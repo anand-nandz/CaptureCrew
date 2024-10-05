@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .animate-BgAnimation {
+    @apply bg-cover bg-center transition-transform duration-500 ease-in-out;
+    transform: scale(1.05);
+    background-image: url('/images/home1.jpg');
+    animation: bgChange 20s infinite;
+  }
+}
+
+@keyframes bgChange {
+  0%, 100% { background-image: url('/images/home1.jpg'); }
+  25% { background-image: url('/images/home2.jpg'); }
+  50% { background-image: url('/images/home3.jpg'); }
+  75% { background-image: url('/images/home4.jpg'); }
+}
+
+/* Preload images */
+body::after {
+  @apply absolute w-0 h-0 overflow-hidden -z-10;
+  content: url('/images/home1.jpg') url('/images/home2.jpg') url('/images/home3.jpg') url('/images/home4.jpg');
+}
+
+/* Ensure full width for all screen sizes */
+html, body, #root {
+  @apply w-full overflow-x-hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 943px) {
+  .animate-BgAnimation {
+    @apply w-full h-full;
+  }
+}
