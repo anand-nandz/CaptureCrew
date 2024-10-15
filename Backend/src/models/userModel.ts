@@ -12,6 +12,8 @@ export interface User {
   imageUrl?: string;
   favourite?: string[];
   refreshToken?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 export interface UserDocument extends User, Document {
@@ -38,7 +40,9 @@ const UserSchema = new Schema<UserDocument, UserModel>({
   imageUrl: { type: String },
   favourite: { type: [String] },
   isGoogleUser: { type: Boolean, default: false },
-  refreshToken: { type: String }
+  refreshToken: { type: String },
+  resetPasswordToken: {type : String},
+  resetPasswordExpires: {type : Date},
 }, { timestamps: true });
 
 export default mongoose.model<UserDocument, UserModel>('User', UserSchema);
