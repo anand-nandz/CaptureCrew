@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser'
 import session from 'express-session';  // Correct import
 import userRoutes from './routes/userRoutes'
 import vendorRoutes from './routes/vendorRoutes'
+import adminRoutes from './routes/adminRoutes'
 dotenv.config()
 
 
@@ -14,7 +15,7 @@ export const app = express() ;
 
 const corsOption = {
     origin : ['http://localhost:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
     credentials : true
 }
 
@@ -43,6 +44,7 @@ app.use(cookieParser()) ;
 
 app.use('/api/user',userRoutes)
 app.use('/api/vendor',vendorRoutes)
+app.use('/api/admin',adminRoutes)
 
 const PORT = process.env.PORT ;
 
