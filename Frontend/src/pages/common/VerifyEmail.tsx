@@ -1,34 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Card, CardBody, Input, Button } from '@material-tailwind/react';
-import { useFormik } from 'formik';
-import { axiosInstance, axiosInstanceVendor } from '../../config/api/axiosInstance';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setUserInfo } from '../../redux/slices/UserSlice';
-import { setVendorInfo } from '../../redux/slices/VendorSlice';
+import { useNavigate } from 'react-router-dom';
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import { Card, CardBody, Button, Typography } from "@material-tailwind/react";
+import { axiosInstance, axiosSessionInstance } from '../../config/api/axiosInstance';
+import axios from 'axios';
 import { showToastMessage } from '../../validations/common/toast';
-import { USER, VENDOR } from '../../config/constants/constants';
-import { validate } from '../../validations/common/otpValidation';
-
-interface FormValues {
-  otp: string;
-}
-
-const initialValues: FormValues = {
-  otp: '',
-};
-
 const images = [
   '/images/login.webp',
   '/images/event1.jpg',
   '/images/event2.jpg'
 ];
 
+interface FormValues {
+  otp: string;
+}  
 const VerifyEmail = () => {
   const [imageIndex, setImageIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const location = useLocation();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,42 +29,123 @@ const VerifyEmail = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const formik = useFormik({
-    initialValues,
-    validate,
-    onSubmit: (values) => {
-      if (location.pathname === USER.VERIFY) {
-        axiosInstance
-          .post('/verify', values, { withCredentials: true })
-          .then((response) => {
-            dispatch(setUserInfo(response.data.user));
-            showToastMessage(response.data.message, 'success');
-            navigate(`${USER.HOME}`);
-          })
-          .catch((error) => {
-            showToastMessage(error.response.data.error, 'error');
-            console.error(error);
-          });
+  useEffect(() => {
+    const otpData = localStorage.getItem('otpData');
+    if (!otpData) {
+      navigate('/signup');
+      return;
+    }
+
+    const { otpExpiry, resendAvailableAt } = JSON.parse(otpData);
+
+    const startTimer = () => {
+      const now = Date.now();
+      if (otpExpiry > now) {
+        setTimeLeft(Math.floor((otpExpiry - now) / 1000));
+        setResendDisabled(resendAvailableAt > now);
+
+        const interval = setInterval(() => {
+          const currentTime = Date.now();
+          if (otpExpiry > currentTime) {
+            setTimeLeft(Math.floor((otpExpiry - currentTime) / 1000));
+            setResendDisabled(resendAvailableAt > currentTime);
+          } else {
+            setTimeLeft(0);
+            setResendDisabled(false);
+            clearInterval(interval);
+          }
+        }, 1000);
+
+        return () => clearInterval(interval);
       } else {
-        axiosInstanceVendor
-          .post('/verify', values, { withCredentials: true })
-          .then((response) => {
-            dispatch(setVendorInfo(response.data.user));
-            showToastMessage(response.data.message, 'success');
-            navigate(`${VENDOR.DASHBOARD}`);
-          })
-          .catch((error) => {
-            showToastMessage(error.response.data.error, 'error');
-            console.error(error);
-          });
+        setTimeLeft(0);
+        setResendDisabled(false);
       }
-    },
+    };
+
+    startTimer();
+  }, [navigate]);
+
+  const handleVerify = async (values: FormValues, { setSubmitting, setFieldError }: FormikHelpers<FormValues>) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosSessionInstance.post('/verify', { otp: values.otp });
+      showToastMessage(response.data.message, 'success');
+      if (response.data.user) {
+        localStorage.removeItem('otpData');
+        navigate('/login');
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || 'Invalid OTP';
+        setFieldError('otp', errorMessage); // Set field error for formik
+        showToastMessage(errorMessage, 'error'); // Display toast message
+        if (error.response?.status === 400 && errorMessage === 'Session expired. Please sign up again.') {
+          setTimeout(() => {
+            navigate('/signup');
+          }, 2000);
+        }
+      } else {
+        showToastMessage('An unexpected error occurred. Please try again.', 'error');
+      }
+
+    } finally {
+      setIsLoading(false);
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendDisabled) return;
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get('/resendOtp');
+      const { otpExpiry, resendAvailableAt } = response.data;
+
+      const otpData = JSON.parse(localStorage.getItem('otpData') || '{}');
+      localStorage.setItem('otpData', JSON.stringify({
+        ...otpData,
+        otpExpiry,
+        resendAvailableAt
+      }));
+      showToastMessage(response.data.message, 'success');
+      setTimeLeft(Math.floor((otpExpiry - Date.now()) / 1000));
+      setResendDisabled(true);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          'An error occurred while processing your request';
+        showToastMessage(errorMessage, 'error');
+      } else {
+        console.error('Failed to resend OTP:', error);
+        showToastMessage('An unexpected error occurred. Please try again.', 'error');
+      }
+
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const validationSchema = Yup.object().shape({
+    otp: Yup.string()
+      .required('OTP is required')
+      .matches(/^[0-9]+$/, "Must be only digits")
+      .min(4, 'Must be exactly 4 digits')
+      .max(4, 'Must be exactly 4 digits')
   });
-  
-  
 
   return (
     <div className="w-full h-screen flex flex-col md:flex-row items-start">
+
       <div
         className={`${imageIndex % 2 === 0
           ? 'bg-gradient-to-r from-blue-600 to-indigo-900'
@@ -94,55 +167,80 @@ const VerifyEmail = () => {
         </p>
       </div>
 
-
       <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center items-center min-h-screen relative z-10">
         <Card className="w-full max-w-md bg-white shadow-xl rounded-xl overflow-hidden" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} >
+
           <div className="w-full text-center mt-6 mb-4">
             <h2 className="text-3xl font-extrabold text-gray-900">
               VERIFY OTP
             </h2>
           </div>
-          <form onSubmit={formik.handleSubmit}>
-            <CardBody className="flex flex-col gap-4 px-4" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} >
-              <div>
-                <label
-                  htmlFor="otp"
-                  className="block text-sm font-medium text-gray-700 mr-3"
-                >
-                  OTP
-                </label>
-                <Input
-                  id="otp"
-                  type="text"
-                  placeholder="Enter OTP"
-                  onChange={formik.handleChange}
-                  value={formik.values.otp}
-                  name="otp"
-                  size="md"
-                  className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
-                  autoComplete="off"
-                  crossOrigin={undefined}
-                  onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
-                />
-                {formik.errors.otp && (
-                  <p className="text-sm" style={{ color: 'red', marginTop: 5 }}>
-                    {formik.errors.otp}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-center mt-4">
-                <Button variant="gradient" fullWidth type="submit"
-                  className="bg-black text-white mt-2 mb-4 rounded-md py-2 px-4 hover:bg-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-                  placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
-                  Verify and Login
-                </Button>
-              </div>
 
-            </CardBody>
-          </form>
+          <Formik
+            initialValues={{ otp: '' }}
+            validationSchema={validationSchema}
+            onSubmit={handleVerify}
+          >
+            {({ isSubmitting }) => (
+              <CardBody className="flex flex-col gap-4 px-4" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} >
+
+                <Form className="space-y-4">
+                  <div>
+                    <Field
+                      type="text"
+                      name="otp"
+                      placeholder="Enter OTP"
+                      className="w-full px-3 py-2 border rounded-md"
+                      disabled={isLoading || isSubmitting}
+                    />
+                    <ErrorMessage name="otp" component="div" className="text-red-500 text-sm mt-1" />
+                  </div>
+
+                  {timeLeft !== null && (
+                    <Typography className="text-center" color={timeLeft > 0 ? "blue-gray" : "red"}
+                      placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
+                      {timeLeft > 0
+                        ? `Time remaining: ${formatTime(timeLeft)}`
+                        : "OTP has expired"}
+                    </Typography>
+                  )}
+
+                  <div className="flex justify-between gap-4">
+                    <Button
+                      type="button"
+                      color="gray"
+                      onClick={handleResend}
+                      placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
+                      disabled={isLoading || resendDisabled || isSubmitting}
+                      className="bg-black"
+                      fullWidth
+                    >
+                      {isLoading ? "Sending..." : "Resend OTP"}
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
+                      disabled={isLoading || !timeLeft || timeLeft === 0 || isSubmitting}
+                      className="bg-black"
+                      fullWidth
+                    >
+                      {isSubmitting ? "Verifying..." : "Verify"}
+                    </Button>
+                  </div>
+                </Form>
+
+              </CardBody>
+            )}
+          </Formik>
+
         </Card>
       </div>
     </div>
+
+
+
+
   );
 };
 
