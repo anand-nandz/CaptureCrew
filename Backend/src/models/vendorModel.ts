@@ -11,7 +11,7 @@ export interface Vendor {
     companyName:string;
     city: string ;
     about: string ;
-    contactinfo :Number ;
+    contactinfo :string ;
     isActive : boolean ;
     isVerified : boolean ;
     isAccepted:AcceptanceStatus;
@@ -21,6 +21,8 @@ export interface Vendor {
     bookedDates:string[];
     refreshToken:string;
     totalRating:number;
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
 }
 export interface VendorDocument extends Vendor, Document {
     _id: mongoose.Types.ObjectId;
@@ -38,7 +40,7 @@ const VendorSchema = new Schema<VendorDocument>({
     companyName: { type: String, required: true },
     city: { type: String, required: true },
     about: { type: String },
-    contactinfo: { type: Number ,required:true , unique:true},
+    contactinfo: { type: String ,required:true , unique:true},
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     isAccepted: { type: String, enum: Object.values(AcceptanceStatus), default: AcceptanceStatus.Requested },
@@ -47,7 +49,9 @@ const VendorSchema = new Schema<VendorDocument>({
     totalBooking:{type:Number},
     bookedDates:{type:[String]},
     totalRating:{type:Number,default:0},
-    refreshToken: { type: String }
+    refreshToken: { type: String },
+    resetPasswordToken: {type : String},
+    resetPasswordExpires: {type : Date},
 },{ timestamps: true })
 
 export default mongoose.model<VendorDocument>('Vendor',VendorSchema)
