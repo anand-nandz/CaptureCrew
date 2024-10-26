@@ -22,6 +22,8 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/UserSlice';
 import { useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
+import { showToastMessage } from '../../validations/common/toast';
+
 
 export default function UserNavbar() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -31,14 +33,28 @@ export default function UserNavbar() {
   const handleLogout = async (e: React.MouseEvent<HTMLLIElement>) => {
     e.preventDefault();
     try {
-      await axiosInstance.get('/logout'); 
-      
+      await axiosInstance.post('/logout'); 
+      localStorage.removeItem('userToken')
+      // localStorage.removeItem('userRefresh')
       dispatch(logout());
       navigate(`${USER.LOGIN}`); 
+      showToastMessage('Logged out successfully', 'success');
     } catch (error) {
-      console.log('logout', error);
+      console.log('Logout Error', error);
+      showToastMessage('Error during logout', 'error');
     }
   };
+
+  const handleProfileClick =async(e: React.MouseEvent<HTMLLIElement>)=>{
+    e.preventDefault();
+    try {
+      navigate(`${USER.PROFILE}`)
+    } catch (error) {
+      console.log('Profile Error', error);
+      showToastMessage('Error during loading profile', 'error');
+    }
+   
+  }
 
   const icons = {
     chevron: <ChevronDown size={16} />,
@@ -154,8 +170,8 @@ export default function UserNavbar() {
             />
           </DropdownTrigger>
           <DropdownMenu aria-label="User Actions">
-            <DropdownItem key="profile" startContent={<User size={20} />}>
-              Profile
+            <DropdownItem key="profile" startContent={<User size={20}/>} onClick={handleProfileClick}>
+              Profile 
             </DropdownItem>
             <DropdownItem key="settings" startContent={<Scale size={20} />}>
               Settings
