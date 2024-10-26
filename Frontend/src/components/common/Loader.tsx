@@ -1,11 +1,9 @@
 import { Hourglass } from 'react-loader-spinner';
 
-const Loader = () => {
+const Loader  : React.FC = () => {
   return (
     <div
-      className="flex h-screen items-center justify-center bg-white"
-      
-    >
+      className="flex h-screen items-center flex-col justify-center bg-white">
       
       <div className="flex items-center justify-center h-40 w-40 rounded-full border-4 border-black">
         <Hourglass
@@ -18,6 +16,7 @@ const Loader = () => {
           colors={['#000000', '#000000']} 
         />
       </div>
+      <h1 className=" mt-4 text-3xl font-bold text-black">CaptureCrew</h1>
     </div>
   );
 };
