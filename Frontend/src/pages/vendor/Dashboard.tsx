@@ -1,9 +1,19 @@
 
-import LayoutVendor from '../../layout/vendor/Layout'
+import Footer from '../../layout/user/footer'
+import VendorNavbar from '../../layout/vendor/VendorNavbar'
+import { ImageMasonry } from '../common/imageMasonary'
+import HeroSectionVendor from '../user/home/Descp'
+
 
 const Dashboard = () => {
   return (
-    <LayoutVendor/>
+    <>
+      <VendorNavbar/>
+      <HeroSectionVendor/>
+      <ImageMasonry/>
+      <Footer/>
+      
+    </>
   )
 }
 
