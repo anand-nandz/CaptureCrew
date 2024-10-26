@@ -3,18 +3,21 @@ export interface VendorData{
     email : string;
     password : string;
     name : string;
+    companyName:string;
     city : string ;
     about :string ;
-    contactinfo : number;
+    contactinfo : string;
     isActive:boolean;
     isVerified:boolean;
-    verificationRequest:boolean;
+    isAccepted:AcceptanceStatus;
     logo:string;
     profilepic : string ;
     totalBooking:number;
     bookedDates:Array<string>;
     refreshToken:string;
     totalRating:number;
+    createdAt: string;  
+    updatedAt: string;  
 }
 
 export interface VendorFormValues {
@@ -24,4 +27,12 @@ export interface VendorFormValues {
     city : string
     contactinfo: string;
     confirmPassword: string;
+    companyName: string;
+    about: string,
   }
+
+  export enum AcceptanceStatus {
+    Requested = 'requested',
+    Accepted = 'accepted',
+    Rejected = 'rejected'
+}
