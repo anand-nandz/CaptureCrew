@@ -1,36 +1,47 @@
 import React, { useEffect, useState } from 'react'
-import UserSignUp from './pages/user/auth/SignUp'
 import Loader from './components/common/Loader'
 import { NextUIProvider } from '@nextui-org/react'
-import { Route, Routes } from 'react-router-dom';
-import { USER } from './config/constants/constants';
+import { Routes, Route, useLocation } from 'react-router-dom'
 import './index.css'
-import UserLogin from './pages/user/auth/Login';
-import VerifyEmail from './pages/common/VerifyEmail';
-import Home from './pages/home/Home';
+import ScrollToTopButton from './components/home/ScrollToTopButton'
+import ErrorBoundary from './components/common/ErrorBoundary'
+
+import UserRoutes from './routes/userRoutes'
+import AdminRoutes from './routes/adminRoutes'
+import { VendorRoutes } from './routes/vendorRoutes'
+import { useAuthCheck } from './hooks/user/useAuthCheck'
 
 
+const App: React.FC = () => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const { pathname } = useLocation();
+  useAuthCheck();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname])
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 1000);
+  }, [])
 
-const App:React.FC = () => {
-  const [loading,setLoading] = useState<boolean>(true) ;
-   useEffect(()=>{
-    setTimeout(()=>setLoading(false),1000);
-   },[])
+  if (loading) {
+    return <Loader />;
+  }
 
-   return (
+  return (
     <NextUIProvider>
-      {loading ? (
-        <Loader/>
-      ) : (
+      <ErrorBoundary>
+      <React.Suspense fallback={<Loader />}>
         <Routes>
-          <Route path={USER.HOME} element={<Home/>} />
-          <Route path={USER.SIGNUP} element={<UserSignUp/>} />
-          <Route path={USER.LOGIN} element={<UserLogin/>} />
-          <Route path={USER.VERIFY} element={<VerifyEmail/>} />
+          <Route path="/*" element={<UserRoutes />} />
+          <Route path="/admin/*" element={<AdminRoutes />} />
+          <Route path="/vendor/*" element={<VendorRoutes />} />
+         
         </Routes>
-      )}
+        <ScrollToTopButton />
+      </React.Suspense>
+      </ErrorBoundary>
     </NextUIProvider>
-  )
+  );
 }
 
 export default App

@@ -6,33 +6,18 @@ import '../public/css/animation.css'
 import { Provider } from 'react-redux'
 import { persistor, store } from './redux/store.js'
 import { PersistGate } from 'redux-persist/integration/react'
-import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom'
+import { BrowserRouter as Router } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
-import VendorApp from './pages/VendorApp.js'
-
-
-
-const router =  createBrowserRouter(
-  createRoutesFromElements(
-    <>
-      <Route path='/*' element={<App/>}>
-        <Route path='/*' element={<App/>}/>
-      </Route>
-
-      <Route path='/vendor/*' element={<VendorApp/>}/>
-
-    </>
-  )
-)
-
 
 createRoot(document.getElementById('root')!).render(
   <Provider store={store}>
-    <PersistGate persistor={persistor}>
+    <PersistGate loading={null} persistor={persistor}>
       <StrictMode>
-        <ToastContainer/>
-          <RouterProvider router={router}/>  
-      </StrictMode>,
+        <Router>
+          <ToastContainer />          
+          <App />
+        </Router>
+      </StrictMode>
     </PersistGate>
   </Provider>
 )
