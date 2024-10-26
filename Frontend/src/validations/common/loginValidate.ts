@@ -17,3 +17,6 @@ export const loginValidationSchema = Yup.object().shape({
 export const googleValidationSchema = Yup.object().shape({
     credential: Yup.string().required('Google credential is required')
 });
+
+
+

@@ -1,104 +1,53 @@
-import { useEffect, useState } from 'react'
 import {
     Card,
     CardBody,
     Typography,
     Button,
-    Input,
-    CardFooter
+    Input as MaterialInput, InputProps,
+    CardFooter,
 
 } from "@material-tailwind/react";
-import { useDispatch, useSelector } from 'react-redux';
-import UserRootState from '../../../redux/rootstate/UserState';
-import { Link, useNavigate } from 'react-router-dom';
+import {
+    Modal,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+
+} from "@nextui-org/react";
+import { Link } from 'react-router-dom';
 import { USER, VENDOR } from '../../../config/constants/constants';
-import { useFormik } from "formik";
-import { axiosInstance } from '../../../config/api/axiosInstance';
-import { setUserInfo } from '../../../redux/slices/UserSlice';
-import { loginValidationSchema } from '../../../validations/common/loginValidate';
-import { showToastMessage } from '../../../validations/common/toast';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { Eye, EyeOff } from 'lucide-react';
+import Loader from '../../../components/common/Loader';
+import { useLoginUser } from "../../../hooks/user/useLoginUser";
+import { showToastMessage } from "../../../validations/common/toast";
 
 const client_id = import.meta.env.VITE_CLIENT_ID || ''
 
+type CustomInputProps = Omit<InputProps, 'onPointerEnterCapture' | 'onPointerLeaveCapture' | 'crossOrigin'>;
 
-interface FormValues {
-    email: string;
-    password: string;
-}
+const Input: React.FC<CustomInputProps> = (props) => {
+    return (
+      <MaterialInput
+        {...props}
+        // Explicitly set these as undefined to satisfy both TypeScript and runtime
+        crossOrigin={undefined}
+        onPointerEnterCapture={undefined}
+        onPointerLeaveCapture={undefined}
+      />
+    );
+  };
 
-const initialValues: FormValues = {
-    email: '',
-    password: ''
-}
+const UserLogin: React.FC = () => {
+    const {
+        imageIndex, images, isLoading, formik, forgotPasswordEmail, emailError, isOpen, showPassword,
+        onOpen, onOpenChange, togglePasswordVisibility, handleEmailChange, handleForgotPassword, handleGoogleSuccess
+    } = useLoginUser()
 
-const images = [
-    '/images/userLogin1.jpg',
-    '/images/userLogin2.jpg',
-    '/images/userLogin3.jpg',
-
-];
-
-const UserLogin = () => {
-    const user = useSelector((state: UserRootState) => state.user.userData);
-    const [imageIndex, setImageIndex] = useState(0);
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
-
-    useEffect(() => {
-        if (user) {
-            navigate(USER.HOME);
-        }
-    }, [navigate, user]);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 3000)
-        return () => clearInterval(interval)
-    }, [])
-
-    const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
-        axiosInstance
-            .post('/google/login', { credential: credentialResponse.credential })
-            .then((response) => {
-                localStorage.setItem('userToken', response.data.token);
-                localStorage.setItem('userRefresh', response.data.refreshToken);
-                dispatch(setUserInfo(response.data.userData));
-                showToastMessage(response.data.message, 'success')
-                navigate(USER.HOME);
-            })
-            .catch((error) => {
-                console.error(error);
-                showToastMessage(error.response?.data?.message || 'An error occurred during Google login', 'error')
-            });
-    };
-
-    const formik = useFormik({
-        initialValues,
-        validationSchema: loginValidationSchema,
-        onSubmit: (values) => {
-            if (Object.keys(formik.errors).length === 0) {
-                axiosInstance
-                    .post('/login', values)
-                    .then((response) => {
-                        localStorage.setItem('userToken', response.data.token);
-                        localStorage.setItem('userRefresh', response.data.refreshToken);
-                        dispatch(setUserInfo(response.data.userData));
-                        showToastMessage(response.data.message, 'success')
-                        navigate(`${USER.HOME}`);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        showToastMessage(error.response.data.message, 'error')
-                    });
-            } else {
-                // Validation errors exist, show toast or notification
-                showToastMessage('Please correct the validation errors before submitting', 'error')
-            }
-
-        }
-    })
+    if (isLoading) {
+        return <Loader />
+    }
 
     return (
         <div className="w-full h-screen flex flex-col md:flex-row items-start">
@@ -106,15 +55,15 @@ const UserLogin = () => {
 
             <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center items-center min-h-screen relative z-10">
                 <GoogleOAuthProvider clientId={client_id}>
-                    <Card className="w-full max-w-md bg-white shadow-xl rounded-xl overflow-hidden" shadow={false} placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
+                    <Card className="w-full max-w-md overflow-hidden" shadow={false} placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                         <div className="w-full text-center mt-6 mb-4">
-                            <h2 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: 'Lemon, sans-serif' }}>
+                            <h2 className="text-3xl font-extrabold text-gray-900 mb-6" style={{ fontFamily: 'Lemon, sans-serif' }}>
                                 LOGIN
                             </h2>
                         </div>
 
                         <form onSubmit={formik.handleSubmit}>
-                            <CardBody className="flex flex-col gap-4 px-4" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
+                            <CardBody className="flex flex-col gap-4 px-4 pb-0" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                                     <Input
@@ -126,10 +75,8 @@ const UserLogin = () => {
                                         value={formik.values.email}
                                         name="email"
                                         size="md"
-                                        crossOrigin={undefined}
                                         autoComplete="email"
                                         className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
-                                        onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
                                     />
                                     {formik.touched.email && formik.errors.email && (
                                         <p className="text-sm" style={{ color: 'red' }}>
@@ -138,30 +85,49 @@ const UserLogin = () => {
                                     )}
 
                                 </div>
-                                <div>
+                                <div className="relative">
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder="••••••••"
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        value={formik.values.password}
-                                        name="password"
-                                        size="md"
-                                        crossOrigin={undefined}
-                                        onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
-                                        className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
-                                        autoComplete="new-password"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            value={formik.values.password}
+                                            name="password"
+                                            size="md"
+                                            className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
+                                            autoComplete="new-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                            onClick={togglePasswordVisibility}
+                                        >
+                                            {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                                        </button>
+                                    </div>
+
                                     {formik.touched.password && formik.errors.password && (
                                         <p className="text-sm" style={{ color: 'red' }}>
                                             {formik.errors.password}
                                         </p>
                                     )}
-                                </div>
 
-                                <div className="flex justify-center mt-4">
+
+                                </div>
+                                <Typography
+                                    className="text-left cursor-pointer"
+                                    onClick={onOpen}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                >
+                                    Forgot password?
+                                </Typography>
+
+                                <div className="flex justify-center mt-2">
                                     <Button
                                         type="submit"
                                         onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} placeholder={undefined}
@@ -192,7 +158,7 @@ const UserLogin = () => {
                         <CardFooter className="pt-0" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                             <Typography
                                 variant="small"
-                                className="mt-2 mb-4 flex justify-center"
+                                className="mt-2 mb-2 flex justify-center"
                                 color="black"
                                 placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
                                 Don't have an account?
@@ -210,11 +176,11 @@ const UserLogin = () => {
                             </Typography>
                             <Typography
                                 variant="small"
-                                className="mt-3 flex justify-center pb-3"
+                                className="mt-2 flex justify-center pb-3"
                                 color="black"
                                 placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
                                 Are you a vendor?
-                                <Link to={VENDOR.SIGNUP}>
+                                <Link to={VENDOR.LOGIN}>
                                     <Typography
                                         as="a"
                                         href="#signup"
@@ -222,7 +188,7 @@ const UserLogin = () => {
                                         color="black"
                                         className="ml-1 font-bold"
                                         placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}            >
-                                        Signup here
+                                        SignIn here
                                     </Typography>
                                 </Link>
                             </Typography>
@@ -231,13 +197,97 @@ const UserLogin = () => {
                     </Card>
                 </GoogleOAuthProvider>
 
+
             </div>
+            <Modal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                placement="center"
+                size="sm"
+                classNames={{
+                    base: "bg-white rounded-lg shadow-lg",
+                    header: "border-b border-gray-200",
+                    body: "py-7",
+                    closeButton: "hidden",
+                }}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <div className="absolute top-2 right-2">
+                                <button
+                                    onClick={onClose}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <ModalHeader className="flex flex-col  items-center justify-center text-xl font-semibold text-black">
+                                Forgot Password
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="space-y-4 font-judson">
+                                    <div>
+                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Email
+                                        </label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="Enter your email"
+                                            value={forgotPasswordEmail}
+                                            onChange={handleEmailChange}
+                                            className="w-full "
+                                            autoComplete="email"
+                                        />
+                                        {emailError ? (
+                                            <p
+                                                className="text-sm"
+                                                style={{ color: "red", marginBottom: -15, marginTop: 5 }}
+                                            >
+                                                {emailError}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        Enter your email address and we'll send you a link to reset your password.
+                                    </p>
+                                </div>
+                            </ModalBody>
+                            <ModalFooter className="flex justify-between space-x-4">
+                                <Button
+                                    className="flex-1 font-judson bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
+                                    onClick={onClose}
+                                    disabled={isLoading}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="flex font-judson bg-black text-white hover:bg-gray-900"
+                                    onClick={handleForgotPassword}
+                                    placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <div className="flex items-center">
+                                            <span className="mr-2">Sending...</span>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        </div>
+                                    ) : (
+                                        "Send Reset Link"
+                                    )}
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
 
             <div
-                className={`${imageIndex % 2 === 0
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-900'
-                    : ''
-                    } w-full h-screen md:w-1/2 object-cover md:static absolute top-0 left-0 z-0 transition-all duration-1000 ease-in-out`}
+                className={`${imageIndex % 2 === 0 ? 'bg-gradient-to-r from-blue-600 to-indigo-900' : ''} w-full h-screen md:w-1/2 object-cover md:static absolute top-0 left-0 z-0 transition-all duration-1000 ease-in-out`}
                 style={{
                     backgroundImage: `url(${images[imageIndex]})`,
                     backgroundSize: 'cover',
@@ -253,6 +303,9 @@ const UserLogin = () => {
                     Find, Connect, and Collaborate with Top Event Planners
                 </p>
             </div>
+
+
+
 
 
 

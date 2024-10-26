@@ -1,13 +1,30 @@
-export interface UserData{
-    _id:string;
-    email : string;
-    password : string;
-    name : string;
-    contactinfo : number;
-    isActive:boolean;
-    isBlocked:boolean;
-    image:string;
-    imageUrl:string;
-    favourite:string[];
-    refreshToken:string;
-}
+export interface UserData {
+    _id: string;
+    email: string;
+    password?: string;
+    name: string;
+    contactinfo?: string;
+    isActive: boolean;
+    isBlocked: boolean;
+    isGoogleUser: boolean;
+    image?: string;
+    imageUrl?: string;
+    favourite: string[];
+    refreshToken?: string;
+    createdAt: string;  
+    updatedAt: string;  
+  }
+  
+
+
+  export interface UserFormValues {
+    email: string;
+    password: string;
+    name: string;
+    contactinfo: string;
+    confirmPassword: string;
+    isGoogleUser?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  }
+  

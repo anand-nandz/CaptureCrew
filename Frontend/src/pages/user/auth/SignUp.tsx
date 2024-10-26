@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react'
 import {
   Card,
   CardBody,
@@ -6,103 +5,20 @@ import {
   Typography,
   Input,
   Button,
+  Spinner
 } from "@material-tailwind/react";
-import { useSelector } from 'react-redux';
-import UserRootState from '../../../redux/rootstate/UserState';
-import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { USER, VENDOR } from '../../../config/constants/constants';
-import { validate } from '../../../validations/user/userRegVal';
-import { axiosInstance } from '../../../config/api/axiosInstance';
 import { showToastMessage } from '../../../validations/common/toast';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { useUserSignUp } from '../../../hooks/user/useUserSignup';
+
 const client_id = import.meta.env.VITE_CLIENT_ID || ''
 
-interface UserFormValues {
-  email: string;
-  password: string;
-  name: string;
-  contactinfo: string;
-  confirmPassword: string;
-}
-
-const initialValues: UserFormValues = {
-  email: "",
-  password: "",
-  name: "",
-  contactinfo: "",
-  confirmPassword: "",
-};
-
-const images = [
-  '/images/userSignup1.jpg',
-  '/images/userSignup2.jpg',
-  '/images/userSignup3.jpg',
-];
-
 const SignUp = () => {
-  const user = useSelector((state: UserRootState) => state.user.userData);
-  const [formValues, setFormValues] = useState(initialValues)
-  const [formErrors, setFormErrors] = useState<UserFormValues>(initialValues);
-  const [imageIndex, setImageIndex] = useState(0)
 
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (user) {
-      navigate(USER.HOME)
-    }
-  }, [navigate, user])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormValues({ ...formValues, [e.target.name]: e.target.value });
-
-
-    const errors = validate({ ...formValues, [name]: value });
-    setFormErrors((prevErrors) => ({ ...prevErrors, ...errors }));
-
-  };
-
-  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
-    axiosInstance
-      .post('./google/register', { credential: credentialResponse.credential })
-      .then((res) => {
-        if (res.data.message) {
-          showToastMessage(res.data.message, 'success')
-          navigate(USER.LOGIN)
-        }
-      })
-      .catch((error) => {
-        showToastMessage(error.response?.data?.error || 'An error occurred during Google sign up', 'error')
-      })
-  };
-
-
-  const submitHandler = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    const errors = validate(formValues);
-    setFormErrors(errors)
-    if (Object.values(errors).every((error) => error === "")) {
-      axiosInstance
-        .post("/signup", formValues, { withCredentials: true })
-        .then((response) => {
-          if (response.data.email) {
-            showToastMessage('Otp send succesfully', 'success')
-            navigate(`${USER.VERIFY}`);
-          }
-        })
-        .catch((error) => {
-          showToastMessage(error.response.data.message, 'success')
-        });
-    }
-  };
+  const { formValues, formErrors, imageIndex, images, isLoading, showPassword, showPassword1, handleChange, submitHandler, handleGoogleSuccess, togglePasswordVisibility, togglePasswordVisibility1 } = useUserSignUp()
 
   return (
     <div className="w-full h-screen flex flex-col md:flex-row items-start">
@@ -123,14 +39,14 @@ const SignUp = () => {
           Elevate Your Event Experience
         </h1>
         <p className="animate-slideIn text-xl md:text-2xl text-white font-normal mt-5 mx-4 md:block hidden">
-          Find, Connect, and Collaborate with Top Event Planners
+          Find, Connect, and Collaborate
         </p>
       </div>
 
 
       <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center items-center min-h-screen relative z-10">
         <GoogleOAuthProvider clientId={client_id} >
-          <Card className="w-full max-w-md bg-white shadow-xl rounded-xl overflow-hidden" shadow={false} placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
+          <Card className="w-full max-w-md overflow-hidden" shadow={false} placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
 
             <div className="w-full text-center mt-6 mb-4">
               <h2 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: 'Lemon, sans-serif' }}>
@@ -138,8 +54,8 @@ const SignUp = () => {
               </h2>
             </div>
 
-            <form onSubmit={submitHandler}>
-              <CardBody className="flex flex-col gap-4 px-4" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
+            <form onSubmit={submitHandler} >
+              <CardBody className="flex flex-col gap-4 px-4 pb-0" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mr-3">Name</label>
                   <Input
@@ -217,48 +133,62 @@ const SignUp = () => {
                   ) : null}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                  <Input
-
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    onChange={handleChange}
-                    value={formValues.password}
-                    name="password"
-                    size="md"
-                    crossOrigin={undefined}
-                    onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
-                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
-                    autoComplete="new-password"
-                  />
-                  {formErrors.password ? (
-                    <p
-                      className="text-sm"
-                      style={{ color: "red", marginBottom: -15, marginTop: 5 }}
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      onChange={handleChange}
+                      value={formValues.password}
+                      name="password"
+                      size="md"
+                      crossOrigin={undefined}
+                      onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
+                      className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md pr-10"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      onClick={togglePasswordVisibility}
                     >
+                      {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                  </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-red-500 mt-1">
                       {formErrors.password}
                     </p>
-                  ) : null}
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm Password</label>
-                  <Input
+                  <div className="relative">
+                    <Input
 
-                    id="confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    onChange={handleChange}
-                    value={formValues.confirmPassword}
-                    name="confirmPassword"
-                    size="md"
-                    crossOrigin={undefined}
-                    onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
-                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
-                    autoComplete="new-password"
-                  />
+                      id="confirm-password"
+                      type={showPassword1 ? "text" : "password"}
+                      placeholder="••••••••"
+                      onChange={handleChange}
+                      value={formValues.confirmPassword}
+                      name="confirmPassword"
+                      size="md"
+                      crossOrigin={undefined}
+                      onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
+                      className="mt-2 block w-full rounded-md border-gray-300 shadow-sm py-2 px-2 text-md"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      onClick={togglePasswordVisibility1}
+                    >
+                      {showPassword1 ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                  </div>
                   {formErrors.confirmPassword ? (
                     <p
                       className="text-sm"
@@ -269,19 +199,28 @@ const SignUp = () => {
                   ) : null}
                 </div>
 
-                <div className="flex justify-center mt-3">
+                <div className="flex justify-center mt-2">
                   <Button
-                    type="submit" variant="gradient" placeholder={undefined}
-                    className="bg-black text-white mt-2 rounded-md py-2 px-4 hover:bg-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-                    onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}
+                    type="submit"
+                    variant="gradient"
+                    onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} placeholder={undefined}
+                    className="bg-black text-white mt-1 rounded-md py-2 px-4 hover:bg-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 flex items-center justify-center"
+                    disabled={isLoading}
                   >
-                    Send OTP
+                    {isLoading ? (
+                      <>
+                        <Spinner className="h-4 w-4 mr-2" onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} />
+                        Sending OTP...
+                      </>
+                    ) : (
+                      "Send OTP"
+                    )}
                   </Button>
                 </div>
               </CardBody>
             </form>
 
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-2">
               <GoogleLogin
                 type='standard'
                 theme='filled_black'
@@ -299,7 +238,7 @@ const SignUp = () => {
             <CardFooter className="pt-0" placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
               <Typography
                 variant="small"
-                className="mt-2 mb-4 flex justify-center"
+                className="mt-2 mb-2 flex justify-center"
                 color="black"
                 placeholder={undefined} onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}        >
                 Already have an account?
@@ -317,7 +256,7 @@ const SignUp = () => {
               </Typography>
               <Typography
                 variant="small"
-                className="mt-3 flex justify-center pb-3"
+                className="mt-1 flex justify-center pb-2"
                 color="black"
                 placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
                 Are you a vendor?
