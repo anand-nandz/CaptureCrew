@@ -5,7 +5,7 @@ export interface User {
   password?: string;
   name: string;
   googleId?: string;
-  contactinfo?: number;
+  contactinfo?: string;
   isActive: boolean;
   isGoogleUser: boolean;
   image?: string;
@@ -34,7 +34,7 @@ const UserSchema = new Schema<UserDocument, UserModel>({
   },
   name: { type: String, required: true },
   googleId: { type: String },
-  contactinfo: { type: Number },
+  contactinfo: { type: String },
   isActive: { type: Boolean, default: true },
   image: { type: String },
   imageUrl: { type: String },
