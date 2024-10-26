@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { User } from "../models/userModel";
 
 export class BaseRepository<T extends mongoose.Document>{
     private model:mongoose.Model<T>;
@@ -13,6 +14,19 @@ export class BaseRepository<T extends mongoose.Document>{
     }
     
     async findByEmail(email:string) : Promise< T | null> {
+        email = email.toLowerCase()
         return await this.model.findOne({email})
+    }
+
+    async update(id:string,data:Partial<T>):Promise<T|null>{
+        return await this.model.findByIdAndUpdate(id,data)
+    }
+
+    async findByToken(resetPasswordToken:string) : Promise< T | null> {
+        return await this.model.findOne({resetPasswordToken})
+    }
+
+    async getById(id:string) : Promise<T | null> {
+        return await this.model.findById(id)
     }
 }
