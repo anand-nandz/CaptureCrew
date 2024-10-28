@@ -16,6 +16,7 @@ import Sidebar from "../../../layout/user/Sidebar";
 import { UserData } from "../../../types/userTypes";
 import EditProfileModal from "./editProfile";
 import ChangePasswordModal, { PasswordFormData } from "../../common/changePassword";
+import Loader from "../../../components/common/Loader";
 
 function UserProfile() {
   const [user, setUser] = useState<UserData | null>(null);
@@ -40,8 +41,6 @@ function UserProfile() {
           Authorization: `Bearer ${token}`
         }
       });
-      console.log('Profile response:', response.data);
-
       setUser(response.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -59,16 +58,21 @@ function UserProfile() {
   }, [fetchProfileData]);
 
 
-  const handleSaveProfile = useCallback(async (updates: Partial<UserData>) => {
+  const handleSaveProfile = useCallback(async (updates: FormData) => {
     try {
       const token = localStorage.getItem('userToken');
       if (!token) {
         showToastMessage('Authentication required', 'error');
         return;
       }
-
-      const response = await axiosInstance.put('/profile', updates);
-      setUser(response.data);
+      console.log(updates,'update in handlesave')
+      const response = await axiosInstance.put('/profile', updates, {
+        headers : {"Content-Type" : 'multipart/form-data'}
+      });
+      
+      setUser(response.data.user);
+      console.log('Profile response:', response.data.user);
+      console.log('Image URL:', response.data.user.imageUrl);
       showToastMessage('Profile updated successfully', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -99,7 +103,7 @@ function UserProfile() {
   }, []);
 
   if (!user) {
-    return <div>Loading...</div>;
+    return <div><Loader/></div>;
   }
 
   return (
@@ -138,7 +142,7 @@ function UserProfile() {
                     size="xxl"
                     placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
                     className="h-32 w-32 ring-4 ring-white -mt-20 relative"
-                    src={"/images/p1.webp"}
+                    src={user?.imageUrl || "/images/user.png"}
 
                   />
                   <div className="space-y-1">
