@@ -7,7 +7,7 @@ export interface UserData {
     isActive: boolean;
     isBlocked: boolean;
     isGoogleUser: boolean;
-    image?: string;
+    image?: string | null | undefined;
     imageUrl?: string;
     favourite: string[];
     refreshToken?: string;
