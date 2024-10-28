@@ -7,6 +7,7 @@ import userRepository from "../repositories/userRepository";
 import Jwt from "jsonwebtoken";
 import { AuthenticatedRequest } from "../types/userTypes";
 import jwt from 'jsonwebtoken';
+import { s3Service } from "../services/s3Service";
 
 
 interface DecodedData {
@@ -376,49 +377,45 @@ class UserController {
         }
     }
 
-    async getUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    async getUserProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
-            const userId = req.user?._id; // Get user ID from the token
-            console.log('User ID from request:', userId);
+            const userId = req.user?._id;
 
             if (!userId) {
                 res.status(400).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const user = await userRepository.getById(userId.toString()); // Fetch user from DB
-            console.log('Retrieved user:', user);
+            const result = await userService.getUserProfileService(userId.toString())
 
-            if (!user) {
-                res.status(404).json({ message: 'User not found' });
-                return;
-            }
-
-            res.status(200).json(user); // Return user data
+            res.status(200).json(result);
         } catch (error) {
-            handleError(res, error, 'getUser'); // Error handling
+            handleError(res, error, 'getUser');
         }
     }
 
     async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { name, contactinfo } = req.body
-            console.log(name, contactinfo, 'in update')
             const userId = req.user?._id;
+
             if (!userId) {
                 res.status(400).json({ message: 'User ID is missing' });
                 return;
             }
 
-            if ((!name && !contactinfo) || (name === '' && contactinfo === '')) {
-                res.status(400).json({ message: 'At least one field (name or contact info) is required' });
+            if ((!name && !contactinfo && !req.file) ||
+                (name === '' && contactinfo === '' && !req.file)) {
+                res.status(400).json({
+                    message: 'At least one field (name, contact info, or image) is required'
+                });
                 return;
             }
-            const updateData: { name?: string; contactinfo?: string } = {};
-            if (name !== undefined && name !== '') updateData.name = name;
-            if (contactinfo !== undefined && contactinfo !== '') updateData.contactinfo = contactinfo;
-            const user = await userService.updateProfile(updateData, userId)
-            res.status(201).json(user);
+
+            const user = await userService.updateProfileService(name, contactinfo, userId, req.file || null)
+            console.log(user, 'user in controler pro update');
+
+            res.status(200).json({user});
         } catch (error) {
             handleError(res, error, 'updateProfile')
         }

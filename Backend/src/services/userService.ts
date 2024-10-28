@@ -10,6 +10,7 @@ import { sendEmail } from '../utils/sendEmail';
 import { emailTemplates } from '../utils/emailTemplates';
 import generateOTP from '../utils/generateOtp';
 import mongoose from 'mongoose';
+import { s3Service } from './s3Service';
 
 
 export interface GoogleUserData {
@@ -128,19 +129,19 @@ class UserService {
             const token = jwt.sign(
                 { _id: user._id },
                 process.env.JWT_SECRET_KEY!,
-                { expiresIn: '1m' }
+                { expiresIn: '1h' }
             );
 
             const refreshToken = jwt.sign(
                 { _id: user._id },
                 process.env.JWT_REFRESH_SECRET_KEY!,
-                { expiresIn: '3m' }
+                { expiresIn: '1d' }
             );
 
             user.refreshToken = refreshToken;
             await user.save();
             await generateUserTokenAndSetCookie(user._id.toString(), res);
-            console.log(user);
+
 
             return {
                 user,
@@ -167,6 +168,22 @@ class UserService {
                 throw new CustomError('User Not Exist!!..', 404)
             }
 
+            let userWithSignedUrl = existingUser.toObject();
+            if (existingUser.imageUrl) {
+                try {
+                    const signedImageUrl = await s3Service.getFile('captureCrew/photo/', existingUser.imageUrl);
+                    userWithSignedUrl = {
+                        ...userWithSignedUrl,
+                        imageUrl: signedImageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL during login:', error);
+                    // Don't throw error, just continue with unsigned URL
+                }
+            }
+            console.log(userWithSignedUrl);
+            
+
             const passwordMatch = await bcrypt.compare(
                 password,
                 existingUser.password || ''
@@ -183,7 +200,7 @@ class UserService {
                 { _id: existingUser._id },
                 process.env.JWT_SECRET_KEY!,
                 {
-                    expiresIn: '1m'
+                    expiresIn: '1h'
                 }
             )
 
@@ -195,7 +212,7 @@ class UserService {
                     { _id: existingUser._id },
                     process.env.JWT_REFRESH_SECRET_KEY!,
                     {
-                        expiresIn: '3m'
+                        expiresIn: '1d'
                     }
                 )
                 existingUser.refreshToken = refreshToken;
@@ -207,7 +224,7 @@ class UserService {
                 token,
                 refreshToken,
                 isNewUser: false,
-                user: existingUser,
+                user: userWithSignedUrl,
                 message: 'Succesfully Logged in'
             }
 
@@ -237,7 +254,7 @@ class UserService {
             const accessToken = jwt.sign(
                 { _id: user._id },
                 process.env.JWT_SECRET_KEY!,
-                { expiresIn: '1m' }
+                { expiresIn: '1h' }
             )
 
             return accessToken;
@@ -407,25 +424,100 @@ class UserService {
         }
     }
 
-    async updateProfile(updateData: { name?: string; contactinfo?: string }, userId: any) {
+    async getUserProfileService(userId: string) {
+        try {
+            const user = await userRepository.getById(userId.toString());
+            console.log('Retrieved user:', user);
+            if (!user) {
+                throw new CustomError('User not found', 400);
+            }
+            if (user?.imageUrl) {
+                try {
+                    const imageUrl = await s3Service.getFile('captureCrew/photo/', user?.imageUrl);
+                    return {
+                        ...user.toObject(),
+                        imageUrl: imageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL:', error);
+                    return user;
+                }
+            }
+            return user
+        } catch (error) {
+            console.error('Error in getUserProfileService:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError((error as Error).message || 'Failed to get profile details', 500);
+        }
+    }
+
+    async updateProfileService(name: string, contactinfo: string, userId: any, files: Express.Multer.File | null) {
         try {
 
             const user = await userRepository.getById(userId.toString())
             if (!user) {
                 throw new CustomError('User not found', 404)
             }
-            const mergeData = {
-                ...user.toObject(),
-                ...updateData
+            console.log(files, 'files got in service');
+
+
+            const updateData: {
+                name?: string;
+                contactinfo?: string;
+                imageUrl?: string;
+            } = {};
+
+            if (name && name !== user.name) {
+                updateData.name = name;
+            }
+            if (contactinfo && contactinfo !== user.contactinfo) {
+                updateData.contactinfo = contactinfo;
             }
 
-            const updatedUser = await userRepository.update(userId, mergeData)
+            if (files) {
+                try {
+                    const imageFileName = await s3Service.uploadToS3(
+                        'captureCrew/photo/',
+                        files
+                    );
+                    updateData.imageUrl = imageFileName;
+                } catch (error) {
+                    console.error('Error uploading to S3:', error);
+                    throw new CustomError('Failed to upload image to S3', 500);
+                }
+            }
+            console.log(updateData, 'updateData in service');
+
+            if (Object.keys(updateData).length === 0) {
+                throw new CustomError('No changes to update', 400);
+            }
+
+            const updatedUser = await userRepository.update(userId, updateData)
             if (!updatedUser) {
                 throw new CustomError('Failed to update user', 500);
             }
             await updatedUser.save();
+            console.log(updatedUser, 'updated user in kfhhsdhjk');
 
             const freshUser = await userRepository.getById(userId.toString());
+            if (freshUser?.imageUrl) {
+                console.log('entered fresuuser iside');
+
+                try {
+                    const imageUrl = await s3Service.getFile('captureCrew/photo/', freshUser.imageUrl);
+                    return {
+                        ...freshUser.toObject(),
+                        imageUrl: imageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL:', error);
+                    // Return user data even if we fail to get the signed URL
+                    return freshUser;
+                }
+            }
+
             return freshUser;
 
         } catch (error) {

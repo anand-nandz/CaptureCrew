@@ -2,7 +2,10 @@ import express from "express";
 import userController from "../controllers/userController";
 import { authMiddleware } from "../middlewares/userauthMiddleware";
 import { authenticateToken } from "../middlewares/authToken";
+import multer from "multer";
 
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
 
 const router = express.Router() ;
 
@@ -22,8 +25,8 @@ router.post('/google/register',userController.googleSignUp)
 router.post('/google/login',userController.googleAuth)
 
 
-router.get('/profile',authenticateToken,userController.getUser)
-router.put('/profile',authenticateToken,userController.updateProfile)
+router.get('/profile',authenticateToken,userController.getUserProfile)
+router.put('/profile', upload.single("image"),authenticateToken,userController.updateProfile)
 router.put('/change-password',authenticateToken,userController.changePassword)
     
 
