@@ -5,7 +5,7 @@ import UserRootState from '../redux/rootstate/UserState';
 import VendorRootState from '../redux/rootstate/VendorState';
 import AdminRootState from '../redux/rootstate/AdminState';
 import { USER, VENDOR, ADMIN} from '../config/constants/constants';
-import { useBlockCheck } from '../hooks/user/useBlockCheck';
+// import { useBlockCheck } from '../hooks/user/useBlockCheck';
 
 type RouteType = 'user' | 'vendor' | 'admin';
 
@@ -19,10 +19,10 @@ const UnifiedPrivateRoute: React.FC<PrivateRouteProps> = ({ routeType }) => {
   
   const vendorState = useSelector((state: VendorRootState) => state.vendor.vendorData);
   const vendorSignedIn = useSelector((state: VendorRootState) => state.vendor.isVendorSignedIn);
-  
+
   const adminSignedIn = useSelector((state: AdminRootState) => state.admin.isAdminSignedIn);
 
-  useBlockCheck(routeType)
+  // useBlockCheck(routeType)
 
   const getRedirectPath = (type: RouteType): string => {
     switch (type) {

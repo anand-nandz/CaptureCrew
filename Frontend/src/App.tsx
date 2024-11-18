@@ -10,12 +10,14 @@ import UserRoutes from './routes/userRoutes'
 import AdminRoutes from './routes/adminRoutes'
 import { VendorRoutes } from './routes/vendorRoutes'
 import { useAuthCheck } from './hooks/user/useAuthCheck'
+import { useBlockCheck } from './hooks/user/useBlockCheck'
 
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { pathname } = useLocation();
   useAuthCheck();
+  useBlockCheck()
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname])
@@ -35,7 +37,6 @@ const App: React.FC = () => {
           <Route path="/*" element={<UserRoutes />} />
           <Route path="/admin/*" element={<AdminRoutes />} />
           <Route path="/vendor/*" element={<VendorRoutes />} />
-         
         </Routes>
         <ScrollToTopButton />
       </React.Suspense>
