@@ -4,15 +4,10 @@ import HeroBanner from "./HeroBanner";
 import { useNavigate } from "react-router-dom";
 import { showToastMessage } from "../../validations/common/toast";
 import { USER } from "../../config/constants/constants";
+import { useCallback, useEffect, useState } from 'react';
+import { VendorData, VendorResponse } from '../../types/vendorTypes';
+import { axiosInstance } from '../../config/api/axiosInstance';
 
-
-const VENDORS = [
-  { name: 'Sreehari', image: '/images/p1.webp' },
-  { name: 'Niju', image: '/images/p2.jpg' },
-  { name: 'Pranav', image: '/images/p3.jpg' },
-  { name: 'Hareesh', image: '/images/p4.heic' },
-  { name: 'Amal', image: '/images/p5.jpg' },
-];
 
 const CATEGORIES = [
   {
@@ -34,18 +29,18 @@ const CAROUSEL_IMAGES = [
 ];
 const services = [
   {
-    title: 'ENGAGEMENT',
-    image: '/images/event1.jpg',
-    description: 'When you realize you want to spend the rest of your life with somebody, you want the rest of your life to start as soon as possible.',
-  },
-  {
     title: 'WEDDING',
-    image: '/images/event2.jpg',
+    image: '/images/event1.jpg',
     description: 'Love seems the swiftest but it is the slowest of all growths. No man or woman really knows what perfect love is until they have been married a quarter of a century.',
   },
   {
-    title: 'LIFESTYLE',
-    image: '/images/event1.jpg',
+    title: 'ENGAGEMENT',
+    image: '/images/event2.jpg',
+    description: 'When you realize you want to spend the rest of your life with somebody, you want the rest of your life to start as soon as possible.',
+  },
+  {
+    title: 'OUTDOOR',
+    image: '/images/event3.jpg',
     description: "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma – which is living with the results of other people's thinking."
   },
 ]
@@ -62,6 +57,34 @@ interface CarouselArrowProps {
 }
 
 const HeroSection = () => {
+  const [vendors, setVendors] = useState<VendorData[]>([])
+
+  const fetchData = useCallback(async () => {
+
+    try {
+      const response = await axiosInstance.get<VendorResponse>('/vendors', {
+        params: {
+          limit: 5,
+        }
+      })
+
+      const transformedVendors: VendorData[] = response.data.vendors.map((vendor) => ({
+        ...vendor._doc,
+        imageUrl: vendor.imageUrl
+      }));
+
+      setVendors(transformedVendors);
+
+    } catch (error) {
+      console.error('Error fetching details:', error);
+    }
+  }, [])
+
+
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const navigate = useNavigate()
 
@@ -122,7 +145,7 @@ const HeroSection = () => {
     </button>
   );
 
-  const handleProfileClick =async(e: React.MouseEvent<HTMLButtonElement>)=>{
+  const handleProfileClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
       navigate(`${USER.VENDORLIST}`)
@@ -130,12 +153,16 @@ const HeroSection = () => {
       console.log('Profile Error', error);
       showToastMessage('Error during loading profile', 'error');
     }
-   
+
+  }
+
+  const viewPorfolio = (vendorId: string)=>{
+    navigate(`${USER.PORTFOLIO}/${vendorId}`)
   }
 
   return (
     <>
-      <HeroBanner/>
+      <HeroBanner />
 
       {/* Vendors Section */}
       <section className="relative container mx-auto px-4 mb-3">
@@ -143,7 +170,7 @@ const HeroSection = () => {
           Popular Vendors
         </h2>
         <div className="flex justify-center items-center w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
-          {VENDORS.map((vendor, index) => (
+          {vendors.map((vendor, index) => (
             <motion.div
               key={index}
               className="relative w-1/5 md:w-2/12 h-full cursor-pointer overflow-hidden border border-gray-300"
@@ -152,9 +179,10 @@ const HeroSection = () => {
                 transition: { duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }
               }}
               whileTap={{ scale: 0.95 }}
+              onClick={()=>viewPorfolio(vendor._id)}
             >
               <img
-                src={vendor.image}
+                src={vendor.imageUrl || '/images/p5.jpg'}
                 alt={vendor.name}
                 className="w-full h-full object-cover transition-all duration-500 ease-out"
               />
@@ -168,70 +196,76 @@ const HeroSection = () => {
         </div>
       </section>
       <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h3 className="text-xl text-yellow-600 font-light tracking-wide mb-2">MOMENTS</h3>
-          <h2 className="text-4xl font-serif font-light text-gray-900">What We Do</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-          {services.map((service, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div className="w-full aspect-square mb-6 overflow-hidden border border-gray-200">
-                <img 
-                  src={service.image} 
-                  alt={service.title} 
-                  className="w-full h-full object-cover"
-                />
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h3 className="text-xl text-yellow-600 font-light tracking-wide mb-2">MOMENTS</h3>
+            <h2 className="text-4xl font-serif font-light text-gray-900">What We Do</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {services.map((service, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div className="w-full aspect-square mb-6 overflow-hidden border border-gray-200">
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-serif font-light mb-4 text-gray-900">{service.title}</h3>
+                <p className="text-sm text-center text-gray-600 max-w-xs">{service.description}</p>
               </div>
-              <h3 className="text-xl font-serif font-light mb-4 text-gray-900">{service.title}</h3>
-              <p className="text-sm text-center text-gray-600 max-w-xs">{service.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
 
       {/* Categories Section */}
       <section className="container mx-auto px-4 py-16">
-      <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl font-light tracking-[0.3em] text-[#B8860B] mb-12 uppercase text-center"
-          >
-            Categories
-          </motion.h2>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl font-light tracking-[0.3em] text-[#B8860B] mb-12 uppercase text-center"
+        >
+          Categories
+        </motion.h2>
         <div className="max-w-6xl mx-auto">
           <div className="p-8 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {CATEGORIES.map((category, index) => (
-               <motion.div 
-               key={index}
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.6, delay: index * 0.1 }}
-               className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-             >
-               <div className="aspect-w-16 aspect-h-9 mb-6">
-                 <img
-                   src={category.image}
-                   alt={category.title}
-                   className="w-full h-full object-cover rounded-lg"
-                 />
-               </div>
-               <Typography variant="h4" color="blue-gray" className="mb-4 text-center uppercase">
-                 {category.title}
-               </Typography>
-               <Typography variant="paragraph" color="gray" className="mb-6 text-center">
-                 {category.description}
-               </Typography>
-               <div className="flex justify-center">
-                 <Button color="gray" size="lg" className="bg-black p-3 rounded-2xl" onClick={handleProfileClick}>
-                   Explore
-                 </Button>
-               </div>
-             </motion.div>
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="aspect-w-16 aspect-h-9 mb-6">
+                    <img
+                      src={category.image}
+                      alt={category.title}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+                  <Typography variant="h4" color="blue-gray" className="mb-4 text-center uppercase"
+                    onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} placeholder={undefined}
+                  >
+                    {category.title}
+                  </Typography>
+                  <Typography variant="paragraph" color="gray" className="mb-6 text-center"
+                    onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} placeholder={undefined}
+                  >
+                    {category.description}
+                  </Typography>
+                  <div className="flex justify-center">
+                    <Button color="gray" size="lg" className="bg-black p-3 rounded-2xl"
+                      onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} placeholder={undefined}
+                      onClick={handleProfileClick}>
+                      Explore
+                    </Button>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -244,8 +278,8 @@ const HeroSection = () => {
           autoplay
           loop
           placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+          onPointerEnterCapture={undefined}
+          onPointerLeaveCapture={undefined}
           className="rounded-xl h-[80vh]"
           navigation={CarouselNavigation}
           prevArrow={PrevArrow}
