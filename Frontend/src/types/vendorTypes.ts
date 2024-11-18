@@ -5,17 +5,18 @@ export interface VendorData{
     name : string;
     companyName:string;
     city : string ;
-    about :string ;
-    contactinfo : string;
+    about?:string ;
+    contactinfo?: string;
     isActive:boolean;
     isVerified:boolean;
     isAccepted:AcceptanceStatus;
     logo:string;
-    profilepic : string ;
-    totalBooking:number;
+    imageUrl?: string ;
+    totalBooking?:number;
     bookedDates:Array<string>;
     refreshToken:string;
-    totalRating:number;
+    totalRating?:number;
+    
     createdAt: string;  
     updatedAt: string;  
 }
@@ -35,4 +36,12 @@ export interface VendorFormValues {
     Requested = 'requested',
     Accepted = 'accepted',
     Rejected = 'rejected'
+}
+
+export interface VendorResponse {
+  vendors: Array<{
+    _doc: VendorData;
+    imageUrl?: string;
+  }>;
+  totalPages: number;
 }
