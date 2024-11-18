@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from "formik";
 import { CredentialResponse } from '@react-oauth/google';
 import axios, { AxiosError } from 'axios';
 import Swal from 'sweetalert2';
-import UserRootState from '../../redux/rootstate/UserState';
+// import UserRootState from '../../redux/rootstate/UserState';
 import { useDisclosure } from '@nextui-org/react';
 import { validateEmail } from '../../validations/user/userVal';
 import { showToastMessage } from '../../validations/common/toast';
@@ -38,7 +38,7 @@ const images = [
 
 
 export const useLoginUser = () => {
-    const user = useSelector((state: UserRootState) => state.user.userData);
+    // const user = useSelector((state: UserRootState) => state.user.userData);
     const [imageIndex, setImageIndex] = useState(0);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [emailError, setEmailError] = useState('');
@@ -105,11 +105,6 @@ export const useLoginUser = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
-    useEffect(() => {
-        if (user) {
-            navigate(USER.HOME);
-        }
-    }, [navigate, user]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -123,10 +118,9 @@ export const useLoginUser = () => {
             .post('/google/login', { credential: credentialResponse.credential })
             .then((response) => {
                 localStorage.setItem('userToken', response.data.token);
-                // localStorage.setItem('userRefresh', response.data.refreshToken);
-                console.log(response);
+                console.log(response.data,'response.data login');
                 
-                dispatch(setUserInfo(response.data.userData));
+                dispatch(setUserInfo(response.data.UserData));
                 showToastMessage(response.data.message, 'success')
                 navigate(USER.HOME);
             })
@@ -145,7 +139,7 @@ export const useLoginUser = () => {
                     .post('/login', values)
                     .then((response) => {
                         localStorage.setItem('userToken', response.data.token);
-                        // localStorage.setItem('userRefresh', response.data.refreshToken);
+                        console.log(response.data,'res.data in login')
                         dispatch(setUserInfo(response.data.userData));
                         showToastMessage(response.data.message, 'success')
                         navigate(`${USER.HOME}`);
