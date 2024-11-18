@@ -10,6 +10,7 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
         baseURL: baseUrl,
         withCredentials: true,
     });
+    
 
     instance.interceptors.request.use(
         (config) => {
@@ -29,28 +30,24 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
                 if (error.response.status === 403 && error.response.data.message === 'Blocked by Admin') {
                     localStorage.removeItem(tokenKey);
                     localStorage.removeItem(refreshTokenKey);
-                    window.location.href = '/login';
                     return Promise.reject(error);
                 }
 
                 if (error.response.status === 401) {
                     if (error.response.data.expired) {
                         try {
-                            // const refreshToken = localStorage.getItem(refreshTokenKey);
-
-                            const refreshResponse = await instance.post('/refresh-token');
-                            const newToken = refreshResponse.data.token;
-                            console.log(newToken, "newToken in refresh");
-
+                           alert('refresh')
+                            const refreshResponse = await instance.post('/refresh-token',{},{withCredentials:true});
+                            
+                            const newToken = refreshResponse.data.token;                            
                             localStorage.setItem(tokenKey, newToken);
 
                             error.config.headers.Authorization = `Bearer ${newToken}`;
                             return instance(error.config);
+
                         } catch (refreshError) {
-                            console.error('Error refreshing token', refreshError);
                             localStorage.removeItem(tokenKey);
                             localStorage.removeItem(refreshTokenKey);
-                            
                             const result = await Swal.fire({
                                 title: 'Session Expired',
                                 text: 'Your session has expired. Please login again to continue.',
@@ -59,16 +56,26 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
                                 allowOutsideClick: false,
                             });
                             if(result.isConfirmed){
-                                window.location.href = '/login';
+                                
+                                window.location.href = baseUrl.includes('/vendor') 
+                                    ? '/login' 
+                                    : baseUrl.includes('/admin')
+                                        ? '/admin'
+                                        : '/vendor/login';
                             }
                             return Promise.reject(refreshError);
                         }
                     } else if (error.response.data.message === 'Session expired') {
-                        // Handle session expiration
                         console.log('Session expired. Redirecting to login...');
-                        window.location.href = '/login';
+                        window.location.href = baseUrl.includes('/vendor') ? '/vendor/login' : '/login';
                         return Promise.reject(error);
-                    }
+                    } 
+                    
+                }
+
+                if(error.response.status === 404){
+                    window.location.href = '/*';
+                    return Promise.reject(error);
                 }
             }
             return Promise.reject(error);
