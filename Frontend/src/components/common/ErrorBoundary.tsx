@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -32,7 +34,20 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => {
   const location = useLocation();
   
+  const errorGot = useRouteError();
   let errorMessage = error?.message || 'Something went wrong. Please try again later.';
+
+  if (isRouteErrorResponse(errorGot)) {
+    if (errorGot.status === 404) {
+      errorMessage = 'Page not found (404). Please check the URL.';
+    } else if (errorGot.status === 500) {
+      errorMessage = 'Internal Server Error (500). Please try again later.';
+    }else{
+      errorMessage = errorGot.statusText;
+
+    }
+ }
+  
   let errorTitle = 'Oops!';
   let errorImage = "/images/error.jpg"; 
 
