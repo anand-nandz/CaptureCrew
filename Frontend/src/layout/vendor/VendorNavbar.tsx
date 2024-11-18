@@ -39,9 +39,11 @@ export default function VendorNavbar() {
       .post("/logout")
       .then(() => {
         localStorage.removeItem('vendorToken')
-        localStorage.removeItem('vendorRefresh')
+        // localStorage.removeItem('vendorRefresh')
         dispatch(logout()); 
         navigate(`${VENDOR.LOGIN}`);
+        showToastMessage('Logged out successfully', 'success');
+
       })
       .catch((error) => {
         console.log("here", error);
@@ -81,7 +83,7 @@ export default function VendorNavbar() {
               onPointerLeaveCapture={undefined}>
             PROFILE
           </Typography>
-          <Typography as="a" href="#" className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+          <Typography as="a" href={VENDOR.VIEW_POSTS} className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
             CONTENTS
