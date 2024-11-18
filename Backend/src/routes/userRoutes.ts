@@ -1,8 +1,10 @@
 import express from "express";
 import userController from "../controllers/userController";
 import { authMiddleware } from "../middlewares/userauthMiddleware";
-import { authenticateToken } from "../middlewares/authToken";
+import { authenticateToken} from "../middlewares/authToken";
 import multer from "multer";
+import postController from "../controllers/postController";
+import bookingController from "../controllers/bookingController";
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
@@ -26,8 +28,19 @@ router.post('/google/login',userController.googleAuth)
 
 
 router.get('/profile',authenticateToken,userController.getUserProfile)
-router.put('/profile', upload.single("image"),authenticateToken,userController.updateProfile)
+router.put('/profile', upload.single("image"), authenticateToken, userController.updateProfile)
 router.put('/change-password',authenticateToken,userController.changePassword)
+
+
+router.get('/vendors',authenticateToken,userController.getAllVendors);
+
+router.get('/viewposts',authenticateToken,postController.getAllPostsUser)
+router.get('/portfolio/:vendorId',authenticateToken,postController.getVendorIdPosts)
+
+router.get('/bookings',authenticateToken,bookingController.FetchBookingRequests)
+router.post('/bookings/request',authenticateToken,bookingController.BookingRequest)
+router.patch('/bookings/:bookingId/cancel', authenticateToken,bookingController.cancelBooking);
+// router.get('/vendors', userController.getAllVendors);
     
 
 export default router ;
