@@ -20,14 +20,11 @@ export const authenticateTokenVendor = (req: VendorRequest, res: Response, next:
 
   jwt.verify(token, process.env.JWT_SECRET_KEY!, (err, decoded) => {
     if (err) {
-      console.error('Token verification error:', err);
       res.status(403).json({ message: 'Token is not valid' });
       return;
     }
 
-    const vendor = decoded as UserJwtPayload;  
-    console.log(vendor,'vendor indecodeuathtojken middleware');
-     
+    const vendor = decoded as UserJwtPayload;       
     if (vendor && vendor._id) {
       req.vendor = {
         _id: new Types.ObjectId(vendor._id)

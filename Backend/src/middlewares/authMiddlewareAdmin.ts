@@ -1,15 +1,15 @@
 import { Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { AuthenticatedRequest } from '../types/userTypes';
 import { Types } from 'mongoose';
  import dotenv from 'dotenv'
+import { AuthRequest } from '../types/adminTypes';
  dotenv.config()
 interface UserJwtPayload extends JwtPayload {
   _id: string;
   // role: 'user' | 'vendor' | 'admin';
 }
 
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+export const authTokenAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   
   const token = authHeader && authHeader.split(' ')[1];
@@ -21,15 +21,17 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 
   jwt.verify(token, process.env.JWT_SECRET_KEY!, (err, decoded) => {
     if (err) {
-      res.status(403).json({ message: 'Token is not valid' });
+      res.status(401).json({ message: 'Token is not valid' });
       return;
     }
+   
 
-    const user = decoded as UserJwtPayload;  
+    const admin = decoded as UserJwtPayload;  
      
-    if (user && user._id) {
-      req.user = {
-        _id: new Types.ObjectId(user._id),
+     
+    if (admin && admin._id) {
+      req.admin = {
+        _id: new Types.ObjectId(admin._id),
         // role: user.role
       };
       next();
