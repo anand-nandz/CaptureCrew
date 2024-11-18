@@ -38,11 +38,28 @@ module.exports = {
           '60%': { backgroundImage: "url('/images/home3.jpg')" },
           '100%': { backgroundImage: "url('/images/home4.jpg')" },
         },
+        fadeTransition: {
+          '0%': { opacity: '0' },
+          '50%': { opacity: '0.5' },
+          '100%': { opacity: '1' },
+        },
+        // swing: {
+        //   '0%': { transform: 'rotate(10deg)' },
+        //   '100%': { transform: 'rotate(-10deg)' }
+        // },
+        // swinghair: {
+        //   '0%': { transform: 'rotate(6deg)' },
+        //   '100%': { transform: 'rotate(-6deg)' }
+        // }
       },
       animation: {
         fadeIn: 'fadeIn 2s ease-in forwards',
         slideIn: 'slideIn 1.5s ease-in forwards',
         BgAnimation: 'BgAnimation 10s linear infinite',
+        fadeTransition: 'fadeTransition 1s ease-in-out',
+        // swing: 'swing ease-in-out 1.3s infinite alternate',
+        // swinghair: 'swinghair ease-in-out 1.3s infinite alternate'
+        
       },
     },
   },
