@@ -8,7 +8,6 @@ import {
   NavbarMenu,
   NavbarMenuItem,
   Link,
-  Button,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
@@ -18,18 +17,21 @@ import {
 } from "@nextui-org/react";
 import { ChevronDown, Scale, Activity, Slash, Server, User, Search, MessageCircle } from 'lucide-react';
 import { axiosInstance } from '../../config/api/axiosInstance';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/UserSlice';
 import { useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
 import { showToastMessage } from '../../validations/common/toast';
+import UserRootState from '../../redux/rootstate/UserState';
 
 
 export default function UserNavbar() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  // const { userData } = useSelector((state: UserRootState) => state.user);
+  const userData = useSelector((state: UserRootState) => state.user.userData);
+    
   const handleLogout = async (e: React.MouseEvent<HTMLLIElement>) => {
     e.preventDefault();
     try {
@@ -55,6 +57,27 @@ export default function UserNavbar() {
     }
    
   }
+  const handleHomeClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    try {
+      navigate(`${USER.HOME}`);
+    } catch (error) {
+      console.log('Profile Error', error);
+      showToastMessage('Error during loading profile', 'error');
+    }
+  };
+
+
+  const handlePostClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    try {
+      navigate(`${USER.POST}`);
+    } catch (error) {
+      console.log('Profile Error', error);
+      showToastMessage('Error during loading profile', 'error');
+    }
+  };
+  
 
   const icons = {
     chevron: <ChevronDown size={16} />,
@@ -89,11 +112,17 @@ export default function UserNavbar() {
       {/* Navbar Items */}
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         <NavbarItem>
-          <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" href="#">
+          <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" onClick={handleHomeClick}>
             HOME
           </Link>
         </NavbarItem>
-        <Dropdown>
+        <NavbarItem>
+        <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" onClick={handlePostClick}>
+            POST
+          </Link>
+        </NavbarItem>
+
+        {/* <Dropdown>
           <NavbarItem>
             <DropdownTrigger>
               <Button
@@ -128,7 +157,7 @@ export default function UserNavbar() {
               Supreme Support
             </DropdownItem>
           </DropdownMenu>
-        </Dropdown>
+        </Dropdown> */}
         <NavbarItem className="max-w-xs hidden md:flex">
           <Input
             classNames={{
@@ -164,9 +193,9 @@ export default function UserNavbar() {
               as="button"
               className="transition-transform"
               color="secondary"
-              name="Jason Hughes"
+              name={userData?.name || ""}
               size="sm"
-              src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+              src={userData?.imageUrl || "/images/user.png"}
             />
           </DropdownTrigger>
           <DropdownMenu aria-label="User Actions">

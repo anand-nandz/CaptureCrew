@@ -5,12 +5,10 @@ import { SortableTableVendor } from '../../../components/admin/vendorList/vendor
 
 const VendorList = () => {
   return (
-    <>
-        {/* <Layout> */}
+    <>        
           <div className='p-4'>
             <SortableTableVendor/>
           </div>
-        {/* </Layout>     */}
     </>
   )
 }

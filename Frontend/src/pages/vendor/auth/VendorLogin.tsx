@@ -133,7 +133,7 @@ const VendorLogin = () => {
                     .post('/login', values)
                     .then((response) => {
                         localStorage.setItem('vendorToken', response.data.token);
-                        localStorage.setItem('vendorRefresh', response.data.refreshToken);
+                        // localStorage.setItem('vendorRefresh', response.data.refreshToken);
                         dispatch(setVendorInfo(response.data.vendorData));
                         showToastMessage(response.data.message, 'success')
                         navigate(`${VENDOR.DASHBOARD}`);
@@ -266,7 +266,7 @@ const VendorLogin = () => {
                             color="black"
                             placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
                             Are you a User?
-                            <Link to={USER.SIGNUP}>
+                            <Link to={USER.LOGIN}>
                                 <Typography
                                     as="a"
                                     href="#signup"
@@ -274,7 +274,7 @@ const VendorLogin = () => {
                                     color="black"
                                     className="ml-1 font-bold pb-3"
                                     placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}            >
-                                    SignUp here
+                                    SignIn here
                                 </Typography>
                             </Link>
                         </Typography>

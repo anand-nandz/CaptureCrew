@@ -1,149 +1,167 @@
+import React, { useState } from 'react';
+import { Card, CardBody, Button, Image } from "@nextui-org/react";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import {
-    Tabs,
-    TabsHeader,
-    TabsBody,
-    Tab,
-    TabPanel,
-} from "@material-tailwind/react";
-
-export function ImageMasonry()  {
-    const data = [
-        {
-            label: "Wedding",
-            value: "wedding",
-            images: [
-                {
-                    imageLink: "https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1606800052052-a08af7148866?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1549417229-7686ac5595fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-            ],
-        },
-        {
-            label: "Engagement",
-            value: "engagement",
-            images: [
-                {
-                    imageLink: "https://images.unsplash.com/photo-1583939411023-14783179e581?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1171&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1589571894960-20bbe2828d0a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1602673221577-0b56d7ce446b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1550005809-91ad75fb315f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80",
-                },
-            ],
-        },
-        {
-            label: "Birthday Party",
-            value: "birthday",
-            images: [
-                {
-                    imageLink: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1558008258-3256797b43f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2091&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2036&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2036&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1533294455009-a77b7557d2d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-            ],
-        },
-        {
-            label: "Outdoor Shoot",
-            value: "outdoor",
-            images: [
-                {
-                    imageLink: "https://images.unsplash.com/photo-1623091410901-00e2d268901f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-                {
-                    imageLink: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-                },
-            ],
-        },
-    ];
-    return (
-        <div className="flex flex-col items-center">
-            <h2 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] py-12 uppercase">
-                Image Masonry Gallery
-            </h2>
-
-            <div className="my-8 container w-full ">
-                <Tabs value="wedding">
-                    <TabsHeader placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                        {data.map(({ label, value }) => (
-                            <Tab key={value} value={value} placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                                {label}
-                            </Tab>
-                        ))}
-                    </TabsHeader>
-                    <TabsBody className="mt-4" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                        {data.map(({ value, images }) => (
-                            <TabPanel key={value} value={value}>
-                                <div className="columns-1 gap-4 sm:columns-2 md:columns-3 lg:columns-4">
-                                    {images?.map(({ imageLink }, index) => (
-                                        <div key={index} className="relative mb-4 break-inside-avoid">
-                                            <div className="absolute top-0 left-0 bg-white px-2 py-1 text-sm text-gray-700">
-                                                {index + 1}
-                                            </div>
-                                            <img
-                                                className="w-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                                                src={imageLink}
-                                                alt={`${value}-photo-${index + 1}`}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </TabPanel>
-                        ))}
-                    </TabsBody>
-                </Tabs>
-            </div>
-        </div>
-    );
+interface Post {
+  serviceType: string;
+  imageUrl: string[];
+  caption: string;
 }
+
+interface VendorData {
+  companyName: string;
+  posts: Post[];
+}
+
+interface GroupedImage {
+  imageUrl: string;
+  caption: string;
+}
+
+type GroupedPosts = {
+  [key: string]: GroupedImage[];
+};
+
+interface ImageCarouselProps {
+  vendorData: VendorData;
+}
+
+const ImageMasonry: React.FC<ImageCarouselProps> = ({ vendorData }) => {
+  const [activeService, setActiveService] = useState<string>("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const groupedPosts = vendorData.posts.reduce<GroupedPosts>((acc, post) => {
+    if (!acc[post.serviceType]) {
+      acc[post.serviceType] = [];
+    }
+    post.imageUrl.forEach((img) => {
+      acc[post.serviceType].push({
+        imageUrl: img,
+        caption: post.caption,
+      });
+    });
+    return acc;
+  }, {});
+
+  React.useEffect(() => {
+    if (!activeService && Object.keys(groupedPosts).length > 0) {
+      setActiveService(Object.keys(groupedPosts)[0]);
+    }
+  }, [groupedPosts, activeService]);
+
+  const currentImages = activeService ? groupedPosts[activeService] : [];
+
+  const nextSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === currentImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? currentImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto p-4">
+      <h2 className="text-2xl font-bold text-center mb-6">
+        {vendorData.companyName} Gallery
+      </h2>
+
+      {/* Service Type Navigation */}
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        {Object.keys(groupedPosts).map((serviceType) => (
+          <Button
+            key={serviceType}
+            color={activeService === serviceType ? "default" : "default"}
+            variant={activeService === serviceType ? "solid" : "bordered"}
+            radius="full"
+            onClick={() => {
+              setActiveService(serviceType);
+              setCurrentIndex(0);
+            }}
+          >
+            {serviceType}
+          </Button>
+        ))}
+      </div>
+
+      {activeService && currentImages.length > 0 ? (
+        <>
+          {/* Carousel */}
+          <Card className="w-full">
+            <CardBody className="p-0 aspect-[4/3] relative overflow-hidden">
+              <Image
+                src={currentImages[currentIndex].imageUrl.startsWith('http')
+                  ? currentImages[currentIndex].imageUrl
+                  : `https://capturecrew.s3.ap-south-1.amazonaws.com/captureCrew/vendor/post/${currentImages[currentIndex].imageUrl}`
+                }
+                alt={`${activeService} image ${currentIndex + 1}`}
+                classNames={{
+                  img: "w-full h-full object-cover align-"
+                }}
+              />
+
+              {/* Navigation Buttons */}
+              <Button
+                isIconOnly
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/75 z-30"
+                radius="full"
+                variant="flat"
+              >
+                <ChevronLeft size={24} />
+              </Button>
+              <Button
+                isIconOnly
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/75 z-30"
+                radius="full"
+                variant="flat"
+              >
+                <ChevronRight size={24} />
+              </Button>
+            </CardBody>
+          </Card>
+
+          {/* Thumbnail Navigation */}
+          <div className="mt-4 grid grid-cols-5 gap-2">
+            {currentImages.map((image, index) => (
+              <Button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`p-0 min-w-0 h-20 ${
+                  currentIndex === index ? 'ring-2 ring-black' : ''
+                }`}
+                variant="flat"
+              >
+                <Image
+                  src={image.imageUrl.startsWith('http')
+                    ? image.imageUrl
+                    : `https://capturecrew.s3.ap-south-1.amazonaws.com/captureCrew/vendor/post/${image.imageUrl}`
+                  }
+                  alt={`Thumbnail ${index + 1}`}
+                  classNames={{
+                    img: "w-full h-full object-cover"
+                  }}
+                />
+              </Button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <Card className="w-full">
+          <CardBody>
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600">No posts found </p>
+              <p className="text-gray-500 mt-2">Add new Posts</p>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default ImageMasonry;

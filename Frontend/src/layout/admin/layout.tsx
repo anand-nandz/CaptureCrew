@@ -121,10 +121,10 @@ const Layout: React.FC = () => {
                 </li>
               </Link>
 
-              <Link to={'/admin'+ADMIN.DASHBOARD}>
+              <Link to={'/admin/view-all-posts'}>
                 <li
                   className={`${
-                    path.pathname ===  ADMIN.VENDORS
+                    path.pathname ===  '/view-all-posts'
                       ? "bg-gray-300 text-gray-800"
                       : "text-gray-900"
                   } flex rounded-md p-2 cursor-pointer hover:bg-gray-200 transition-colors
@@ -135,10 +135,10 @@ const Layout: React.FC = () => {
                 </li>
               </Link>
 
-              <Link to={'/admin'+ADMIN.DASHBOARD}>
+              <Link to={'/admin'+ADMIN.ALLBOOKINGS}>
                 <li
                   className={`${
-                    path.pathname ===  ADMIN.VENDORS
+                    path.pathname ===  ADMIN.ALLBOOKINGS
                       ? "bg-gray-300 text-gray-800"
                       : "text-gray-900"
                   } flex rounded-md p-2 cursor-pointer hover:bg-gray-200 transition-colors

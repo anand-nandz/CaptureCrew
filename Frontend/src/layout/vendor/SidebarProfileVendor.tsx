@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Typography, List, ListItem, ListItemPrefix, ListItemSuffix, Chip } from "@material-tailwind/react";
 import {
     UserCircleIcon, MapPinIcon, ShoppingBagIcon,
-    ChatBubbleLeftRightIcon, ClockIcon, Cog6ToothIcon, PowerIcon
+    ChatBubbleLeftRightIcon, ClockIcon, Cog6ToothIcon, PowerIcon, CalendarIcon, 
 } from "@heroicons/react/24/solid";
 import { VENDOR } from '../../config/constants/constants';
 import { useDispatch } from 'react-redux';
@@ -39,7 +39,7 @@ const SidebarVendor = () => {
         {
             icon: ShoppingBagIcon,
             label: 'Bookings',
-            path: VENDOR.PROFILE,
+            path: VENDOR.REQUEST_BOOKING,
             badge: '3'
         },
         {
@@ -50,14 +50,20 @@ const SidebarVendor = () => {
         },
         {
             icon: ClockIcon,
-            label: 'Uploaded Contents',
-            path: VENDOR.PROFILE,
+            label: 'Upload Contents',
+            path: VENDOR.VIEW_POSTS,
+            badge: null
+        },
+        {
+            icon: CalendarIcon,
+            label: 'Slot Update',
+            path: VENDOR.DATE_AVAILABILTY,
             badge: null
         },
         {
             icon: Cog6ToothIcon,
-            label: 'Slot Update',
-            path: VENDOR.PROFILE,
+            label: 'Packages',
+            path: VENDOR.VIEW_PACKAGES,
             badge: null
         },
         {
@@ -79,6 +85,7 @@ const SidebarVendor = () => {
             try {
                 await axiosInstanceVendor.post('/logout');
                 localStorage.removeItem('vendorToken');
+                localStorage.removeItem('vendorRefresh');
                 dispatch(logout());
                 navigate(VENDOR.LOGIN);
                 showToastMessage('Logged out successfully', 'success');
@@ -94,7 +101,7 @@ const SidebarVendor = () => {
     };
 
     return (
-        <Card className="h-full w-64 p-4 shadow-xl shadow-blue-gray-900/5" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} >
+        <Card className="min-h-screen w-64 p-4 shadow-xl shadow-blue-gray-900/5 " placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} >
             <div className="mb-2 p-4">
                 <Typography variant="h5" color="blue-gray" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                     Dashboard

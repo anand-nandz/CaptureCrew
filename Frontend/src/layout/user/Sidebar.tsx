@@ -39,8 +39,8 @@ const Sidebar = () => {
     {
       icon: ShoppingBagIcon,
       label: 'Bookings',
-      path: USER.PROFILE,
-      badge: '3'
+      path: USER.BOOKING,
+      badge: null
     },
     {
       icon: ChatBubbleLeftRightIcon,
@@ -88,7 +88,7 @@ const Sidebar = () => {
   };
 
   return (
-    <Card className="h-full w-64 p-4 shadow-xl shadow-blue-gray-900/5" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} >
+    <Card className="h-screen w-64 p-4 shadow-xl shadow-blue-gray-900/5" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined} >
       <div className="mb-2 p-4">
         <Typography variant="h5" color="blue-gray" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
           Dashboard

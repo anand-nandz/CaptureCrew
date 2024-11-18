@@ -167,14 +167,14 @@ const EditProfileModal: React.FC<UserDetails> = ({ user, isOpen, onClose, onSave
                                             }}
                                         />
                                     </label>
-                                    <Button
+                                    {/* <Button
                                         component="span"
                                         variant="outlined"
                                         size="small"
                                         sx={{ mb: 2 }}
                                     >
                                         Change Photo
-                                    </Button>
+                                    </Button> */}
                                 </Box>
                             </Grid>
 

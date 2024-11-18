@@ -2,11 +2,11 @@ import React from "react";
 import {
     Input,
     Typography,
-    
+
 } from "@material-tailwind/react";
 import { format } from "date-fns";
 import { AcceptanceStatus, VendorData } from "../../../types/vendorTypes";
-import { XMarkIcon } from "@heroicons/react/24/solid"; 
+import { XMarkIcon } from "@heroicons/react/24/solid";
 
 interface VendorDetailsModalProps {
     isOpen: boolean;
@@ -19,7 +19,7 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
     onClose,
     vendor,
 }) => {
-    
+
     if (!isOpen || !vendor) return null;
 
     const joinedDate = new Date(vendor.createdAt);
@@ -45,37 +45,37 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                     <div className="flex flex-col items-center">
                         <div className="mb-6">
                             <img
-                                src="/images/user.png"
+                                src={ vendor?.imageUrl ||"/images/user.png"}
                                 alt="avatar"
                                 className="h-32 w-32 rounded-full object-cover object-center sm:h-36 sm:w-36 lg:h-28 lg:w-28 xl:h-32 xl:w-32"
                             />
 
                         </div>
                         <div className="text-center">
-                            <Typography variant="h5" color="blue-gray" className="mb-2" 
-                             placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                            <Typography variant="h5" color="blue-gray" className="mb-2"
+                                placeholder={undefined}
+                                onPointerEnterCapture={undefined}
+                                onPointerLeaveCapture={undefined}
+                            >
                                 {vendor.name || "Vendor Name"}
                             </Typography>
-                            <Typography variant="h6" color="blue-gray" className="mb-4 break-words" 
-                             placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                            <Typography variant="h6" color="blue-gray" className="mb-4 break-words"
+                                placeholder={undefined}
+                                onPointerEnterCapture={undefined}
+                                onPointerLeaveCapture={undefined}
+                            >
                                 {vendor.email || "email@example.com"}
                             </Typography>
-                            <Typography  color="blue-gray" className="text-sm" 
-                             placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                            <Typography color="blue-gray" className="text-sm"
+                                placeholder={undefined}
+                                onPointerEnterCapture={undefined}
+                                onPointerLeaveCapture={undefined}
+                            >
                                 {vendor.about || "About section not added yet."}
                             </Typography>
-                            
+
                         </div>
-                       
+
                     </div>
                 </div>
 
@@ -83,11 +83,11 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                 <div className="w-full rounded-lg bg-white p-6 lg:w-2/3">
 
                     <div className="mb-6 flex items-center justify-between">
-                        <Typography variant="h5" color="blue-gray" 
-                         placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                        <Typography variant="h5" color="blue-gray"
+                            placeholder={undefined}
+                            onPointerEnterCapture={undefined}
+                            onPointerLeaveCapture={undefined}
+                        >
                             Vendor Details
                         </Typography>
                         <button onClick={onClose} className="text-zinc-800 hover:text-zinc-950">
@@ -100,29 +100,29 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
                             <div>
-                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium" 
-                                 placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
+                                >
                                     Company Name
                                 </Typography>
                                 <Input
                                     size="md"
                                     value={vendor.companyName || "Not Added"}
                                     readOnly
-                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
-                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium" 
-                                 placeholder={undefined}
-                                 onPointerEnterCapture={undefined}
-                                 onPointerLeaveCapture={undefined}
+                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                 >
                                     Contact Info
                                 </Typography>
@@ -130,18 +130,18 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     size="md"
                                     value={vendor.contactinfo?.toString() || "Not Added"}
                                     readOnly
-                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
                                 <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
-                                placeholder={undefined}
-                                onPointerEnterCapture={undefined}
-                                onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                 >
                                     City
                                 </Typography>
@@ -149,18 +149,18 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     size="md"
                                     value={vendor.city || "Not Added"}
                                     readOnly
-                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
                                 <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
-                                placeholder={undefined}
-                                onPointerEnterCapture={undefined}
-                                onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                 >
                                     Joined Date
                                 </Typography>
@@ -168,18 +168,18 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     size="md"
                                     value={format(joinedDate, "PPP")}
                                     readOnly
-                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
                                 <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
-                                placeholder={undefined}
-                                onPointerEnterCapture={undefined}
-                                onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                 >
                                     Total Bookings
                                 </Typography>
@@ -188,17 +188,17 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     value={vendor.totalBooking?.toString() || "0"}
                                     readOnly
                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
                                 <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
-                                placeholder={undefined}
-                                onPointerEnterCapture={undefined}
-                                onPointerLeaveCapture={undefined}
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                 >
                                     Total Bookings
                                 </Typography>
@@ -207,45 +207,45 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     value={vendor.totalBooking?.toString() || "0"}
                                     readOnly
                                     placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
                                     className="w-full"
                                     crossOrigin={undefined}
                                 />
                             </div>
                             <div>
-                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium" 
-                                placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
+                                >
                                     Status
                                 </Typography>
                                 <div className={`w-max rounded-full ${vendor.isActive ? "bg-green-100" : "bg-red-100"} px-4 py-2`}>
-                                    <Typography className={vendor.isActive ? "text-green-700" : "text-red-700"} 
-                                    placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                                    <Typography className={vendor.isActive ? "text-green-700" : "text-red-700"}
+                                        placeholder={undefined}
+                                        onPointerEnterCapture={undefined}
+                                        onPointerLeaveCapture={undefined}
+                                    >
                                         {vendor.isActive ? "Active" : "Inactive"}
                                     </Typography>
                                 </div>
 
                             </div>
                             <div>
-                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium" 
-                                placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                                <Typography variant="small" color="blue-gray" className="mb-2 font-medium"
+                                    placeholder={undefined}
+                                    onPointerEnterCapture={undefined}
+                                    onPointerLeaveCapture={undefined}
+                                >
                                     Verification Status
                                 </Typography>
                                 <div className={`w-max rounded-full px-4 py-2 ${getStatusColor(vendor.isAccepted)}`}>
-                                    <Typography 
-                                    placeholder={undefined}
-                  onPointerEnterCapture={undefined}
-                  onPointerLeaveCapture={undefined}
-                  >
+                                    <Typography
+                                        placeholder={undefined}
+                                        onPointerEnterCapture={undefined}
+                                        onPointerLeaveCapture={undefined}
+                                    >
                                         {vendor.isAccepted.toUpperCase()}
                                     </Typography>
                                 </div>

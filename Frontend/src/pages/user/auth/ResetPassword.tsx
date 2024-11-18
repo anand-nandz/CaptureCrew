@@ -115,8 +115,8 @@ const ResetPassword: React.FC = () => {
         return null
     }
     return (
-        <div className="flex justify-center items-center h-screen bg-cover bg-center" style={{ backgroundImage: "url('/images/reset1.jpg')" }}> 
-            <Card className="w-full max-w-md overflow-hidden bg-gray-500 " placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
+        <div className="flex justify-center items-center h-screen bg-cover bg-center"> 
+            <Card className="w-full max-w-md overflow-hidden bg-transparent shadow-lg " placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
 
 
                 <div className="w-full text-center my-4">

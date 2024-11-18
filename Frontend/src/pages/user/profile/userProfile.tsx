@@ -65,11 +65,10 @@ function UserProfile() {
         showToastMessage('Authentication required', 'error');
         return;
       }
-      console.log(updates,'update in handlesave')
       const response = await axiosInstance.put('/profile', updates, {
-        headers : {"Content-Type" : 'multipart/form-data'}
+        headers: { "Content-Type": 'multipart/form-data' }
       });
-      
+
       setUser(response.data.user);
       console.log('Profile response:', response.data.user);
       console.log('Image URL:', response.data.user.imageUrl);
@@ -103,7 +102,7 @@ function UserProfile() {
   }, []);
 
   if (!user) {
-    return <div><Loader/></div>;
+    return <div><Loader /></div>;
   }
 
   return (
@@ -120,23 +119,23 @@ function UserProfile() {
 
         <section className="container mx-auto ">
           <Card className="w-full mb-6" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-          <motion.div
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="relative h-64 w-full overflow-hidden"
-          >
+            <motion.div
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative h-64 w-full overflow-hidden"
+            >
               <img src={"/images/cate2.jpg"} alt="Cover" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/20" />
-              </motion.div>
+            </motion.div>
 
             <div className="relative px-6 py-8">
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="flex flex-wrap justify-between items-start gap-4"
-            >
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="flex flex-wrap justify-between items-start gap-4"
+              >
                 <div className="flex items-center gap-6">
                   <Avatar
                     size="xxl"
@@ -178,7 +177,7 @@ function UserProfile() {
                     />
                   )}
                 </div>
-              
+
               </motion.div>
             </div>
 

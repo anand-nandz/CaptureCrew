@@ -71,13 +71,9 @@ const Login = () => {
                     .then((response) => {
                         console.log(response,'response in formik login admin')
                         localStorage.setItem('adminToken', response.data.token);
-                        localStorage.setItem('adminRefresh', response.data.refreshToken);
                         dispatch(setAdminInfo(response.data.adminData));
                         console.log(response.data.adminData,'adminData ');
-                        
-                        // alert('formik before navigAITNG')
                         showToastMessage(response.data.message, 'success')
-                        // console.log(`/admin${ADMIN.DASHBOARD}`)
                         navigate(`/admin${ADMIN.DASHBOARD}`);
                     })
                     .catch((error) => {

@@ -351,7 +351,7 @@ const VendorSignUp = () => {
               className="mt-3 flex justify-center pb-3"
               color="black"
               placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
-              Are you a User?
+              Would tou like to Register as a User?
               <Link to={USER.SIGNUP}>
                 <Typography
                   as="a"

@@ -1,15 +1,10 @@
-// import Layout from "../../../layout/admin/layout"
-
+import DashboardDetails from "../../../components/admin/dashboard/DashboardDetails"
 
 const Dashboard = () => {
   return (
-    <>
-    
-    {/* <Layout> */}
-    <div>
-        <div>Dashboard</div>
-        </div>
-    {/* </Layout> */}
+    <> 
+      
+        <DashboardDetails/>
     
     </>
   )

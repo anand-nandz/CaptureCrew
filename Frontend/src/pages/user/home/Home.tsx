@@ -2,15 +2,15 @@
 
 import Footer from '../../../layout/user/footer'
 import UserNavbar from '../../../layout/user/navbar'
-import { PhotoGalleryWithTabs } from '../../common/sampleText'
 import HeroSection from '../../../components/user/HeroSection'
+import ShowAllPosts from '../../../components/user/ShowAllPosts'
 
 const Home = () => {
   return (
     <div >
           <UserNavbar />
           <HeroSection/>
-          <PhotoGalleryWithTabs/>
+          <ShowAllPosts/>
           <Footer/>
     </div>
   )

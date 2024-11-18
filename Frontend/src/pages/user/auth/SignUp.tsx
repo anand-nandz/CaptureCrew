@@ -259,7 +259,7 @@ const SignUp = () => {
                 className="mt-1 flex justify-center pb-2"
                 color="black"
                 placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}        >
-                Are you a vendor?
+                Would you like to be a vendor?
                 <Link to={VENDOR.SIGNUP}>
                   <Typography
                     as="a"
