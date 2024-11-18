@@ -19,10 +19,10 @@ interface VendorDetails {
     isOpen: boolean;
     onClose: () => void;
     vendor: VendorData | null;
-    onSave: (data: Partial<FormData>) => Promise<void>
+    onSave: (data: FormData) => Promise<void>
 
 }
-interface FormData {
+interface ProfileFormData {
     name: string;
     email: string;
     contactinfo: string;
@@ -31,7 +31,7 @@ interface FormData {
     about: string;
     isVerified: boolean;
     logo: string;
-    profilepic: string;
+    imageUrl?: File | string;
     bookedDates: Array<string>;
     totalRating: number;
     createdAt?: string;
@@ -48,7 +48,9 @@ interface ValidationErrors {
 }
 
 const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClose, onSave }) => {
-    const [formData, setFormData] = useState<FormData>({
+    const [previewUrl, setPreviewUrl] = useState<string | null>(vendor?.imageUrl || null);
+
+    const [formData, setFormData] = useState<ProfileFormData>({
         name: vendor?.name || '',
         email: vendor?.email || '',
         contactinfo: vendor?.contactinfo || '',
@@ -57,7 +59,7 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
         isVerified: vendor?.isVerified || true,
         about: vendor?.about || '',
         logo: vendor?.logo || '',
-        profilepic: vendor?.profilepic || '',
+        imageUrl: vendor?.imageUrl || '',
         totalRating: vendor?.totalRating || 0,
         bookedDates: vendor?.bookedDates || [],
         createdAt: vendor?.createdAt || '',
@@ -85,7 +87,6 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
                 isVerified: vendor.isVerified || true,
                 about: vendor.about || '',
                 logo: vendor.logo || '',
-                profilepic: vendor.profilepic || '',
                 totalRating: vendor.totalRating || 0,
                 bookedDates: vendor.bookedDates || [],
                 createdAt: vendor.createdAt || '',
@@ -95,6 +96,7 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
     }, [vendor]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -102,6 +104,21 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
         }));
         setErrors(prev => ({ ...prev, [name]: '' }));
     };
+
+    
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            
+            setFormData(prev => ({ ...prev, imageUrl: file }));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -122,15 +139,25 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
                     showToastMessage('Authentication required', 'error');
                     return;
                 }
-                const updates: Partial<FormData> = {};
-                if (formData.name !== vendor?.name) updates.name = formData.name;
-                if (formData.contactinfo !== vendor?.contactinfo) updates.contactinfo = formData.contactinfo;
-                if (formData.companyName !== vendor?.companyName) updates.companyName = formData.companyName;
-                if (formData.city !== vendor?.city) updates.city = formData.city;
-                if (formData.about !== vendor?.about) updates.about = formData.about;
 
-                if (Object.keys(updates).length > 0) {
-                    await onSave(updates);
+                const formDataToSend =new FormData();
+                if (formData.name !== vendor?.name) formDataToSend.append('name', formData.name);
+                if (formData.contactinfo !== vendor?.contactinfo) formDataToSend.append('contactinfo', formData.contactinfo);
+                if (formData.imageUrl) formDataToSend.append('image', formData.imageUrl);
+                if (formData.companyName !== vendor?.companyName) formDataToSend.append('companyName', formData.companyName);
+                if (formData.city !== vendor?.city) formDataToSend.append('city', formData.city);
+                if (formData.about !== vendor?.about) formDataToSend.append('about', formData.about);
+
+
+                if (
+                    formDataToSend.has('name') || 
+                    formDataToSend.has('contactinfo') || 
+                    formDataToSend.has('image') || 
+                    formDataToSend.has('companyName') || 
+                    formDataToSend.has('city') ||
+                    formDataToSend.has('about')                    
+                ) {
+                    await onSave(formDataToSend);
                     onClose();
                 } else {
                     showToastMessage('No changes to save', 'error');
@@ -162,10 +189,27 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
                         <Grid container spacing={3}>
                             <Grid item xs={12} md={4}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <Avatar
-                                        src="/api/placeholder/128/128"
-                                        sx={{ width: 128, height: 128, mb: 2 }}
+                                <input
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        id="image-upload"
+                                        type="file"
+                                        onChange={handleImageChange}
                                     />
+                                    <label htmlFor="image-upload">
+                                        <Avatar
+                                            src={previewUrl || vendor?.imageUrl || "/api/placeholder/128/128"}
+                                            sx={{
+                                                width: 128,
+                                                height: 128,
+                                                mb: 2,
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    opacity: 0.8
+                                                }
+                                            }}
+                                        />
+                                    </label>
                                 </Box>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <Grid item xs={12} sx={{ mb: 2 }}>

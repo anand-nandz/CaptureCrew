@@ -27,8 +27,6 @@ function VendorProfile() {
     const fetchProfileData = useCallback(async () => {
         try {
             const token = localStorage.getItem('vendorToken');
-            console.log('Token from localStorage:', token);
-
             if (!token) {
                 showToastMessage('Authentication required', 'error');
                 navigate(VENDOR.LOGIN);
@@ -39,9 +37,7 @@ function VendorProfile() {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            });
-            console.log('Profile response:', response.data);
-
+            })           
             setVendor(response.data);
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -59,7 +55,7 @@ function VendorProfile() {
     }, [fetchProfileData]);
 
 
-    const handleSaveProfile = useCallback(async (updates: Partial<VendorData>) => {
+    const handleSaveProfile = useCallback(async (updates: FormData) => {
         try {
             const token = localStorage.getItem('vendorToken');
             if (!token) {
@@ -67,7 +63,9 @@ function VendorProfile() {
                 return;
             }
 
-            const response = await axiosInstanceVendor.put('/profile', updates);
+            const response = await axiosInstanceVendor.put('/profile', updates,{
+                headers : {"Content-Type" : 'multipart/form-data'}
+            });
             setVendor(response.data);
             showToastMessage('Profile updated successfully', 'success');
         } catch (error) {
@@ -126,7 +124,7 @@ function VendorProfile() {
                                     size="xxl"
                                     placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
                                     className="h-32 w-32 ring-4 ring-white -mt-20 relative"
-                                    src={"/images/p3.jpg"}
+                                    src={vendor?.imageUrl || "/images/user.png"}
 
                                 />
                                 <div className="space-y-1">
