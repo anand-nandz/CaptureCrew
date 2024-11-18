@@ -1,4 +1,7 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { emailTemplates } from './emailTemplates';
 
 const transporter = nodemailer.createTransport({
@@ -20,6 +23,8 @@ export async function sendEmail(to: string, subject: string, htmlBody: string) {
       subject,
       html: htmlBody
     };
+    console.log(mailOptions,'mail otitions');
+    
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent: ' + info.response);

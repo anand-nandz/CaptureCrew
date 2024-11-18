@@ -17,11 +17,12 @@ import { axiosInstanceAdmin } from "../../../config/api/axiosInstance";
 import { useDispatch } from 'react-redux';
 import { logout } from '../../../redux/slices/VendorSlice';
 import { showToastMessage } from '../../../validations/common/toast';
-import { useNavigate } from 'react-router-dom';
-import { ADMIN } from '../../../config/constants/constants';
+// import { useNavigate } from 'react-router-dom';
+// import { ADMIN } from '../../../config/constants/constants';
 import Swal from 'sweetalert2';
 import { AcceptanceStatus, VendorData } from '../../../types/vendorTypes';
 import VendorDetailsModal from './viewdetails';
+import Loader from '../../common/Loader';
 
 const TABS = [
     {
@@ -50,7 +51,7 @@ export function SortableTableVendor() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null);
     const dispatch = useDispatch()
-    const navigate = useNavigate()
+    // const navigate = useNavigate()
 
     const handleViewDetails = (vendor: VendorData) => {
         setSelectedVendor(vendor);
@@ -66,12 +67,24 @@ export function SortableTableVendor() {
             const response = await axiosInstanceAdmin.get('/vendors', {
                 params: {
                     page: currentPage,
-                    limit: 6,
+                    limit: 3,
                     search: searchTerm,
                     status: activeTab !== 'all' ? activeTab : undefined
                 }
             });
-            setVendors(response.data.vendors);
+            console.log(response.data.vendors,'reepsonse sdfdjdi');
+            
+
+            const transformedVendors = response.data.vendors.map((vendor: any) => ({
+                ...vendor._doc,
+                imageUrl: vendor.imageUrl // Keep the top-level imageUrl
+            }));
+
+            console.log(transformedVendors,'trenasformed');
+            
+
+
+            setVendors(transformedVendors);
             setTotalPages(response.data.totalPages);
         } catch (error) {
             console.error('Error fetching details:', error);
@@ -96,6 +109,8 @@ export function SortableTableVendor() {
     };
 
     const handleBlockUnblock = async (vendorId: string, currentStatus: boolean) => {
+        alert(vendorId)
+        alert(currentStatus)
         const action = currentStatus ? 'block' : 'unblock';
         const result = await Swal.fire({
             title: `Are you sure?`,
@@ -110,6 +125,8 @@ export function SortableTableVendor() {
         if (result.isConfirmed) {
             try {
                 const response = await axiosInstanceAdmin.patch(`/vendorblock-unblock?vendorId=${vendorId}`);
+                console.log(response.data,'while blcok');
+                
                 showToastMessage(response.data.message, 'success');
                 Swal.fire(
                     'Success!',
@@ -118,8 +135,9 @@ export function SortableTableVendor() {
                 );
 
                 if (response.data.processHandle === 'block') {
+                    // fetchData()
                     dispatch(logout());
-                    navigate(`${ADMIN.LOGIN}`);
+                    // navigate(`${ADMIN.LOGIN}`);
                 } else {
                     fetchData();
                 }
@@ -268,15 +286,15 @@ export function SortableTableVendor() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan={6} className="text-center p-4">Loading...</td></tr>
+                                <tr><td colSpan={6} className="text-center p-4"><Loader /></td></tr>
                             ) : vendors.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center p-4">No vendors found</td></tr>
                             ) : (
-                                vendors.map((vendor) => (
-                                    <tr key={vendor._id} className="even:bg-blue-gray-50/50">
+                                vendors.map((vendor,index) => (
+                                    <tr key={index} className="even:bg-blue-gray-50/50">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
-                                                <Avatar src="/images/user.png" alt={vendor.name} size="sm" placeholder={undefined}
+                                                <Avatar src={ vendor?.imageUrl ||"/images/user.png"} alt={vendor.name} size="sm" placeholder={undefined}
                                                     onPointerEnterCapture={undefined}
                                                     onPointerLeaveCapture={undefined} />
                                                 <div className="flex flex-col">
@@ -330,7 +348,7 @@ export function SortableTableVendor() {
                                             <div className="w-max flex justify-center items-center">
                                                 {(vendor.isAccepted === AcceptanceStatus.Requested || vendor.isAccepted === AcceptanceStatus.Rejected) ? (
                                                     <Switch
-                                                        id="custom-switch-component"
+                                                    id={`custom-switch-component-${vendor._id}`}
                                                         ripple={false}
                                                         color={vendor.isActive ? "green" : "red"}
                                                         checked={vendor.isActive}
@@ -352,7 +370,7 @@ export function SortableTableVendor() {
                                                     />
                                                 ) : (
                                                     <Switch
-                                                        id="custom-switch-component"
+                                                    id={`custom-switch-component-${vendor._id}`}
                                                         ripple={false}
                                                         color={vendor.isActive ? "green" : "red"}
                                                         checked={vendor.isActive}

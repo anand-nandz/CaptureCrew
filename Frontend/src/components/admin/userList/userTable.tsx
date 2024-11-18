@@ -23,6 +23,7 @@ import { showToastMessage } from '../../../validations/common/toast';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN } from '../../../config/constants/constants';
 import Swal from 'sweetalert2';
+import { AxiosError } from 'axios';
 const TABS = [
   {
     label: "All",
@@ -54,18 +55,29 @@ export function SortableTable() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await axiosInstanceAdmin.get('/users', {
         params: {
           page: currentPage,
           limit: 4,
           search: searchTerm,
           status: activeTab !== 'all' ? activeTab : undefined
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
         }
       });
+      
       setUsers(response.data.users);
       setTotalPages(response.data.totalPages);
     } catch (error) {
-      console.error('Error fetching details:', error);
+      console.error('Error fetching profile:', error);
+      if (error instanceof AxiosError) {
+        showToastMessage(error.message || 'Error loading profile', 'error');
+      } else {
+        showToastMessage('An unknown error occurred', 'error');
+      }
+      
     } finally {
       setIsLoading(false);
     }
@@ -280,7 +292,7 @@ export function SortableTable() {
                     <td className="p-4">
                       <div className="w-max flex justify-center items-center">
                         <Switch
-                        id="custom-switch-component"
+                        id={`custom-switch-component-${user._id}`}
                         ripple={false}
                           color={user.isActive ? "green" : "red"}
                           checked={user.isActive}
