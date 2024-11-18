@@ -11,6 +11,11 @@ import Home from '../pages/user/home/Home';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import UserProfile from '../pages/user/profile/userProfile';
 import VendorList from '../pages/user/vendorListing';
+import Posts from '../pages/user/home/Posts';
+import VendorPorfolio from '../pages/user/vendorPorfolio';
+import ShowAvailabilty from '@/pages/user/bookings/ShowAvailabilty';
+import BookingUser from '../pages/user/bookings/Booking';
+import TVScreen from '@/components/common/404';
 
 const UserRoutes: React.FC = () => {
   return (
@@ -27,7 +32,13 @@ const UserRoutes: React.FC = () => {
         <Route path={USER.HOME} element={<Home />} />
         <Route path={`${USER.PROFILE}/*`} element={<UserProfile />} />
         <Route path={`${USER.VENDORLIST}/*`} element={<VendorList/>} />
+        <Route path={`${USER.POST}/*`} element={<Posts/>}/>
+        <Route path={`${USER.PORTFOLIO}/:vendorId`} element ={<VendorPorfolio/>}/>
+        <Route path={`${USER.SERVICE_AVAILABILTY}/:vendorId`} element ={<ShowAvailabilty/>}/>
+        <Route path={`${USER.BOOKING}/*`} element={<BookingUser/>}/>
       </Route>
+      <Route path="*" element={<TVScreen />} />
+
     </Routes>
     </ErrorBoundary>
   );
