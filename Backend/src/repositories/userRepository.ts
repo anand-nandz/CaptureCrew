@@ -98,11 +98,6 @@ class UserRepository extends BaseRepository<UserDocument>{
             throw new CustomError('Failed to clear reset token', 500);
         }
     }
-
-
-
-
-
 }
 
 export default new UserRepository();

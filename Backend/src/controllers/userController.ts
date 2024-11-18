@@ -7,7 +7,7 @@ import userRepository from "../repositories/userRepository";
 import Jwt from "jsonwebtoken";
 import { AuthenticatedRequest } from "../types/userTypes";
 import jwt from 'jsonwebtoken';
-import { s3Service } from "../services/s3Service";
+import vendorService from "../services/vendorService";
 
 
 interface DecodedData {
@@ -206,7 +206,7 @@ class UserController {
 
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true, secure: process.env.NODE_ENV === 'production',
-                    maxAge: 5 * 60 * 1000
+                    maxAge: 7 * 24 * 60 * 60 * 1000
                 })
                 res.status(200).json({
                     user,
@@ -219,7 +219,7 @@ class UserController {
 
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true, secure: process.env.NODE_ENV === 'production',
-                    maxAge: 5 * 60 * 1000
+                    maxAge: 7 * 24 * 60 * 60 * 1000
                 })
                 res.status(200).json({
                     user,
@@ -241,7 +241,7 @@ class UserController {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true, secure: process.env.NODE_ENV === 'production',
-                maxAge: 5 * 60 * 1000
+                maxAge: 7 * 24 * 60 * 60 * 1000
             })
 
             res.status(200).json({ token, user, message })
@@ -255,20 +255,13 @@ class UserController {
         try {
 
             const refreshToken = req.cookies.refreshToken;
-            // const {refreshToken} = req.body
-            console.log('refresh token call to backen ', refreshToken);
-
 
             if (!refreshToken) {
                 throw new CustomError('No refresh token provided', 401);
             }
 
             try {
-                console.log('entered trty increate refresh token');
-
                 const newAccessToken = await userService.createRefreshToken(refreshToken);
-                console.log(newAccessToken, 'newAccesstoken');
-
                 res.status(200).json({ token: newAccessToken });
             } catch (error) {
                 if (error instanceof jwt.TokenExpiredError) {
@@ -302,7 +295,6 @@ class UserController {
         try {
             const userId = req.user?._id
 
-
             if (!userId) {
                 throw new CustomError('User not found', 404)
             }
@@ -318,7 +310,6 @@ class UserController {
                 })
                 return
             }
-            // console.log(user);
 
             res.status(200).json({
                 isBlocked: false
@@ -332,6 +323,8 @@ class UserController {
     async forgotPassword(req: Request, res: Response): Promise<void> {
         try {
             const { email } = req.body
+            console.log(email);
+            
             if (!email) {
                 throw new CustomError('Email is required', 400);
             }
@@ -347,6 +340,7 @@ class UserController {
     async changeForgotPassword(req: Request, res: Response): Promise<void> {
         const { token } = req.params;
         const { password } = req.body;
+        
         try {
             if (!token) {
                 throw new CustomError('Session Expired', 400)
@@ -355,8 +349,6 @@ class UserController {
             }
 
             let updated = await userService.newPasswordChange(token, password)
-            console.log(updated, 'updated');
-
             res.status(200).json({ message: 'Password Reset Successfull' })
 
         } catch (error) {
@@ -382,12 +374,12 @@ class UserController {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(401).json({ message: 'User ID is missing' });
                 return;
             }
 
             const result = await userService.getUserProfileService(userId.toString())
-
+            
             res.status(200).json(result);
         } catch (error) {
             handleError(res, error, 'getUser');
@@ -413,7 +405,6 @@ class UserController {
             }
 
             const user = await userService.updateProfileService(name, contactinfo, userId, req.file || null)
-            console.log(user, 'user in controler pro update');
 
             res.status(200).json({user});
         } catch (error) {
@@ -434,6 +425,48 @@ class UserController {
             res.status(200).json({ message: "Password reset successfully." });
         } catch (error) {
             handleError(res, error, 'changePassword')
+        }
+    }
+
+    
+    // async getAllVendors(req:Request , res:Response) : Promise<void> {
+    //     try {
+    //         const page = parseInt(req.query.page as string) || 1
+    //         const limit = parseInt(req.query.limit as string) || 6
+    //         const search = req.query.search as string || '' ;
+    //         const status = req.query.status as string;
+    //         const result = await vendorService.getVendors(page, limit, search,status)
+            
+    //         res.status(200).json({
+    //             vendors: result.vendors,
+    //             totalPages : result.totalPages,
+    //             currentPage : page,
+    //             totalVendors : result.total
+    //         })
+
+    //     } catch (error) {
+    //         handleError(res,error,'getAllUsers')
+    //     }
+    // }
+
+    
+    async getAllVendors(req:Request , res:Response) : Promise<void> {
+        try {
+            const page = parseInt(req.query.page as string) || 1
+            const limit = parseInt(req.query.limit as string) || 6
+            const search = req.query.search as string || '' ;
+            const status = req.query.status as string;
+            const result = await vendorService.getVendors(page, limit, search,status)
+            
+            res.status(200).json({
+                vendors: result.vendors,
+                totalPages : result.totalPages,
+                currentPage : page,
+                totalVendors : result.total
+            })
+
+        } catch (error) {
+            handleError(res,error,'getAllVendors')
         }
     }
 

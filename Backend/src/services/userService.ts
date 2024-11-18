@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { UserDocument } from '../models/userModel';
 import { CustomError } from '../error/customError';
 import userRepository from '../repositories/userRepository';
-import generateUserTokenAndSetCookie from '../utils/generateUserTokenAndSetCookie';
 import { Response } from 'express';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/sendEmail';
@@ -53,8 +52,6 @@ class UserService {
 
             })
             // generateUserTokenAndSetCookie(newUser._id.toString(), res);
-            console.log(newUser, 'new User in service');
-
 
             return { user: newUser }
         } catch (error) {
@@ -69,8 +66,6 @@ class UserService {
     async googleSignup({ email, name, googleId }: GoogleUserData): Promise<object> {
         try {
             const existingUser = await userRepository.findByEmail(email);
-            console.log(existingUser, 'exixteing in signup service');
-
 
             if (existingUser) {
                 if (existingUser.isGoogleUser) return { user: existingUser };
@@ -135,12 +130,12 @@ class UserService {
             const refreshToken = jwt.sign(
                 { _id: user._id },
                 process.env.JWT_REFRESH_SECRET_KEY!,
-                { expiresIn: '1d' }
+                { expiresIn: '7d' }
             );
 
             user.refreshToken = refreshToken;
             await user.save();
-            await generateUserTokenAndSetCookie(user._id.toString(), res);
+            // await generateUserTokenAndSetCookie(user._id.toString(), res);
 
 
             return {
@@ -178,12 +173,9 @@ class UserService {
                     };
                 } catch (error) {
                     console.error('Error generating signed URL during login:', error);
-                    // Don't throw error, just continue with unsigned URL
                 }
             }
-            console.log(userWithSignedUrl);
             
-
             const passwordMatch = await bcrypt.compare(
                 password,
                 existingUser.password || ''
@@ -193,26 +185,32 @@ class UserService {
                 throw new CustomError('Incorrect Password', 401)
             }
             if (existingUser.isActive === false) {
-                throw new CustomError('Blocked by Admin', 404)
+                throw new CustomError('Blocked by Admin', 403)
             }
+
+//             const tokenPayload = {
+//                 _id: existingUser._id,
+//                 role: 'user' 
+//             };
+// console.log(tokenPayload);
 
             const token = jwt.sign(
                 { _id: existingUser._id },
+                // tokenPayload,
                 process.env.JWT_SECRET_KEY!,
                 {
                     expiresIn: '1h'
                 }
-            )
+            )            
 
             let { refreshToken } = existingUser;
             if (!refreshToken || isTokenExpiringSoon(refreshToken)) {
-                console.log('hi to sign refreshtoken in login');
-
                 refreshToken = jwt.sign(
                     { _id: existingUser._id },
+                    // tokenPayload,
                     process.env.JWT_REFRESH_SECRET_KEY!,
                     {
-                        expiresIn: '1d'
+                        expiresIn: '7d'
                     }
                 )
                 existingUser.refreshToken = refreshToken;
@@ -248,14 +246,21 @@ class UserService {
             const user = await userRepository.getById(decodedToken._id);
 
             if (!user || user.refreshToken !== refreshToken) {
-                throw new CustomError('Invalid refresh Token', 404)
+                throw new CustomError('Invalid refresh Token', 401)
             }
+            // const tokenPayload = {
+            //     _id: user._id,
+            //     role: 'user' 
+            // };
+
 
             const accessToken = jwt.sign(
                 { _id: user._id },
+                // tokenPayload,
                 process.env.JWT_SECRET_KEY!,
                 { expiresIn: '1h' }
             )
+            
 
             return accessToken;
 
@@ -271,7 +276,7 @@ class UserService {
 
     async getUsers(page: number, limit: number, search: string, status?: string) {
         try {
-            const result = await userRepository.findAllUsers(page, limit, search, status)
+            const result = await userRepository.findAllUsers(page, limit, search, status);
             return result
         } catch (error) {
             console.error('Error in finding users', error)
@@ -320,7 +325,6 @@ class UserService {
                 emailTemplates.forgotPassword(user.name, resetUrl)
             );
             this.scheduleTokenCleanup(user._id, resetTokenExpiry)
-            console.log(`Password reset link: ${resetUrl}`);
         } catch (error) {
             console.error('Error in handleForgotPassword:', error);
             if (error instanceof CustomError) {
@@ -346,7 +350,6 @@ class UserService {
     async newPasswordChange(token: string, password: string): Promise<void> {
         try {
             const user = await userRepository.findByToken(token)
-            console.log(user, 'user in new passwordchange');
 
             if (!user) {
                 throw new CustomError('Invalid token', 400);
@@ -391,7 +394,6 @@ class UserService {
 
             const currentTime = new Date().getTime()
             const tokenExpiry = new Date(user.resetPasswordExpires).getTime();
-            console.log(currentTime, tokenExpiry, 'checking in valkidation token');
 
             if (currentTime > tokenExpiry) {
                 await userRepository.clearResetToken(user._id)
@@ -411,7 +413,6 @@ class UserService {
     async resendNewOtp(email: string) {
         try {
             const newOtp = await generateOTP(email);
-            console.log(newOtp, 'newOtp');
             return newOtp
 
 
@@ -427,13 +428,13 @@ class UserService {
     async getUserProfileService(userId: string) {
         try {
             const user = await userRepository.getById(userId.toString());
-            console.log('Retrieved user:', user);
             if (!user) {
                 throw new CustomError('User not found', 400);
             }
             if (user?.imageUrl) {
                 try {
-                    const imageUrl = await s3Service.getFile('captureCrew/photo/', user?.imageUrl);
+                    
+                    const imageUrl = await s3Service.getFile('captureCrew/photo/', user?.imageUrl);                    
                     return {
                         ...user.toObject(),
                         imageUrl: imageUrl
@@ -460,8 +461,6 @@ class UserService {
             if (!user) {
                 throw new CustomError('User not found', 404)
             }
-            console.log(files, 'files got in service');
-
 
             const updateData: {
                 name?: string;
@@ -488,7 +487,6 @@ class UserService {
                     throw new CustomError('Failed to upload image to S3', 500);
                 }
             }
-            console.log(updateData, 'updateData in service');
 
             if (Object.keys(updateData).length === 0) {
                 throw new CustomError('No changes to update', 400);
@@ -499,12 +497,8 @@ class UserService {
                 throw new CustomError('Failed to update user', 500);
             }
             await updatedUser.save();
-            console.log(updatedUser, 'updated user in kfhhsdhjk');
-
             const freshUser = await userRepository.getById(userId.toString());
             if (freshUser?.imageUrl) {
-                console.log('entered fresuuser iside');
-
                 try {
                     const imageUrl = await s3Service.getFile('captureCrew/photo/', freshUser.imageUrl);
                     return {
@@ -587,7 +581,7 @@ function isTokenExpiringSoon(token: string): boolean {
         const timeUntilExpiration = expirationTime - currentTime;
 
 
-        return timeUntilExpiration < 24 * 60 * 60 * 1000;
+        return timeUntilExpiration < 7 * 24 * 60 * 60 * 1000;
     } catch (error) {
         return true;
     }
