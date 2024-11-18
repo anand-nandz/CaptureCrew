@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { User } from "../models/userModel";
 
 export class BaseRepository<T extends mongoose.Document>{
     private model:mongoose.Model<T>;
