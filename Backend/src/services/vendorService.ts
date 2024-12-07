@@ -1,5 +1,5 @@
 import { CustomError } from "../error/customError"
-import { AcceptanceStatus } from "../models/vendorModel";
+import { AcceptanceStatus, VendorDocument } from "../models/vendorModel";
 import crypto from 'crypto';
 import vendorRepository from "../repositories/vendorRepository";
 import bcrypt from 'bcrypt';
@@ -12,6 +12,8 @@ import mongoose from "mongoose";
 import { CustomizationOption, PackageDocument } from "../models/packageModel";
 import { validatePackageInput } from "../validations/packageValidation";
 import packageRepository from "../repositories/packageRepository";
+import moment from "moment";
+import bookingModel from "../models/bookingModel";
 
 interface VendorLoginResponse {
     vendor: object,
@@ -271,8 +273,8 @@ class VendorService {
             if (!vendor) {
                 throw new CustomError('Vendor not Found', 404)
             }
-            console.log(vendor,'vendor to be blocked sblock service');
-            
+            console.log(vendor, 'vendor to be blocked sblock service');
+
             vendor.isActive = !vendor.isActive
             await vendor.save()
         } catch (error) {
@@ -646,76 +648,6 @@ class VendorService {
     }
 
 
-
-
-    // async getAllDetails(vendorId: string) {
-    //     try {
-    //         const vendorDetails = await vendorRepository.getAllPopulate(vendorId);
-
-    //         // Get the signed URL for the vendor's profile picture
-    //         if (vendorDetails?.imageUrl) {
-    //             try {
-    //                 const imageUrl = await s3Service.getFile('captureCrew/vendor/photo/', vendorDetails?.imageUrl);
-    //                 return {
-    //                     ...vendorDetails,
-    //                     imageUrl: imageUrl
-    //                 };
-    //             } catch (error) {
-    //                 console.error('Error generating signed URL:', error);
-    //                 return vendorDetails;
-    //             }
-    //         }
-
-
-    //         const postWithSignedUrls = await Promise.all(
-    //             vendorDetails.posts.map(async (post) => {
-    //                 try {
-    //                     let postObject = post;
-    //                     if (post.imageUrl && Array.isArray(post.imageUrl)) {
-    //                         const signedImageUrls = await Promise.all(
-    //                             post.imageUrl.map(async (imageFileName) => {
-    //                                 try {
-    //                                     return await s3Service.getFile(
-    //                                         'captureCrew/vendor/posts/',
-    //                                         imageFileName
-    //                                     )
-    //                                 } catch (error) {
-    //                                     console.error(`Error getting signed URL for image ${imageFileName}:`, error);
-    //                                     return null;
-    //                                 }
-    //                             })
-    //                         )
-
-    //                         const validSignedUrls = signedImageUrls.filter(url => url !== null);
-
-    //                         return {
-    //                             ...postObject,
-    //                             imageUrl: validSignedUrls
-    //                         }
-    //                     }
-
-    //                     return postObject;
-
-    //                 } catch (error) {
-    //                     console.error('Error processing post:', error);
-    //                     return post;
-    //                 }
-    //             })
-    //         );
-
-    //         console.log(vendorDetails,'vendetails');
-    //         console.log(postWithSignedUrls,'vendor posts');
-
-    //         return {
-    //             ...vendorDetails,
-    //             posts : postWithSignedUrls,
-    //         };
-    //     } catch (error) {
-    //         console.error('Error in getAllDetails:', error);
-    //         throw new CustomError('Failed to getAllDetails from database', 500);
-    //     }
-    // }
-
     async getAllDetails(vendorId: string) {
         try {
             const vendorDetails = await vendorRepository.getAllPopulate(vendorId);
@@ -808,13 +740,13 @@ class VendorService {
             }
 
             const { newDates, alreadyBooked, updatedVendor } = await vendorRepository.addDates(dates, vendorId);
-            console.log(newDates,'newDates');
-            console.log(alreadyBooked,'alreadyBooked');
-            console.log(updatedVendor,'updatedVendor');
-            
-            
-            
-            
+            console.log(newDates, 'newDates');
+            console.log(alreadyBooked, 'alreadyBooked');
+            console.log(updatedVendor, 'updatedVendor');
+
+
+
+
             if (newDates.length === 0 && alreadyBooked.length > 0) {
                 return {
                     success: false,
@@ -843,7 +775,7 @@ class VendorService {
         }
     }
 
-    async showDates(vendorId:string){
+    async showDates(vendorId: string) {
         try {
             const vendor = await vendorRepository.getById(vendorId)
             return vendor
@@ -859,26 +791,26 @@ class VendorService {
                 const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
                 return dateRegex.test(date);
             });
-    
+
             if (!isValidDates) {
                 throw new CustomError('Invalid date format. Use DD/MM/YYYY', 400);
             }
-    
+
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
+
             const hasInvalidDate = dates.some(date => {
                 const [day, month, year] = date.split('/');
                 const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 return dateObj < today;
             });
-    
+
             if (hasInvalidDate) {
                 throw new CustomError('Cannot modify dates from the past', 400);
             }
-    
+
             const result = await vendorRepository.removeDates(dates, vendorId);
-            
+
             return {
                 success: true,
                 removedDates: result.removedDates
@@ -888,6 +820,196 @@ class VendorService {
             throw error;
         }
     }
+
+    async passwordCheckUser(currentPassword: string, newPassword: string, vendorId: any) {
+        try {
+            const vendor = await vendorRepository.getById(vendorId.toString())
+            if (!vendor) {
+                throw new CustomError('User not found', 404)
+            }
+            if (!vendor.password) {
+                throw new CustomError("User password not set", 400)
+            }
+
+            const passwordMatch = await bcrypt.compare(
+                currentPassword,
+                vendor.password || ''
+            )
+            if (!passwordMatch) {
+                throw new CustomError('Incorrect Password', 401)
+            }
+
+            if (currentPassword === newPassword) {
+                throw new CustomError("Current and New Passwords can't be same", 401)
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const newHashedPassword = await bcrypt.hash(newPassword, salt);
+            const updateSuccess = await vendorRepository.UpdatePassword(vendorId, newHashedPassword)
+            if (!updateSuccess) {
+                throw new CustomError('Failed to update password', 500);
+            }
+            await sendEmail(
+                vendor.email,
+                'Password Reset Successful',
+                emailTemplates.ResetPasswordSuccess(vendor.name)
+            );
+
+
+        } catch (error) {
+            console.error("Error in updating password:", error)
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError("Failed to changing password.", 500);
+        }
+    }
+
+    async getSingleVendor(vendorId:string): Promise<VendorDocument> {
+        try {
+            const vendor = await vendorRepository.getById(vendorId)
+            if(!vendor){
+                throw new CustomError('Vendor not found',404)
+            }
+            let vendorWithSignedUrl = vendor.toObject();
+            if (vendor?.imageUrl) {
+                try {
+                    const signedImageUrl = await s3Service.getFile('captureCrew/vendor/photo/', vendor?.imageUrl);
+                    vendorWithSignedUrl = {
+                        ...vendorWithSignedUrl,
+                        imageUrl: signedImageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL during getSingleVendor:', error);
+                    // Don't throw error, just continue with unsigned URL
+                }
+            }
+            return vendorWithSignedUrl
+        } catch (error) {
+            console.error("Error in getting singlevendor", error)
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError("Failed to get vendor", 500);
+        }
+    }
+
+    async getRevenueDetails(dateType: string,vendorId: string) {
+        try {
+          let start, end, groupBy, sortField, arrayLength = 0;
+          switch (dateType) {
+            case 'week':
+              const { startOfWeek, endOfWeek } = getCurrentWeekRange();
+              start = startOfWeek;
+              end = endOfWeek;
+              groupBy = { $dayOfWeek: '$paidAt' };
+              sortField = 'day';
+              arrayLength = 7;
+              break;
+    
+            case 'month':
+              const { startOfYear, endOfYear } = getCurrentYearRange();
+              start = startOfYear;
+              end = endOfYear;
+              groupBy = { $month: '$paidAt' };
+              sortField = 'month';
+              arrayLength = 12;
+              break;
+    
+            case 'year':
+              const { startOfFiveYearsAgo, endOfCurrentYear } = getLastFiveYearsRange();
+              start = startOfFiveYearsAgo;
+              end = endOfCurrentYear;
+              groupBy = { $year: '$paidAt' };
+              sortField = 'year';
+              arrayLength = 5;
+              break;
+    
+    
+            default:
+              throw new CustomError('Invalid Date Parameter', 400)
+          }
+    
+          const revenueData = await bookingModel.aggregate([
+            {
+                $match: {
+                    vendorId: new mongoose.Types.ObjectId(vendorId), 
+                },
+            },
+            {
+              $project: {
+                validAdvanceAmount: {
+                  $cond: [
+                    { $eq: ['$advancePayment.status', 'completed'] },
+                    '$advancePayment.amount',
+                    0
+                  ]
+                },
+                validFinalAmount: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ['$finalPayment.status', 'completed'] },
+                        { $ne: ['$finalPayment.paidAt', null] }
+                      ]
+                    },
+                    '$finalPayment.amount',
+                    0
+                  ]
+                },
+                paidAt: {
+                  $ifNull: ['$finalPayment.paidAt', '$advancePayment.paidAt']
+                }
+              }
+            },
+            {
+              $project: {
+                totalAmount: { $add: ['$validAdvanceAmount', '$validFinalAmount'] },
+                paidAt: 1
+              }
+            },
+            {
+              $match: {
+                paidAt: { $gte: start, $lt: end }
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  [sortField]: groupBy
+                },
+                totalRevenue: { $sum: '$totalAmount' }
+              }
+            },
+            { $sort: { [`_id.${sortField}`]: 1 } }
+          ]);
+    
+          const revenueArray = Array.from({ length: arrayLength }, (_, index) => {
+            const item = revenueData.find((r) => {
+    
+              if (dateType === 'week') {
+                const dayFromData = r._id?.day;
+                return dayFromData === index + 1;
+              } else if (dateType === 'month') {
+                return r._id?.month === index + 1 || r._id?.month?.month === index + 1;
+              } else if (dateType === 'year') {
+                const expectedYear = new Date().getFullYear() - (arrayLength - 1) + index;
+                return r._id?.year === expectedYear;
+              }
+              return false;
+            });
+    
+            return item ? item.totalRevenue : 0;
+          });
+          return revenueArray
+    
+        } catch (error) {
+          console.error('Error fetching revenue stats:', error);
+          throw new Error('Unable to fetch revenue statistics');
+        }
+      }
+
+
 
 
 }
@@ -913,7 +1035,29 @@ function isTokenExpiringSoon(token: string): boolean {
         return true;
     }
 
-
 }
+
+
+function getCurrentWeekRange() {
+    const startOfWeek = moment().startOf("isoWeek").toDate();
+    const endOfWeek = moment().endOf("isoWeek").toDate();
+    return { startOfWeek, endOfWeek };
+  }
+  
+  // Function to get current year range
+  function getCurrentYearRange() {
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+    const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+    return { startOfYear, endOfYear };
+  }
+  
+  // Function to calculate the last five years' range
+  function getLastFiveYearsRange() {
+    const currentYear = new Date().getFullYear();
+    const startOfFiveYearsAgo = new Date(currentYear - 4, 0, 1);
+    const endOfCurrentYear = new Date(currentYear + 1, 0, 1);
+    return { startOfFiveYearsAgo, endOfCurrentYear };
+  }
+  
 
 export default new VendorService();

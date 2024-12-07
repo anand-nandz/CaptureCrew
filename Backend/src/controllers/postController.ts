@@ -6,7 +6,6 @@ import postService from "../services/postService";
 import mongoose from "mongoose";
 import { AuthenticatedRequest } from "../types/userTypes";
 import { AuthRequest } from "../types/adminTypes";
-import { log } from "console";
 
 
 

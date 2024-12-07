@@ -6,6 +6,7 @@ import vendorService from "../services/vendorService";
 import vendorRepository from "../repositories/vendorRepository";
 import { VendorRequest } from "../types/vendorTypes";
 import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from "../types/userTypes";
 
 interface VendorSession {
     otpSetTimestamp: number | undefined;
@@ -259,7 +260,7 @@ class VendorController {
             const result = await vendorService.getVendorProfileService(vendorId.toString())
             res.status(200).json(result);
         } catch (error) {
-            handleError(res, error, 'getVendor'); // Error handling
+            handleError(res, error, 'getVendor');
         }
     }
 
@@ -284,7 +285,7 @@ class VendorController {
         }
     }
 
-    
+
     async getPackages(req: VendorRequest, res: Response): Promise<void> {
         try {
 
@@ -363,7 +364,7 @@ class VendorController {
                 videographerCount,
                 features,
                 customizationOptions
-             } = req.body
+            } = req.body
 
             if (!vendorId) {
                 res.status(400).json({ message: 'Vendor ID is missing' });
@@ -375,7 +376,7 @@ class VendorController {
                 return;
             }
 
-            
+
             const updatePackage = await vendorService.updatePkg(
                 vendorId,
                 packageId,
@@ -389,9 +390,9 @@ class VendorController {
                 customizationOptions
             )
 
-            console.log(updatePackage,'updatd packageeeeeeeeeeeeeeeeeeeee');
-            
-            res.status(200).json({package:updatePackage})
+            console.log(updatePackage, 'updatd packageeeeeeeeeeeeeeeeeeeee');
+
+            res.status(200).json({ package: updatePackage })
 
         } catch (error) {
             handleError(res, error, 'updatePackge')
@@ -399,7 +400,7 @@ class VendorController {
     }
 
 
-    async getVendorWithAll(req: VendorRequest, res: Response) : Promise<void> {
+    async getVendorWithAll(req: VendorRequest, res: Response): Promise<void> {
         try {
             const vendorId = req.vendor?._id
             if (!vendorId) {
@@ -407,61 +408,61 @@ class VendorController {
                 return;
             }
 
-            const result =  await vendorService.getAllDetails(vendorId.toString())
-            
-            res.status(200).json({vendor: result})
+            const result = await vendorService.getAllDetails(vendorId.toString())
+
+            res.status(200).json({ vendor: result })
 
         } catch (error) {
-            handleError(res,error,'getVendorWithAll')
+            handleError(res, error, 'getVendorWithAll')
         }
     }
 
-    async showUnavailableDates(req: VendorRequest, res: Response) : Promise<void> {
+    async showUnavailableDates(req: VendorRequest, res: Response): Promise<void> {
         try {
-            const vendorId = req.vendor?._id ;             
-            if(!vendorId){
-                res.status(401).json({success: false, message: 'VendorId is missing'})
+            const vendorId = req.vendor?._id;
+            if (!vendorId) {
+                res.status(401).json({ success: false, message: 'VendorId is missing' })
                 return
             }
 
             const result = await vendorService.showDates(vendorId.toString())
-            console.log(result,'res show');
-            
+            console.log(result, 'res show');
+
             res.status(200).json({
                 success: true,
                 message: 'Data fetched succesfully',
                 result
             })
         } catch (error) {
-            handleError(res,error,'showUnavailableDates')
+            handleError(res, error, 'showUnavailableDates')
         }
     }
 
-    async addUnavailableDates(req: VendorRequest, res: Response) : Promise<void> {
+    async addUnavailableDates(req: VendorRequest, res: Response): Promise<void> {
         try {
-            const vendorId = req.vendor?._id ; 
-            const {dates} =  req.body ; 
-            console.log(dates,'dates');
-            console.log(vendorId,'vendorId');
-            
-            if(!vendorId){
-                res.status(401).json({success: false, message: 'VendorId is missing'})
+            const vendorId = req.vendor?._id;
+            const { dates } = req.body;
+            console.log(dates, 'dates');
+            console.log(vendorId, 'vendorId');
+
+            if (!vendorId) {
+                res.status(401).json({ success: false, message: 'VendorId is missing' })
                 return
             }
 
-            const result = await vendorService.addDates(dates,vendorId.toString())
-            console.log(result,'result in controler');
-            
-            if(result.success){
+            const result = await vendorService.addDates(dates, vendorId.toString())
+            console.log(result, 'result in controler');
+
+            if (result.success) {
                 res.status(200).json({
                     success: true,
                     message: result.message,
                     addedDates: result.addedDates,
                     alreadyBookedDates: result.alreadyBookedDates
                 })
-            } 
+            }
 
-            if(result.success === false) {
+            if (result.success === false) {
                 res.status(200).json({
                     success: false,
                     message: result.message,
@@ -479,14 +480,14 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id;
             const { dates } = req.body;
-            
+
             if (!vendorId) {
                 res.status(401).json({ success: false, message: 'VendorId is missing' });
                 return;
             }
-    
+
             const result = await vendorService.removeDates(dates, vendorId.toString());
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Dates updated successfully',
@@ -497,8 +498,64 @@ class VendorController {
         }
     }
 
+    async changePassword(req: VendorRequest, res: Response): Promise<void> {
+        try {
+            const { currentPassword, newPassword } = req.body
 
-    
+            const vendorId = req.vendor?._id;
+            if (!vendorId) {
+                res.status(401).json({ success: false, message: 'VendorId is missing' });
+                return;
+            }
+            const passwordCheck = await vendorService.passwordCheckUser(currentPassword, newPassword, vendorId)
+
+            res.status(200).json({ message: "Password reset successfully." });
+        } catch (error) {
+            handleError(res, error, 'changePassword')
+        }
+    }
+
+    async getVendor(req: AuthenticatedRequest, res: Response): Promise<void> {
+        try {
+            const vendorId: string = req.query.vendorId as string
+            if(!vendorId){
+                res.status(400).json({message:'VendorId is missing'})
+                return
+            }
+
+            const data = await vendorService.getSingleVendor(vendorId)
+            if(!data){
+                res.status(400).json({message: "Vendor not Found."})
+            } else {
+                res.status(200).json({data: data})
+            }
+        } catch (error) {
+            handleError(res,error,'getVendor')
+        }
+    }
+
+    async getRevenue(req: VendorRequest, res: Response){
+        try {
+            const dateType =  req.query.date as string
+            const vendorId = req.vendor?._id;
+            if (!vendorId) {
+                res.status(401).json({ success: false, message: 'VendorId is missing' });
+                return;
+            }            
+            const response = await vendorService.getRevenueDetails(dateType,vendorId.toString())
+            console.log(response,'in revenue fetching');
+            
+            if(response){
+                res.status(200).json({revenue: response})
+            }
+        } catch (error) {
+            handleError(res, error, 'getRevenue')
+        }
+    }
+
+
+
+
 
 
 }

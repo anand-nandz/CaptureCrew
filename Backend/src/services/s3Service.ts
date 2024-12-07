@@ -42,7 +42,7 @@ export class S3Service {
             }
             
             const getCommand = new GetObjectCommand(getObjectparams)           
-            const url = await getSignedUrl(this.s3Client, getCommand, {expiresIn : 60 * 60})            
+            const url = await getSignedUrl(this.s3Client, getCommand, {expiresIn : 604800 })                     
             return url
 
         } catch (error) {
@@ -54,10 +54,10 @@ export class S3Service {
         folderPath: string,
         file: Express.Multer.File
     ): Promise<string> {
-
+        
         const imageBuffer : Buffer = file.buffer;
         const fileName : string = file.originalname;
-        const contentType : string = file.mimetype;
+        const contentType : string = file.mimetype;        
 
         const uniqueFileName = `${uuidv4()}-${fileName}`;
 
