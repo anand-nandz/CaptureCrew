@@ -374,11 +374,12 @@ class UserController {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(401).json({ message: 'User ID is missing' });
+                res.status(400).json({ message: 'User ID is missing' });
                 return;
             }
 
             const result = await userService.getUserProfileService(userId.toString())
+            console.log(result,'profile details');
             
             res.status(200).json(result);
         } catch (error) {
@@ -415,6 +416,8 @@ class UserController {
     async changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { currentPassword, newPassword } = req.body
+            console.log(currentPassword,newPassword);
+            
             const userId = req.user?._id;
             if (!userId) {
                 res.status(400).json({ message: 'User ID is missing' });
@@ -429,25 +432,25 @@ class UserController {
     }
 
     
-    // async getAllVendors(req:Request , res:Response) : Promise<void> {
-    //     try {
-    //         const page = parseInt(req.query.page as string) || 1
-    //         const limit = parseInt(req.query.limit as string) || 6
-    //         const search = req.query.search as string || '' ;
-    //         const status = req.query.status as string;
-    //         const result = await vendorService.getVendors(page, limit, search,status)
-            
-    //         res.status(200).json({
-    //             vendors: result.vendors,
-    //             totalPages : result.totalPages,
-    //             currentPage : page,
-    //             totalVendors : result.total
-    //         })
+    async getUser(req:Request , res:Response) : Promise<void> {
+        try {
+            const userId: string = req.query.userId as string
+            if(!userId){
+                res.status(400).json({message:'UserId is missing'})
+                return
+            }
 
-    //     } catch (error) {
-    //         handleError(res,error,'getAllUsers')
-    //     }
-    // }
+            const data = await userService.getSingleUser(userId)
+            if(!data){
+                res.status(400).json({message: "User not Found."})
+            } else {
+                res.status(200).json({data: data})
+            }
+
+        } catch (error) {
+            handleError(res,error,'getUser')
+        }
+    }
 
     
     async getAllVendors(req:Request , res:Response) : Promise<void> {
@@ -470,6 +473,7 @@ class UserController {
         }
     }
 
+  
 
 }
 

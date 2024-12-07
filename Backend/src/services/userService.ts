@@ -47,11 +47,12 @@ class UserService {
                 email,
                 password: hashedPassword,
                 name,
+                walletBalance:0,
+                transactions:[],
                 contactinfo,
                 isActive,
 
             })
-            // generateUserTokenAndSetCookie(newUser._id.toString(), res);
 
             return { user: newUser }
         } catch (error) {
@@ -79,6 +80,8 @@ class UserService {
                 email,
                 googleId,
                 name,
+                walletBalance: 0,
+                transactions:[],
                 isActive: true,
                 isGoogleUser: true,
             });
@@ -99,6 +102,7 @@ class UserService {
             const existingUser = await userRepository.findByEmail(userData.email);
             let user: UserDocument;
             let isNewUser = false;
+            
 
             if (existingUser) {
                 if (!existingUser.isGoogleUser) {
@@ -115,10 +119,24 @@ class UserService {
                     name: userData.name,
                     googleId: userData.googleId,
                     isGoogleUser: true,
+                    walletBalance:0,
+                    transactions: [],
                     imageUrl: userData.picture,
                     isActive: true
                 });
                 isNewUser = true;
+            }
+            let userWithSignedUrl = user.toObject();
+            if (user?.imageUrl) {
+                try {
+                    const signedImageUrl = await s3Service.getFile('captureCrew/photo/', user.imageUrl);
+                    userWithSignedUrl = {
+                        ...userWithSignedUrl,
+                        imageUrl: signedImageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL during Google login:', error);
+                }
             }
 
             const token = jwt.sign(
@@ -139,7 +157,7 @@ class UserService {
 
 
             return {
-                user,
+                user: userWithSignedUrl,
                 isNewUser,
                 token,
                 refreshToken,
@@ -163,19 +181,6 @@ class UserService {
                 throw new CustomError('User Not Exist!!..', 404)
             }
 
-            let userWithSignedUrl = existingUser.toObject();
-            if (existingUser.imageUrl) {
-                try {
-                    const signedImageUrl = await s3Service.getFile('captureCrew/photo/', existingUser.imageUrl);
-                    userWithSignedUrl = {
-                        ...userWithSignedUrl,
-                        imageUrl: signedImageUrl
-                    };
-                } catch (error) {
-                    console.error('Error generating signed URL during login:', error);
-                }
-            }
-            
             const passwordMatch = await bcrypt.compare(
                 password,
                 existingUser.password || ''
@@ -188,6 +193,26 @@ class UserService {
                 throw new CustomError('Blocked by Admin', 403)
             }
 
+          
+
+            let userWithSignedUrl = existingUser.toObject();
+            
+            if (existingUser?.imageUrl) {
+                try {
+                    
+                    const signedImageUrl = await s3Service.getFile('captureCrew/photo/', existingUser?.imageUrl);
+                    console.log(signedImageUrl);
+                    
+                    userWithSignedUrl = {
+                        ...userWithSignedUrl,
+                        imageUrl: signedImageUrl
+                    };
+                } catch (error) {
+                    console.error('Error generating signed URL during login:', error);
+                }
+            }
+            
+            
 //             const tokenPayload = {
 //                 _id: existingUser._id,
 //                 role: 'user' 
@@ -260,6 +285,8 @@ class UserService {
                 process.env.JWT_SECRET_KEY!,
                 { expiresIn: '1h' }
             )
+            
+            console.log(accessToken,'new tokem');
             
 
             return accessToken;
@@ -466,7 +493,7 @@ class UserService {
                 name?: string;
                 contactinfo?: string;
                 imageUrl?: string;
-            } = {};
+            } = {};            
 
             if (name && name !== user.name) {
                 updateData.name = name;
@@ -565,6 +592,38 @@ class UserService {
             throw new CustomError("Failed to changing password.", 500);
         }
     }
+
+    async getSingleUser(userId: string): Promise<UserDocument>{
+        try {
+            const user= await userRepository.getById(userId)
+            console.log(user);
+            
+            if(!user){
+                throw new CustomError('User Not Found',400)
+            }
+
+            let userWithSignedUrl = user.toObject();
+            if(user?.imageUrl){
+                try {
+                    const signedImageUrl = await s3Service.getFile('captureCrew/photo/',user?.imageUrl);
+                    userWithSignedUrl ={
+                        ...userWithSignedUrl,
+                        imageUrl: signedImageUrl
+                    }
+                } catch (error) {
+                    console.error('Error generating signed URL during getSingleUser:', error);
+                }
+            }
+            return userWithSignedUrl
+        } catch (error) {
+            console.error("Error in getting singleUser", error)
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError("Failed to get user", 500);
+        }
+    }
+
 
 
 
