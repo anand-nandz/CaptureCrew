@@ -7,7 +7,6 @@ import {
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
-  Link,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
@@ -19,27 +18,27 @@ import { ChevronDown, Scale, Activity, Slash, Server, User, Search, MessageCircl
 import { axiosInstance } from '../../config/api/axiosInstance';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/UserSlice';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
 import { showToastMessage } from '../../validations/common/toast';
-import UserRootState from '../../redux/rootstate/UserState';
+import UserRootState from '@/redux/rootstate/UserState';
+// import { Typography } from '@material-tailwind/react';
 
 
 export default function UserNavbar() {
+  const user= useSelector((state:UserRootState)=>state.user.userData)
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // const { userData } = useSelector((state: UserRootState) => state.user);
-  const userData = useSelector((state: UserRootState) => state.user.userData);
-    
+
+
   const handleLogout = async (e: React.MouseEvent<HTMLLIElement>) => {
     e.preventDefault();
     try {
-      await axiosInstance.post('/logout'); 
+      await axiosInstance.post('/logout');
       localStorage.removeItem('userToken')
-      // localStorage.removeItem('userRefresh')
       dispatch(logout());
-      navigate(`${USER.LOGIN}`); 
+      navigate(`${USER.LOGIN}`);
       showToastMessage('Logged out successfully', 'success');
     } catch (error) {
       console.log('Logout Error', error);
@@ -47,7 +46,8 @@ export default function UserNavbar() {
     }
   };
 
-  const handleProfileClick =async(e: React.MouseEvent<HTMLLIElement>)=>{
+  const handleProfileClick = async (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
     e.preventDefault();
     try {
       navigate(`${USER.PROFILE}`)
@@ -55,29 +55,28 @@ export default function UserNavbar() {
       console.log('Profile Error', error);
       showToastMessage('Error during loading profile', 'error');
     }
-   
   }
-  const handleHomeClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    try {
-      navigate(`${USER.HOME}`);
-    } catch (error) {
-      console.log('Profile Error', error);
-      showToastMessage('Error during loading profile', 'error');
-    }
-  };
+  // const handleHomeClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+  //   e.preventDefault();
+  //   try {
+  //     navigate(`${USER.HOME}`);
+  //   } catch (error) {
+  //     console.log('Profile Error', error);
+  //     showToastMessage('Error during loading profile', 'error');
+  //   }
+  // };
 
 
-  const handlePostClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    try {
-      navigate(`${USER.POST}`);
-    } catch (error) {
-      console.log('Profile Error', error);
-      showToastMessage('Error during loading profile', 'error');
-    }
-  };
-  
+  // const handlePostClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+  //   e.preventDefault();
+  //   try {
+  //     navigate(`${USER.POST}`);
+  //   } catch (error) {
+  //     console.log('Profile Error', error);
+  //     showToastMessage('Error during loading profile', 'error');
+  //   }
+  // };
+
 
   const icons = {
     chevron: <ChevronDown size={16} />,
@@ -112,56 +111,19 @@ export default function UserNavbar() {
       {/* Navbar Items */}
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         <NavbarItem>
-          <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" onClick={handleHomeClick}>
+          <Link to={`${USER.HOME}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base">
             HOME
           </Link>
         </NavbarItem>
         <NavbarItem>
-        <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" onClick={handlePostClick}>
+          <Link to={`${USER.POST}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
             POST
           </Link>
         </NavbarItem>
-
-        {/* <Dropdown>
-          <NavbarItem>
-            <DropdownTrigger>
-              <Button
-                disableRipple
-                className="p-0 bg-transparent data-[hover=true]:bg-transparent text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base"
-                endContent={icons.chevron}
-                radius="sm"
-                variant="light"
-              >
-                BROWSE SERVICES
-              </Button>
-            </DropdownTrigger>
-          </NavbarItem>
-          <DropdownMenu
-            aria-label="Services"
-            className="w-[340px]"
-            itemClasses={{ base: "gap-4" }}
-          >
-            <DropdownItem key="autoscaling" description="Scale apps based on load." startContent={icons.scale}>
-              Autoscaling
-            </DropdownItem>
-            <DropdownItem key="usage_metrics" description="Real-time metrics." startContent={icons.activity}>
-              Usage Metrics
-            </DropdownItem>
-            <DropdownItem key="production_ready" description="High availability." startContent={icons.slash}>
-              Production Ready
-            </DropdownItem>
-            <DropdownItem key="99_uptime" description="+99% uptime." startContent={icons.server}>
-              +99% Uptime
-            </DropdownItem>
-            <DropdownItem key="support" description="Supreme support team." startContent={icons.user}>
-              Supreme Support
-            </DropdownItem>
-          </DropdownMenu>
-        </Dropdown> */}
         <NavbarItem className="max-w-xs hidden md:flex">
           <Input
             classNames={{
-              
+
               base: "max-w-full lg:text-xl md:text-lg sm:text-base",
               input: "text-small lg:text-xl md:text-lg sm:text-base",
               inputWrapper: "font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
@@ -173,12 +135,18 @@ export default function UserNavbar() {
           />
         </NavbarItem>
         <NavbarItem>
-          <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" href="#">
-            FAVORITES
+          {/* <Typography as="a" href="#" className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+            onPointerEnterCapture={undefined} onClick={handleProfileClick}
+            onPointerLeaveCapture={undefined}>
+            PROFILE
+          </Typography> */}
+          <Link to={`${USER.BOOKING}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
+            BOOKING
           </Link>
+          {/* <li onClick={() => navigate(`${USER.PROFILE}`)}>profile</li> */}
         </NavbarItem>
         <NavbarItem>
-          <Link className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" href="#">
+          <Link to={`${USER.ABOUT_US}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
             ABOUT US
           </Link>
         </NavbarItem>
@@ -192,15 +160,13 @@ export default function UserNavbar() {
               isBordered
               as="button"
               className="transition-transform"
-              color="secondary"
-              name={userData?.name || ""}
               size="sm"
-              src={userData?.imageUrl || "/images/user.png"}
+              src={ user?.imageUrl || "/images/user.png"}
             />
           </DropdownTrigger>
           <DropdownMenu aria-label="User Actions">
-            <DropdownItem key="profile" startContent={<User size={20}/>} onClick={handleProfileClick}>
-              Profile 
+            <DropdownItem key="profile" startContent={<User size={20} />} onClick={handleProfileClick}>
+              Profile
             </DropdownItem>
             <DropdownItem key="settings" startContent={<Scale size={20} />}>
               Settings
@@ -212,7 +178,7 @@ export default function UserNavbar() {
           </DropdownMenu>
         </Dropdown>
         <NavbarItem className="hidden sm:flex">
-          <Link href="#" className="text-white">
+          <Link to={`${USER.CHAT}`} className="text-white">
             {icons.message}
           </Link>
         </NavbarItem>
@@ -237,8 +203,7 @@ export default function UserNavbar() {
           <NavbarMenuItem key={`${item}-${index}`}>
             <Link
               className="w-full text-white hover:text-gray-300"
-              href="#"
-              size="lg"
+              to={`${USER.HOME}`}
             >
               {item}
             </Link>
