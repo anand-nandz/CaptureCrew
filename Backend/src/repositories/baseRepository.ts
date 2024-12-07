@@ -20,6 +20,10 @@ export class BaseRepository<T extends mongoose.Document>{
     async update(id:string,data:Partial<T>):Promise<T|null>{
         return await this.model.findByIdAndUpdate(id,data)
     }
+    
+    async findOne(condition: Record<string, unknown>): Promise<T | null> {
+        return await this.model.findOne(condition);
+    }
 
     async findByToken(resetPasswordToken:string) : Promise< T | null> {
         return await this.model.findOne({resetPasswordToken})
@@ -27,5 +31,9 @@ export class BaseRepository<T extends mongoose.Document>{
 
     async getById(id:string) : Promise<T | null> {
         return await this.model.findById(id)
+    }
+
+    async findByCondition(condition:Record<string, unknown>): Promise<T[]> {
+        return await this.model.find(condition)
     }
 }

@@ -194,7 +194,7 @@ class PostRepository extends BaseRepository<PostDocument> {
         options: { new: boolean }
     ): Promise<PostDocument | null> {
         try {
-            return await Post.findByIdAndUpdate(id, updateData, options);
+            return await Post.findByIdAndUpdate(id, updateData, options).exec();
         } catch (error) {
             console.error('Error in findByIdAndUpdate:', error);
             throw error;

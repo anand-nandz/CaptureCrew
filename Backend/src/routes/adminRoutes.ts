@@ -18,6 +18,9 @@ router.patch('/vendorblock-unblock',authTokenAdmin, adminController.VendorBlockU
 
 router.get('/view-all-posts',authTokenAdmin,postController.getAllPostsAdmin);
 router.get('/all-bookingsReqs',authTokenAdmin,adminController.getAllBookings);
+router.get('/dashboard',authTokenAdmin, adminController.getAllInOneDashboardStats);
+router.get('/revenue',authTokenAdmin, adminController.getRevenue);
+router.get('/client-reports',authTokenAdmin, adminController.getReports);
 
 
 

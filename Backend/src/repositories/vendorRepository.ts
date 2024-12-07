@@ -39,6 +39,7 @@ class VendorRepository extends BaseRepository<VendorDocument> {
             const vendors = await Vendor.find(query)
                 .skip(skip)
                 .limit(limit)
+                .select('-password')
                 .sort({ createdAt: -1 })
 
             return {
@@ -51,10 +52,10 @@ class VendorRepository extends BaseRepository<VendorDocument> {
         }
     }
 
-    async UpdatePassword(userId: mongoose.Types.ObjectId, hashedPassword: string): Promise<boolean> {
+    async UpdatePassword(vendorId: mongoose.Types.ObjectId, hashedPassword: string): Promise<boolean> {
         try {
             const result = await Vendor.updateOne(
-                { _id: userId },
+                { _id: vendorId },
                 { $set: { password: hashedPassword } }
             );
             return result.modifiedCount > 0;

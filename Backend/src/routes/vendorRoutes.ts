@@ -5,6 +5,8 @@ import { authenticateTokenVendor } from "../middlewares/vendorauthToken";
 import multer from "multer";
 import postController from "../controllers/postController";
 import bookingController from "../controllers/bookingController";
+import userController from "../controllers/userController";
+import reviewController from "../controllers/reviewController";
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
@@ -25,6 +27,7 @@ router.get('/validate-reset-token/:token',vendorController.validateResetToken);
 
 router.get('/profile', authenticateTokenVendor, vendorController.getVendorProfile)
 router.put('/profile', upload.single("image"), authenticateTokenVendor, vendorController.updateProfile)
+router.put('/change-password',authenticateTokenVendor,vendorController.changePassword)
 
 router.get('/posts',authenticateTokenVendor,postController.getPosts)
 router.post('/add-post', upload.array("images", 6), authenticateTokenVendor, postController.createPost)
@@ -42,6 +45,14 @@ router.post('/dateAvailabilty/unblock', authenticateTokenVendor, vendorControlle
 
 router.get('/bookings',authenticateTokenVendor,bookingController.SingleVendorBookingReq)
 router.patch('/bookings/accept-reject', authenticateTokenVendor,bookingController.acceptBooking);
+
+router.get('/getVendor',vendorController.getVendor);
+router.get('/clientreviews',authenticateTokenVendor,reviewController.getVendorReviews);
+router.get('/revenue',authenticateTokenVendor, vendorController.getRevenue);
+
+
+
+
 
 
 

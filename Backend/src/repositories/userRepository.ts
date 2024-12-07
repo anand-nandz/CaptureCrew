@@ -7,7 +7,7 @@ class UserRepository extends BaseRepository<UserDocument>{
     constructor(){
         super(User);
     }
-
+    
     async findAllUsers(page: number, limit: number, search: string,status?:string)  {
         try {
             const skip = (page -1) * limit ;
@@ -98,6 +98,7 @@ class UserRepository extends BaseRepository<UserDocument>{
             throw new CustomError('Failed to clear reset token', 500);
         }
     }
+
 }
 
 export default new UserRepository();
