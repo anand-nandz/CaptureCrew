@@ -1,3 +1,5 @@
+import { Transaction } from "./extraTypes";
+
 export interface VendorData{
     _id:string;
     email : string;
@@ -14,9 +16,12 @@ export interface VendorData{
     imageUrl?: string ;
     totalBooking?:number;
     bookedDates:Array<string>;
+    walletBalance: number;
+    transactions?: Transaction[];
     refreshToken:string;
-    totalRating?:number;
-    
+    totalRating?:number; 
+    postCount?:number;
+    reportCount?: number;
     createdAt: string;  
     updatedAt: string;  
 }
