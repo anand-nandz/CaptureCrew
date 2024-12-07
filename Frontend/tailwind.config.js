@@ -22,6 +22,15 @@ module.exports = {
         danger: '#FF5630',
         success: '#17C964',
         'navbar-dark': '#1a202c',
+        'custom-button': {
+          DEFAULT: '#000000', // Black
+          hover: '#1a1a1a',  // Slightly lighter black for hover
+        },
+        'custom-radio': {
+          DEFAULT: '#000000',
+          selected: '#000000',
+          hover: '#f9fafb',
+        },
       },
       keyframes: {
         fadeIn: {
@@ -64,5 +73,17 @@ module.exports = {
     },
   },
   darkMode: "class",
-  plugins: [nextui()],
+  plugins: [nextui({
+      themes: {
+        light: {
+          colors: {
+            // Customize NextUI component colors
+            primary: {
+              DEFAULT: "#000000",
+            },
+            // Add more NextUI color customizations here
+          },
+        },
+      },
+    })],
 }
