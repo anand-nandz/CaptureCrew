@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { Transaction, TransactionSchema } from "../utils/extraUtils";
 
 export enum AcceptanceStatus {
     Requested = 'requested',
@@ -24,6 +25,8 @@ export interface Vendor {
     postCount: number;
     refreshToken: string;
     totalRating: number;
+    walletBalance: number;
+    transactions?: Transaction[];
     posts?: Types.ObjectId[];
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
@@ -48,7 +51,11 @@ export interface VendorDocument extends Vendor, Document {
     postCount: number;
     refreshToken: string;
     totalRating: number;
+    walletBalance: number;
+    transactions?: Transaction[];
     posts?: Types.ObjectId[];
+    reportCount?:number;
+    blockReason: string;
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
 }
@@ -80,7 +87,19 @@ const VendorSchema = new Schema<VendorDocument>({
         type: Schema.Types.ObjectId,
         ref: "Post"
     }],
+    walletBalance: {
+        type: Number,
+        default: 0
+    },
+    transactions: [TransactionSchema],
     totalRating: { type: Number, default: 0 },
+    reportCount: {
+        type: Number,
+        default: 0
+    },
+    blockReason: {
+        type: String
+    },
     refreshToken: { type: String },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

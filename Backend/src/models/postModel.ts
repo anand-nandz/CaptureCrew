@@ -24,7 +24,9 @@ export interface Post {
     location?: string;
     createdAt: Date;
     updatedAt: Date;
-    vendor_id: mongoose.Types.ObjectId
+    vendor_id: mongoose.Types.ObjectId;
+    reportCount: number;
+    blockReason?: string
 }
 
 export interface PostDocument extends Post, Document {
@@ -52,6 +54,13 @@ const PostSchema = new Schema<PostDocument>({
         required: true,
         index: true
     },
+    reportCount: {
+        type: Number,
+        default: 0
+      },
+      blockReason: {
+        type: String
+      }
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { Transaction, TransactionSchema } from '../utils/extraUtils';
 
 export interface User {
   email: string;
@@ -11,6 +12,8 @@ export interface User {
   image?: string;
   imageUrl?: string;
   favourite?: string[];
+  walletBalance: number;
+  transactions?: Transaction[];
   refreshToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -28,8 +31,8 @@ const UserSchema = new Schema<UserDocument, UserModel>({
   email: { type: String, required: true, unique: true },
   password: {
     type: String,
-    required: function() {
-      return !this.isGoogleUser; 
+    required: function () {
+      return !this.isGoogleUser;
     }
   },
   name: { type: String, required: true },
@@ -40,9 +43,14 @@ const UserSchema = new Schema<UserDocument, UserModel>({
   imageUrl: { type: String },
   favourite: { type: [String] },
   isGoogleUser: { type: Boolean, default: false },
+  walletBalance: {
+    type: Number,
+    default: 0
+  },
+  transactions: [TransactionSchema],
   refreshToken: { type: String },
-  resetPasswordToken: {type : String},
-  resetPasswordExpires: {type : Date},
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 export default mongoose.model<UserDocument, UserModel>('User', UserSchema);
