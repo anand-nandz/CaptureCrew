@@ -59,7 +59,7 @@ export function SortableTable() {
       const response = await axiosInstanceAdmin.get('/users', {
         params: {
           page: currentPage,
-          limit: 4,
+          limit: 5,
           search: searchTerm,
           status: activeTab !== 'all' ? activeTab : undefined
         },
@@ -138,7 +138,7 @@ export function SortableTable() {
   };
   return (
 
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mt-5 mx-auto px-4 sm:px-6 lg:px-8">
       <CardHeader floated={false} shadow={false} className="rounded-none p-4 -mt-7 mb-4" placeholder={undefined}
         onPointerEnterCapture={undefined}
         onPointerLeaveCapture={undefined}>

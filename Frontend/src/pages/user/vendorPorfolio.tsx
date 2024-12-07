@@ -12,6 +12,7 @@ import Servicepackage from '../../components/vendor/ServicePackage';
 import { VendorData } from '../../types/vendorTypes';
 import { AxiosError } from 'axios';
 import { showToastMessage } from '@/validations/common/toast';
+import VendorReviews from '@/components/common/ReviewCard';
 
 
 const VendorPorfolio = () => {
@@ -26,6 +27,7 @@ const VendorPorfolio = () => {
     const POSTS_PER_PAGE = 3
     const { vendorId } = useParams()
 
+
     useEffect(() => {
         fetchPosts()
     }, [vendorId])
@@ -33,8 +35,7 @@ const VendorPorfolio = () => {
     const fetchPosts = async () => {
         setIsLoading(true)
         try {
-            const response = await axiosInstance.get(`/portfolio/${vendorId}`)
-
+            const response = await axiosInstance.get(`/portfolio/${vendorId}`)            
             const publishedPosts = response.data.data.post.filter(
                 (post: PostData) => post.status === PostStatus.Published
             )
@@ -69,6 +70,7 @@ const VendorPorfolio = () => {
         }
     }
 
+
     const filteredPosts = posts.filter(post => post.serviceType === selectedService);
     const totalFilteredPosts = filteredPosts.length;
     const totalPages = Math.max(1, Math.ceil(totalFilteredPosts / POSTS_PER_PAGE));
@@ -92,6 +94,7 @@ const VendorPorfolio = () => {
         <>
             <UserNavbar />
               {vendor && <VendorDetails isVendor={false} vendorDetails={vendor} />}
+              
             <Servicepackage packages={packages} />
             <div className="max-w-7xl mx-auto px-4 py-10">
                 <h1 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] text-center mb-12 uppercase">
@@ -147,6 +150,7 @@ const VendorPorfolio = () => {
                     </div>
                 )}
             </div>
+            <VendorReviews vendorId={`${vendorId}`}/>
             <PostModal
                 post={selectedPost}
                 isOpen={modalOpen}

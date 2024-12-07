@@ -20,11 +20,7 @@ const userSlice = createSlice({
             state.userData = action.payload;
             state.isUserSignedIn = true
         },
-        updateUserImage: (state, action: PayloadAction<string>) => {
-            if (state.userData) {
-                state.userData.imageUrl = action.payload;
-            }
-        },
+        
         logout:(state)=>{
             state.userData = null;
             state.isUserSignedIn =false

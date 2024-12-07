@@ -112,9 +112,8 @@ const EditProfileModal: React.FC<UserDetails> = ({ user, isOpen, onClose, onSave
                 if (formData.name !== user?.name) formDataToSend.append('name', formData.name);
                 if (formData.contactinfo !== user?.contactinfo) formDataToSend.append('contactinfo', formData.contactinfo);
                 if (formData.image) formDataToSend.append('image', formData.image);
-
                 if (formDataToSend.has('name') || formDataToSend.has('contactinfo') || formDataToSend.has('image')) {
-                    await onSave(formDataToSend); // Pass FormData object
+                    await onSave(formDataToSend); 
                     onClose();
                 } else {
                     showToastMessage('No changes to save', 'error');

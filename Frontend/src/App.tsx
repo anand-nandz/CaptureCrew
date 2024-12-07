@@ -4,7 +4,7 @@ import { NextUIProvider } from '@nextui-org/react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import './index.css'
 import ScrollToTopButton from './components/home/ScrollToTopButton'
-import ErrorBoundary from './components/common/ErrorBoundary'
+// import ErrorBoundary from './components/common/ErrorBoundary'
 
 import UserRoutes from './routes/userRoutes'
 import AdminRoutes from './routes/adminRoutes'
@@ -30,8 +30,8 @@ const App: React.FC = () => {
   }
 
   return (
-    <NextUIProvider>
-      <ErrorBoundary>
+    // <ErrorBoundary>
+        <NextUIProvider>
       <React.Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/*" element={<UserRoutes />} />
@@ -40,8 +40,8 @@ const App: React.FC = () => {
         </Routes>
         <ScrollToTopButton />
       </React.Suspense>
-      </ErrorBoundary>
     </NextUIProvider>
+      // </ErrorBoundary>
   );
 }
 

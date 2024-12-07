@@ -13,13 +13,14 @@ import {
   ScrollShadow,
 
 } from "@nextui-org/react";
-import { Calendar, MapPin, Package, Phone, Mail, User, Clock, Building, MessageSquare, CreditCard } from 'lucide-react';
+import { Calendar, MapPin, Package, Phone, Mail, User, Clock, Building, MessageSquare } from 'lucide-react';
 import { CustomizationOption } from "@/types/packageTypes";
 import PriceBreakdown from "./PriceBreakdown";
 import { PaymentDetails } from "@/validations/user/bookingValidation";
 import { FaMoneyBill } from "react-icons/fa";
+import { formatDate } from "@/utils/userUtils";
 
-interface BookingDetailsModalProps {
+export interface BookingDetailsModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   booking: {
@@ -34,6 +35,7 @@ interface BookingDetailsModalProps {
     noOfDays: number;
     message: string;
     bookingStatus: string;
+    bookingReqId?: string;
     rejectionReason?: string;
     packageId: {
       price?: number;
@@ -49,7 +51,7 @@ interface BookingDetailsModalProps {
       contactinfo: string;
     };
     customizations: string[];
-    advancePaymentDueDate?: string;  // Using string for dates in frontend
+    advancePaymentDueDate?: string; 
     advancePayment?: PaymentDetails;
     createdAt: string;
   };
@@ -57,26 +59,19 @@ interface BookingDetailsModalProps {
 
 const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpenChange, booking }) => {
 
-
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(price);
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'requested': return "warning";
-      case `pending` : return "warning";
+      case `pending`: return "warning";
       case 'accepted': return "success";
       case 'rejected': return "danger";
+      case 'overdue': return "danger";
       case 'revoked': return "default";
       default: return "default";
     }
   };
-
+  console.log(booking,'aandd bookinnggggggggggg');
+  
   const InfoItem: React.FC<{ icon: React.ElementType; label: string; value: string }> = ({ icon: Icon, label, value }) => (
     <div className="flex items-center gap-3">
       <Icon className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -99,7 +94,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpe
           <>
             <ModalHeader className="flex flex-col gap-1">
               <h2 className="text-2xl font-bold">Booking Details</h2>
-              <p className="text-sm text-gray-500">Reference ID: {booking._id}</p>
+              <p className="text-sm text-gray-500">Booking ID: {booking.bookingReqId ?? booking._id}</p>
             </ModalHeader>
             <ModalBody>
               <ScrollShadow className="h-[calc(80vh-200px)]">
@@ -120,13 +115,22 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpe
                     </Card>
                   )}
 
-                  {booking.bookingStatus.toLowerCase() === 'accepted' && booking.advancePaymentDueDate && booking.advancePayment && (
+                  {booking.bookingStatus.toLowerCase() === 'overdue' && (
                     <Card>
                       <CardBody>
-                        <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
+                        <h3 className="text-lg font-semibold mb-2">Payment Overdue</h3>
+                        <p className="text-gray-600">{`Your payment is overdue on ${formatDate(booking.advancePaymentDueDate)}. Plaease do conatct the vendor for more.`}</p>
+                      </CardBody>
+                    </Card>
+                  )}
+
+                  {booking.bookingStatus.toLowerCase() === 'accepted' && booking.bookingStatus.toLowerCase() === 'overdue' && booking.advancePaymentDueDate && booking.advancePayment && (
+                    <Card>
+                      <CardBody>
+                        <h3 className="text-lg font-semibold mb-2">{booking.bookingStatus.toLowerCase() === 'overdue' ? 'Payment Overdue' : 'Payment Details'}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <InfoItem icon={FaMoneyBill} label="Due Date" value={new Date(booking.advancePaymentDueDate).toLocaleDateString() ?? 'N/A'} />
-                          <InfoItem icon={FaMoneyBill} label="Amount" value={booking.advancePayment?.amount.toString() ?? 'N/A'} />
+                          <InfoItem icon={FaMoneyBill} label="Amount" value={`₹ ${booking.advancePayment?.amount.toString() ?? 'N/A'}`} />
                           <Chip color={getStatusColor(booking.advancePayment.status)} variant="flat" size="lg">
                             {booking.advancePayment.status.toUpperCase()}
                           </Chip>
@@ -160,11 +164,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpe
                         {booking.customizations && booking.customizations.length > 0 ? (
                           <PriceBreakdown booking={booking} />
                         ) : (
-                          <InfoItem
-                            icon={CreditCard}
-                            label="Total Booking Price"
-                            value={booking.totalPrice !== undefined ? formatPrice(booking.totalPrice) : "N/A"}
-                          />
+                         <>
+                          <PriceBreakdown booking={booking} />
+                         </>
                         )}
 
                         {/* <div className="flex items-center">
@@ -182,7 +184,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpe
                             <PopoverContent>
                               <div className="px-1 py-2">
                                 <div className="text-small font-bold">Pricing Breakdown</div>
-                                <div className="text-tiny">{}</div>
+                                <div className="text-tiny">{'fgdfgdfgfdg'}</div>
                               </div>
                             </PopoverContent>
                           </Popover>

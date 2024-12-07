@@ -13,16 +13,14 @@ import {
     Checkbox
 } from '@nextui-org/react';
 import { ServiceProvided } from '@/types/postTypes';
-import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarIcon, CheckIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BookingFormData, useBookingValidation } from '@/validations/user/bookingValidation';
 import { Package } from '@/types/packageTypes';
 import { ChevronDown, ChevronUp, Package as PackageIcon } from 'lucide-react';
 
-
 interface ValidationError {
     inner?: Array<{ path: string; message: string }>;
 }
-
 
 interface BookingModalProps {
     isOpen: boolean;
@@ -55,18 +53,25 @@ export const BookingModal: FC<BookingModalProps> = ({
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
     const [showCustomization, setShowCustomization] = useState(false);
     const [selectedCustomizations, setSelectedCustomizations] = useState<string[]>([]);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
 
     const TODAY = new Date();
     TODAY.setHours(0, 0, 0, 0);
 
+    const MIN_BOOKING_DATE = new Date(TODAY);
+    MIN_BOOKING_DATE.setDate(MIN_BOOKING_DATE.getDate() + 3);
+
+    const MAX_BOOKING_DATE = new Date(TODAY);
+    MAX_BOOKING_DATE.setFullYear(MAX_BOOKING_DATE.getFullYear() + 1);
+
+
     useEffect(() => {
         if (selectedDate) {
             const [, monthStr, yearStr] = selectedDate.split('/');
-            // Convert strings to numbers for Date constructor
-            
+
             const year = parseInt(yearStr, 10);
-            const month = parseInt(monthStr, 10) - 1; // Months are 0-based
+            const month = parseInt(monthStr, 10) - 1;
             setCurrentMonth(new Date(year, month));
         }
     }, [selectedDate, isOpen]);
@@ -123,7 +128,6 @@ export const BookingModal: FC<BookingModalProps> = ({
         return packages.filter(pkg => pkg.serviceType === serviceType);
     };
 
-
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -161,7 +165,6 @@ export const BookingModal: FC<BookingModalProps> = ({
         }
     };
 
-    // Enhanced input change handler with validation
     const handleInputChange = (fieldName: string, value: BookingFormData[keyof BookingFormData]) => {
         setBookingForm(prev => ({ ...prev, [fieldName]: value }));
 
@@ -186,15 +189,67 @@ export const BookingModal: FC<BookingModalProps> = ({
         return basePrice;
     };
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+
+    //     try {
+
+    //         const selectedPackage = packages.find(pkg => pkg._id === bookingForm.packageId);
+
+
+    //         const totalPrice = calculateTotalPrice(bookingForm.packageId, selectedCustomizations);
+
+    //         const updatedBookingForm = {
+    //             ...bookingForm,
+    //             totalPrice,
+    //             customizations: selectedCustomizations
+    //         };
+    //         console.log(updatedBookingForm, 'updatedbooking form');
+
+    //         const { isValid, errors } = await validateForm(updatedBookingForm);
+
+    //         if (!isValid) {
+    //             setValidationErrors(errors);
+    //             return;
+    //         }
+
+    //         if (!selectedPackage) {
+    //             setValidationErrors({ package: 'Invalid package selected' });
+    //             return;
+    //         }
+
+    //         setValidationErrors({});
+    //         await originalOnSubmit(e, updatedBookingForm);
+    //     } catch (error) {
+    //         console.error('Form submission error:', error);
+    //     }
+    // };
 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+        setIsSubmitting(true);
+        setIsSubmitSuccess(false);
         try {
+            const { isValid, errors } = await validateForm({
+                ...bookingForm,
+                totalPrice: calculateTotalPrice(bookingForm.packageId, selectedCustomizations),
+                customizations: selectedCustomizations
+            });
+
+            if (!isValid) {
+                setValidationErrors(errors);
+                setIsSubmitting(false);
+                return;
+            }
+
             const selectedPackage = packages.find(pkg => pkg._id === bookingForm.packageId);
             if (!selectedPackage) {
-                setValidationErrors({ package: 'Invalid package selected' });
+                setValidationErrors(prev => ({
+                    ...prev,
+                    package: 'Invalid package selected'
+                }));
+                setIsSubmitting(false);
                 return;
             }
 
@@ -205,23 +260,28 @@ export const BookingModal: FC<BookingModalProps> = ({
                 totalPrice,
                 customizations: selectedCustomizations
             };
-            console.log(updatedBookingForm, 'updatedbooking form');
-
-            const { isValid, errors } = await validateForm(updatedBookingForm);
-
-            if (!isValid) {
-                setValidationErrors(errors);
-                return;
-            }
 
             setValidationErrors({});
+            await new Promise(resolve => setTimeout(resolve, 1500));
             await originalOnSubmit(e, updatedBookingForm);
+            setIsSubmitSuccess(true);
+        setIsSubmitting(false);
         } catch (error) {
             console.error('Form submission error:', error);
+            if (error && typeof error === 'object' && 'inner' in error) {
+                const validationError = error as ValidationError;
+                const errors: Record<string, string> = {};
+
+                validationError.inner?.forEach(err => {
+                    if (err.path) {
+                        errors[err.path] = err.message;
+                    }
+                });
+
+                setValidationErrors(errors);
+            }
         }
     };
-
-
     const DateInput = () => (
         <div className="relative w-full">
             <Input
@@ -333,7 +393,7 @@ export const BookingModal: FC<BookingModalProps> = ({
                 <button
                     type="button"
                     onClick={(e) => {
-                        e.preventDefault(); 
+                        e.preventDefault();
                         e.stopPropagation();
                         setShowCustomization(!showCustomization);
                     }}
@@ -544,8 +604,9 @@ export const BookingModal: FC<BookingModalProps> = ({
                             <Button color="danger" variant="light" onPress={onClose}>
                                 Cancel
                             </Button>
-                            <Button color="danger" onClick={handleSubmit}>
-                                Submit Request
+                            <Button color="danger" onClick={handleSubmit} isLoading={isSubmitting} endContent={isSubmitSuccess ? <CheckIcon className="w-5 h-5" /> : null}
+    isDisabled={isSubmitting}>
+                                {isSubmitSuccess ? 'Submitted' : 'Submit Request'}
                             </Button>
                         </ModalFooter>
                     </>

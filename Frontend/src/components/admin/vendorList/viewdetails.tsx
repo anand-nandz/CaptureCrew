@@ -181,11 +181,11 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     onPointerEnterCapture={undefined}
                                     onPointerLeaveCapture={undefined}
                                 >
-                                    Total Bookings
+                                    Total Posts
                                 </Typography>
                                 <Input
                                     size="md"
-                                    value={vendor.totalBooking?.toString() || "0"}
+                                    value={vendor.postCount?.toString() || "0"}
                                     readOnly
                                     placeholder={undefined}
                                     onPointerEnterCapture={undefined}
@@ -200,11 +200,11 @@ const VendorDetailsModal: React.FC<VendorDetailsModalProps> = ({
                                     onPointerEnterCapture={undefined}
                                     onPointerLeaveCapture={undefined}
                                 >
-                                    Total Bookings
+                                    Total ReportCount
                                 </Typography>
                                 <Input
                                     size="md"
-                                    value={vendor.totalBooking?.toString() || "0"}
+                                    value={vendor.reportCount?.toString() || "0"}
                                     readOnly
                                     placeholder={undefined}
                                     onPointerEnterCapture={undefined}

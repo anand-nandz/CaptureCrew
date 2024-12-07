@@ -69,10 +69,10 @@ const Login = () => {
                 axiosInstanceAdmin
                     .post('/login', values)
                     .then((response) => {
-                        console.log(response,'response in formik login admin')
                         localStorage.setItem('adminToken', response.data.token);
+                        console.log(response.data);
+                        
                         dispatch(setAdminInfo(response.data.adminData));
-                        console.log(response.data.adminData,'adminData ');
                         showToastMessage(response.data.message, 'success')
                         navigate(`/admin${ADMIN.DASHBOARD}`);
                     })

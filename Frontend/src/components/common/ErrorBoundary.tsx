@@ -2,28 +2,26 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 
-
 interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
 
 interface ErrorBoundaryState {
-  hasError: boolean;
   error?: Error;
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { error: undefined };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return { error };
   }
 
   render() {
-    if (this.state.hasError) {
+    if (this.state.error) {
       return <ErrorFallback error={this.state.error} />;
     }
 
@@ -33,28 +31,24 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => {
   const location = useLocation();
-  
-  const errorGot = useRouteError();
+  const routeError = useRouteError();
+
   let errorMessage = error?.message || 'Something went wrong. Please try again later.';
-
-  if (isRouteErrorResponse(errorGot)) {
-    if (errorGot.status === 404) {
-      errorMessage = 'Page not found (404). Please check the URL.';
-    } else if (errorGot.status === 500) {
-      errorMessage = 'Internal Server Error (500). Please try again later.';
-    }else{
-      errorMessage = errorGot.statusText;
-
-    }
- }
-  
   let errorTitle = 'Oops!';
-  let errorImage = "/images/error.jpg"; 
+  let errorImage = `${process.env.PUBLIC_URL}/images/error.jpg`;
 
-  if (location.pathname !== '/' && !error) {
-    errorTitle = '404 - Not Found';
-    errorMessage = `The page "${location.pathname}" doesn't exist.`;
-    errorImage = "/images/error404.jpg";
+  if (isRouteErrorResponse(routeError)) {
+    if (routeError.status === 404) {
+      errorTitle = '404 - Page Not Found';
+      errorMessage = `The page "${location.pathname}" doesn't exist.`;
+      errorImage = `${process.env.PUBLIC_URL}/images/error404.jpg`;
+    } else if (routeError.status === 500) {
+      errorTitle = 'Internal Server Error';
+      errorMessage = 'Something went wrong on our end. Please try again later.';
+    } else {
+      errorTitle = `Error ${routeError.status}`;
+      errorMessage = routeError.statusText || errorMessage;
+    }
   }
 
   return (
@@ -94,32 +88,64 @@ export default ErrorBoundary;
 
 
 
-// import React from 'react';
-// import { useRouteError, isRouteErrorResponse, Link, useLocation } from 'react-router-dom';
 
-// const ErrorBoundary: React.FC = () => {
-//   const error = useRouteError();
+
+
+
+// import React from 'react';
+// import { Link, useLocation } from 'react-router-dom';
+// import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+
+
+// interface ErrorBoundaryProps {
+//   children: React.ReactNode;
+// }
+
+// interface ErrorBoundaryState {
+//   hasError: boolean;
+//   error?: Error;
+// }
+
+// class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+//   constructor(props: ErrorBoundaryProps) {
+//     super(props);
+//     this.state = { hasError: false };
+//   }
+
+//   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+//     return { hasError: true, error };
+//   }
+
+//   render() {
+//     if (this.state.hasError) {
+//       return <ErrorFallback error={this.state.error} />;
+//     }
+
+//     return this.props.children;
+//   }
+// }
+
+// const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => {
 //   const location = useLocation();
   
-//   let errorMessage = 'Something went wrong. Please try again later.';
+//   const errorGot = useRouteError();
+//   let errorMessage = error?.message || 'Something went wrong. Please try again later.';
+
+//   if (isRouteErrorResponse(errorGot)) {
+//     if (errorGot.status === 404) {
+//       errorMessage = 'Page not found (404). Please check the URL.';
+//     } else if (errorGot.status === 500) {
+//       errorMessage = 'Internal Server Error (500). Please try again later.';
+//     }else{
+//       errorMessage = errorGot.statusText;
+
+//     }
+//  }
+  
 //   let errorTitle = 'Oops!';
 //   let errorImage = "/images/error.jpg"; 
 
-//   if (isRouteErrorResponse(error)) {
-//     if (error.status === 404) {
-//       errorTitle = '404 - Not Found';
-//       errorMessage = `The page you're looking for doesn't exist.`;
-//       errorImage = "/images/error404.jpg"; 
-//     } else if (error.status === 500) {
-//       errorTitle = '500 - Server Error';
-//       errorMessage = 'Internal Server Error. Please try again later.';
-//     } else {
-//       errorMessage = error.statusText || errorMessage;
-//     }
-//   } else if (error instanceof Error) {
-//     errorMessage = error.message;
-//   } else if (location.pathname !== '/') {
-//     // This handles the case when no route matches (404)
+//   if (location.pathname !== '/' && !error) {
 //     errorTitle = '404 - Not Found';
 //     errorMessage = `The page "${location.pathname}" doesn't exist.`;
 //     errorImage = "/images/error404.jpg";
@@ -155,3 +181,8 @@ export default ErrorBoundary;
 // };
 
 // export default ErrorBoundary;
+
+
+
+
+

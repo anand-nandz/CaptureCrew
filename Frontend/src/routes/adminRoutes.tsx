@@ -12,6 +12,7 @@ import Layout from '../layout/admin/layout';
 import UnifiedPrivateRoute from '../pages/PrivateRouteProps';
 import PostList from '../pages/admin/profile/postList';
 import AdminBooking from '@/pages/admin/allBookings/AdminBookings';
+import ReportList from '@/pages/admin/profile/reportList';
 
 const AdminRoutes: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const AdminRoutes: React.FC = () => {
               <Route path={ADMIN.VENDORS} element={<VendorList />} />
               <Route path={ADMIN.POST} element={<PostList />} />
               <Route path={ADMIN.ALLBOOKINGS} element={<AdminBooking />} />
+              <Route path={ADMIN.REPORT} element={<ReportList />} />
             </Route>
           </Route>
         </Route>

@@ -18,13 +18,14 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
+            console.log(token,'tokeng');
             return config;
         },
         (error) => Promise.reject(error)
     );
 
     instance.interceptors.response.use(
-        (response) => response,
+        (response) => response,        
         async (error) => {
             if (error.response) {
                 if (error.response.status === 403 && error.response.data.message === 'Blocked by Admin') {
@@ -32,13 +33,12 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
                     localStorage.removeItem(refreshTokenKey);
                     return Promise.reject(error);
                 }
+                
 
-                if (error.response.status === 401) {
+                if (error.response?.status === 401) {
                     if (error.response.data.expired) {
                         try {
-                           alert('refresh')
                             const refreshResponse = await instance.post('/refresh-token',{},{withCredentials:true});
-                            
                             const newToken = refreshResponse.data.token;                            
                             localStorage.setItem(tokenKey, newToken);
 
@@ -81,6 +81,8 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
             return Promise.reject(error);
         }
     );
+   
+    
 
     return instance;
 };
@@ -88,6 +90,8 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
 export const axiosInstance = createAxiosInstance(`${BASE_URL}/api/user`, 'userToken', 'userRefresh');
 export const axiosInstanceAdmin = createAxiosInstance(`${BASE_URL}/api/admin`, 'adminToken', 'adminRefresh');
 export const axiosInstanceVendor = createAxiosInstance(`${BASE_URL}/api/vendor`, 'vendorToken', 'vendorRefresh');
+export const axiosInstanceChat = createAxiosInstance(`${BASE_URL}/api/conversations`, 'userToken', 'userRefresh');
+export const axiosInstanceMessage = createAxiosInstance(`${BASE_URL}/api/messages`, 'userToken', 'userRefresh');
 
 
 export const axiosSessionInstance: AxiosInstance = axios.create({

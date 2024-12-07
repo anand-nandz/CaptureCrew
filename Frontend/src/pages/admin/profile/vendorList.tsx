@@ -1,6 +1,5 @@
 
 import { SortableTableVendor } from '../../../components/admin/vendorList/vendortable'
-// import Layout from '../../../layout/admin/layout'
 
 
 const VendorList = () => {

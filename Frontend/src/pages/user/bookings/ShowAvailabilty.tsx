@@ -29,7 +29,7 @@ const ShowAvailabilty = () => {
             if (Array.isArray(response.data.data.package)) {
                 setPackages(response.data.data.package);
             }
-            console.log(response.data.data,'reso');
+            console.log(response.data.data,'vendordateda availbilty show');
             
 
 

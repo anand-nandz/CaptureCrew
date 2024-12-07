@@ -8,13 +8,15 @@ export interface ValidationResult {
   errors: Record<string, string>;
 }
 
-export type PaymentStatus = 'pending' | 'completed';
+export type PaymentStatus = 'pending' | 'completed' | 'overdue';
 
 export enum BookingAcceptanceStatus {
   Requested = 'requested',
   Accepted = 'accepted',
   Rejected = 'rejected',
-  Revoked = 'revoked'
+  Revoked = 'revoked',
+  PaymentOverdue = 'overdue'
+
 }
 
 export type PaymentDetails = {

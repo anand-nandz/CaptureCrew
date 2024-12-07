@@ -134,7 +134,9 @@ const VendorLogin = () => {
                     .then((response) => {
                         localStorage.setItem('vendorToken', response.data.token);
                         // localStorage.setItem('vendorRefresh', response.data.refreshToken);
-                        dispatch(setVendorInfo(response.data.vendorData));
+                        console.log(response.data.vendor,'vendorrrrrrrrrrrrrrr');
+                        
+                        dispatch(setVendorInfo(response.data.vendor));
                         showToastMessage(response.data.message, 'success')
                         navigate(`${VENDOR.DASHBOARD}`);
                     })

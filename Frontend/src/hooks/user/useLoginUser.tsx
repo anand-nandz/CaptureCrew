@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from "formik";
 import { CredentialResponse } from '@react-oauth/google';
@@ -13,6 +13,7 @@ import { axiosInstance } from '../../config/api/axiosInstance';
 import { USER } from '../../config/constants/constants';
 import { loginValidationSchema } from '../../validations/common/loginValidate';
 import { setUserInfo } from '../../redux/slices/UserSlice';
+import UserRootState from '@/redux/rootstate/UserState';
 
 
 interface FormValues {
@@ -38,7 +39,7 @@ const images = [
 
 
 export const useLoginUser = () => {
-    // const user = useSelector((state: UserRootState) => state.user.userData);
+    const user = useSelector((state: UserRootState) => state.user.userData);
     const [imageIndex, setImageIndex] = useState(0);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [emailError, setEmailError] = useState('');
@@ -58,7 +59,6 @@ export const useLoginUser = () => {
         setShowPassword(!showPassword);
       };
   
-
     const handleForgotPassword = async () => {
         try {
 
@@ -101,7 +101,6 @@ export const useLoginUser = () => {
         }
     };
 
-
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
@@ -117,10 +116,8 @@ export const useLoginUser = () => {
         axiosInstance
             .post('/google/login', { credential: credentialResponse.credential })
             .then((response) => {
-                localStorage.setItem('userToken', response.data.token);
-                console.log(response.data,'response.data login');
-                
-                dispatch(setUserInfo(response.data.UserData));
+                localStorage.setItem('userToken', response.data.token);                
+                dispatch(setUserInfo(response.data.user));
                 showToastMessage(response.data.message, 'success')
                 navigate(USER.HOME);
             })
@@ -139,8 +136,7 @@ export const useLoginUser = () => {
                     .post('/login', values)
                     .then((response) => {
                         localStorage.setItem('userToken', response.data.token);
-                        console.log(response.data,'res.data in login')
-                        dispatch(setUserInfo(response.data.userData));
+                        dispatch(setUserInfo(response.data.user));
                         showToastMessage(response.data.message, 'success')
                         navigate(`${USER.HOME}`);
                     })
@@ -155,7 +151,9 @@ export const useLoginUser = () => {
 
         }
     })
+
     return {
+        user,
         imageIndex,
         isOpen,
         onOpen, 

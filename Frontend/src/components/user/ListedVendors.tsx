@@ -15,7 +15,7 @@ import {
   faPhone,
   faMapMarkerAlt,
   faStar,
-  faTimes
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -31,6 +31,8 @@ import IconButton from '@mui/material/IconButton'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
+import { ReportModal } from '../common/ReportModal';
+import { showToastMessage } from '@/validations/common/toast';
 
 
 const ListedVendors = () => {
@@ -40,9 +42,11 @@ const ListedVendors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null)
+  const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  const navigate =  useNavigate()
+
+  const navigate = useNavigate()
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -52,13 +56,15 @@ const ListedVendors = () => {
           page: currentPage,
           limit: 3,
           search: searchTerm,
-         
+
         }
       })
+      console.log(response.data.vendors);
 
-      const transformedVendors : VendorData[] = response.data.vendors.map((vendor) => ({
+
+      const transformedVendors: VendorData[] = response.data.vendors.map((vendor) => ({
         ...vendor._doc,
-        imageUrl: vendor.imageUrl 
+        imageUrl: vendor.imageUrl
       }));
 
       setVendors(transformedVendors);
@@ -71,8 +77,6 @@ const ListedVendors = () => {
     }
   }, [currentPage, searchTerm])
 
-
-
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -82,15 +86,42 @@ const ListedVendors = () => {
     setCurrentPage(1);
   };
 
-
   const handleShowDetails = (vendor: VendorData) => {
     setSelectedVendor(vendor)
     setModalOpen(true)
   }
 
-  const viewPorfolio = (vendorId: string)=>{
+  const viewPorfolio = (vendorId: string) => {
     navigate(`${USER.PORTFOLIO}/${vendorId}`)
   }
+
+  const handleReport = (vendorId: string) => {
+    const vendorToReport = vendors.find(v => v._id === vendorId);
+    setSelectedVendor(vendorToReport || null);
+    setIsReportModalOpen(true);
+  }
+
+  const handleReportSubmit = async (vendorId: string | undefined, reportData: { reason: string; additionalDetails?: string }) => {
+    if (!vendorId) {
+      showToastMessage('Vendor ID is missing', 'error');
+      return;
+    }
+  
+    try {
+      await axiosInstance.post('/reports', {
+        itemId: vendorId,
+        type: 'Vendor',
+        reason: reportData.reason,
+        additionalDetails: reportData.additionalDetails
+      });
+  
+      showToastMessage('Vendor reported successfully', 'success');
+    } catch (error) {
+      showToastMessage('Failed to submit report', 'error');
+      throw error;
+    }
+  };
+  
 
   const PostModal = () => {
     if (!selectedVendor || !modalOpen) return null;
@@ -102,7 +133,6 @@ const ListedVendors = () => {
         className="flex items-center justify-center"
       >
         <Box className="relative bg-white dark:bg-gray-900 w-full max-w-6xl mx-4 rounded-lg overflow-hidden flex flex-col md:flex-row md:h-[80vh]">
-          {/* Left side - Image */}
           <div className="relative w-full md:w-[60%] h -full bg-black flex items-center justify-center">
             <IconButton
               onClick={() => setModalOpen(false)}
@@ -285,6 +315,15 @@ const ListedVendors = () => {
                           onClick={() => handleShowDetails(vendor)}
                         >View Details</Button>
                       </CardActions>
+                      <CardActions>
+                        <Button
+                          size="small"
+                          // startContent={<FontAwesomeIcon icon={faFlag} />}
+                          onClick={() => handleReport(vendor._id)}
+                        >
+                          Report Vendor
+                        </Button>
+                      </CardActions>
                     </Card>
                   </Grid>
                 )}
@@ -317,6 +356,12 @@ const ListedVendors = () => {
       </Box>
 
       <PostModal />
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        type= 'Vendor'
+        onReportSubmit={(reportData) => handleReportSubmit(selectedVendor?._id, reportData)} 
+        />
 
     </Container>
   );

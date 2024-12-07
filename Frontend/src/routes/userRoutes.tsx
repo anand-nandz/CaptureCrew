@@ -16,31 +16,42 @@ import VendorPorfolio from '../pages/user/vendorPorfolio';
 import ShowAvailabilty from '@/pages/user/bookings/ShowAvailabilty';
 import BookingUser from '../pages/user/bookings/Booking';
 import TVScreen from '@/components/common/404';
+import PaymentSuccess from '@/pages/user/bookings/PaymentSuccess';
+import PaymentFailed from '@/pages/user/bookings/PaymentFailed';
+import WalletDashboard from '@/pages/common/wallet-dash';
+import Chat from '@/pages/user/chat/Chat';
+import About from '@/pages/common/AboutUs';
 
 const UserRoutes: React.FC = () => {
   return (
-    <ErrorBoundary>
+    // <ErrorBoundary>
     <Routes>
       <Route element={<PublicRoute routeType='user' />}>
-        <Route path={USER.SIGNUP} element={<UserSignUp />} />
-        <Route path={USER.LOGIN} element={<UserLogin />} />
-        <Route path={USER.VERIFY} element={<VerifyEmail />} />
-        <Route path={USER.FORGOT_PWDMAIL} element={<ResetPassword />} />
+        <Route path={USER.SIGNUP} element={<ErrorBoundary><UserSignUp /></ErrorBoundary>} />
+        <Route path={USER.LOGIN} element={<ErrorBoundary><UserLogin /></ErrorBoundary>} />
+        <Route path={USER.VERIFY} element={<ErrorBoundary><VerifyEmail /></ErrorBoundary>} />
+        <Route path={USER.FORGOT_PWDMAIL} element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
       </Route>
       
       <Route element={<UnifiedPrivateRoute routeType='user' />}>
-        <Route path={USER.HOME} element={<Home />} />
-        <Route path={`${USER.PROFILE}/*`} element={<UserProfile />} />
-        <Route path={`${USER.VENDORLIST}/*`} element={<VendorList/>} />
-        <Route path={`${USER.POST}/*`} element={<Posts/>}/>
-        <Route path={`${USER.PORTFOLIO}/:vendorId`} element ={<VendorPorfolio/>}/>
-        <Route path={`${USER.SERVICE_AVAILABILTY}/:vendorId`} element ={<ShowAvailabilty/>}/>
-        <Route path={`${USER.BOOKING}/*`} element={<BookingUser/>}/>
+        <Route path={USER.HOME} element={<ErrorBoundary><Home /></ErrorBoundary>} />
+        <Route path={`${USER.PROFILE}`} element={<ErrorBoundary><UserProfile /></ErrorBoundary>} />
+        <Route path={`${USER.VENDORLIST}/*`} element={<ErrorBoundary><VendorList/></ErrorBoundary>} />
+        <Route path={`${USER.POST}/*`} element={<ErrorBoundary><Posts/></ErrorBoundary>}/>
+        <Route path={`${USER.PORTFOLIO}/:vendorId`} element ={<ErrorBoundary><VendorPorfolio/></ErrorBoundary>}/>
+        <Route path={`${USER.SERVICE_AVAILABILTY}/:vendorId`} element ={<ErrorBoundary><ShowAvailabilty/></ErrorBoundary>}/>
+        <Route path={`${USER.BOOKING}/*`} element={<ErrorBoundary><BookingUser/></ErrorBoundary>}/>
+        <Route path={`${USER.CHAT}`} element={<Chat/>}/>
+        <Route path={`${USER.WALLET}/*`} element={<ErrorBoundary><WalletDashboard/></ErrorBoundary>}/>
       </Route>
-      <Route path="*" element={<TVScreen />} />
+      <Route path="*" element={<TVScreen  />} />
+      <Route path={`${USER.PAYMENT_SUCCESS}`} element={<ErrorBoundary><PaymentSuccess/></ErrorBoundary>}/>
+      <Route path={`${USER.PAYMENT_FAILURE}`} element={<ErrorBoundary><PaymentFailed/></ErrorBoundary>}/>
+      <Route path={`${USER.ABOUT_US}`} element={<About/>}/>
+
 
     </Routes>
-    </ErrorBoundary>
+    // </ErrorBoundary>
   );
 };
 

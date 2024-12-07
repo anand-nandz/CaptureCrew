@@ -3,14 +3,16 @@ import { Star, StarHalf } from 'lucide-react'
 import { VendorData } from '../../types/vendorTypes';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {  USER, VENDOR } from '../../config/constants/constants';
+import { axiosInstanceChat } from '@/config/api/axiosInstance';
+import { useSelector } from 'react-redux';
+import UserRootState from '@/redux/rootstate/UserState';
 
 interface VendorProps {
   isVendor?: boolean,
   vendorDetails: VendorData;
 }
 export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) {
-  console.log(vendorDetails);
-  
+  const user = useSelector((state:UserRootState)=>state.user.userData)  
   const location = useLocation();
   const isVendorDashboard = location.pathname.includes('/vendor');
   const navigate =  useNavigate()
@@ -23,7 +25,47 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
     }
     
   }
+  
+ 
+  const handleMessageOpen = async() => {
 
+    const res= await  axiosInstanceChat.post('/',{senderId: user?._id, receiverId:vendorDetails._id})
+      const conversation = res.data
+      console.log(conversation,'conversationnnnnnn');
+      
+    navigate(`${USER.CHAT}`);
+  };
+
+  const renderStarRating = (totalRating: number | undefined) => {
+    if (totalRating === undefined) {
+      return (
+        <div className="flex justify-center md:justify-start mb-4">
+          {[...Array(5)].map((_, index) => (
+            <Star key={index} className="w-5 h-5 text-gray-300" />
+          ))}
+        </div>
+      );
+    }
+  
+    const fullStars = Math.floor(totalRating);
+    const hasHalfStar = totalRating % 1 >= 0.5;
+    
+    return (
+      <div className="flex justify-center md:justify-start mb-4">
+        {[...Array(fullStars)].map((_, index) => (
+          <Star key={`full-${index}`} className="w-5 h-5 text-yellow-400" />
+        ))}
+        
+        {hasHalfStar && (
+          <StarHalf className="w-5 h-5 text-yellow-400" />
+        )}
+        
+        {[...Array(5 - fullStars - (hasHalfStar ? 1 : 0))].map((_, index) => (
+          <Star key={`empty-${index}`} className="w-5 h-5 text-gray-300" />
+        ))}
+      </div>
+    );
+  };
   return (
     <>
       <div className="min-h-screen bg-gray-100">
@@ -51,17 +93,17 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
                   <p className="font-semibold mb-1">{vendorDetails.companyName}</p>
                   <p className="text-sm text-gray-500 mb-4">FOUNDER</p>
                   <div className="flex justify-center md:justify-start mb-4">
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    <Star className="w-5 h-5 text-yellow-400" />
-                    <StarHalf className="w-5 h-5 text-yellow-400" />
+                  {renderStarRating(vendorDetails?.totalRating)}
                   </div>
                   
 
-                  <button className="bg-red-800 text-white px-6 py-2 rounded-full hover:bg-red-700 transition duration-300">
+                 {!isVendor &&
+                  <button className="bg-red-800 text-white px-6 py-2 rounded-full hover:bg-red-700 transition duration-300"
+                  onClick={handleMessageOpen}
+                  >
                     Message Us
                   </button>
+                 }
 
                   <button className="bg-red-800 text-white px-6 py-2 rounded-full hover:bg-red-700 transition duration-300 ml-2"
                   onClick={handleAvailability}

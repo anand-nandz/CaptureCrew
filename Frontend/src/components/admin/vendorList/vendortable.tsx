@@ -39,7 +39,7 @@ const TABS = [
     },
 ];
 
-const TABLE_HEAD = ["VendorName", 'Company Name', "Mobile", "Joined-At", "Status", "Actions", 'View Details', 'Verify'];
+const TABLE_HEAD = ["VendorName", 'Company Name', "Mobile", "Joined-At", "Status", 'Reported', "Actions", 'View Details', 'Verify'];
 
 export function SortableTableVendor() {
     const [vendors, setVendors] = useState<VendorData[]>([]);
@@ -72,17 +72,13 @@ export function SortableTableVendor() {
                     status: activeTab !== 'all' ? activeTab : undefined
                 }
             });
-            console.log(response.data.vendors,'reepsonse sdfdjdi');
-            
+            console.log(response.data.vendors, 'reepsonse sdfdjdi');
+
 
             const transformedVendors = response.data.vendors.map((vendor: any) => ({
                 ...vendor._doc,
                 imageUrl: vendor.imageUrl // Keep the top-level imageUrl
             }));
-
-            console.log(transformedVendors,'trenasformed');
-            
-
 
             setVendors(transformedVendors);
             setTotalPages(response.data.totalPages);
@@ -109,8 +105,6 @@ export function SortableTableVendor() {
     };
 
     const handleBlockUnblock = async (vendorId: string, currentStatus: boolean) => {
-        alert(vendorId)
-        alert(currentStatus)
         const action = currentStatus ? 'block' : 'unblock';
         const result = await Swal.fire({
             title: `Are you sure?`,
@@ -125,8 +119,8 @@ export function SortableTableVendor() {
         if (result.isConfirmed) {
             try {
                 const response = await axiosInstanceAdmin.patch(`/vendorblock-unblock?vendorId=${vendorId}`);
-                console.log(response.data,'while blcok');
-                
+                console.log(response.data, 'while blcok');
+
                 showToastMessage(response.data.message, 'success');
                 Swal.fire(
                     'Success!',
@@ -195,7 +189,7 @@ export function SortableTableVendor() {
 
     return (
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mt-5 mx-auto px-4 sm:px-6 lg:px-8">
             <CardHeader floated={false} shadow={false} className="rounded-none p-4 -mt-7 mb-4" placeholder={undefined}
                 onPointerEnterCapture={undefined}
                 onPointerLeaveCapture={undefined}>
@@ -290,11 +284,11 @@ export function SortableTableVendor() {
                             ) : vendors.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center p-4">No vendors found</td></tr>
                             ) : (
-                                vendors.map((vendor,index) => (
+                                vendors.map((vendor, index) => (
                                     <tr key={index} className="even:bg-blue-gray-50/50">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
-                                                <Avatar src={ vendor?.imageUrl ||"/images/user.png"} alt={vendor.name} size="sm" placeholder={undefined}
+                                                <Avatar src={vendor?.imageUrl || "/images/user.png"} alt={vendor.name} size="sm" placeholder={undefined}
                                                     onPointerEnterCapture={undefined}
                                                     onPointerLeaveCapture={undefined} />
                                                 <div className="flex flex-col">
@@ -343,12 +337,35 @@ export function SortableTableVendor() {
                                                 </Typography>
                                             </div>
                                         </td>
+                                        <td className="p-4">
+                                            <div
+                                                className={`w-max rounded-full ${vendor.reportCount! > 10
+                                                        ? "bg-red-200" 
+                                                        : vendor.reportCount! > 1
+                                                            ? "bg-yellow-200"
+                                                            : vendor.reportCount! >= 0
+                                                                ? "bg-green-200" 
+                                                                : "bg-blue-gray-200" 
+                                                    } px-2 py-1`}
+                                            >
+                                                <Typography
+                                                    variant="small"
+                                                    color="blue-gray" placeholder={undefined}
+                                                    onPointerEnterCapture={undefined}
+                                                    onPointerLeaveCapture={undefined}
+                                                    className={`font-normal rounded-md text-black`} 
+                                                >
+                                                    {vendor.reportCount || "0"}
+                                                </Typography>
+                                            </div>
+                                        </td>
+
 
                                         <td className="p-4">
                                             <div className="w-max flex justify-center items-center">
                                                 {(vendor.isAccepted === AcceptanceStatus.Requested || vendor.isAccepted === AcceptanceStatus.Rejected) ? (
                                                     <Switch
-                                                    id={`custom-switch-component-${vendor._id}`}
+                                                        id={`custom-switch-component-${vendor._id}`}
                                                         ripple={false}
                                                         color={vendor.isActive ? "green" : "red"}
                                                         checked={vendor.isActive}
@@ -370,7 +387,7 @@ export function SortableTableVendor() {
                                                     />
                                                 ) : (
                                                     <Switch
-                                                    id={`custom-switch-component-${vendor._id}`}
+                                                        id={`custom-switch-component-${vendor._id}`}
                                                         ripple={false}
                                                         color={vendor.isActive ? "green" : "red"}
                                                         checked={vendor.isActive}

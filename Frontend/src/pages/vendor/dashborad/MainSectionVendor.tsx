@@ -23,12 +23,15 @@ const MainSectionVendor = () => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4">
+        <div className="w-full  mx-auto ">
             {vendor ? (
-                <div className="space-y-8">
-                    <VendorDetails isVendor={true} vendorDetails={vendor} />
-                    <ImageMasonry vendorData={vendor} />
-                </div>
+                <>
+
+                    <div className="space-y-8">
+                        <VendorDetails isVendor={true} vendorDetails={vendor} />
+                        <ImageMasonry vendorData={vendor} />
+                    </div>
+                </>
             ) : (
                 <div className="text-center py-8">
                     Loading vendor details...

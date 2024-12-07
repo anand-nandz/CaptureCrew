@@ -15,13 +15,14 @@ import {
     ModalFooter,
 
 } from "@nextui-org/react";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { USER, VENDOR } from '../../../config/constants/constants';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { Eye, EyeOff } from 'lucide-react';
 import Loader from '../../../components/common/Loader';
 import { useLoginUser } from "../../../hooks/user/useLoginUser";
 import { showToastMessage } from "../../../validations/common/toast";
+import { useEffect } from "react";
 
 const client_id = import.meta.env.VITE_CLIENT_ID || ''
 
@@ -29,21 +30,29 @@ type CustomInputProps = Omit<InputProps, 'onPointerEnterCapture' | 'onPointerLea
 
 const Input: React.FC<CustomInputProps> = (props) => {
     return (
-      <MaterialInput
-        {...props}
-        // Explicitly set these as undefined to satisfy both TypeScript and runtime
-        crossOrigin={undefined}
-        onPointerEnterCapture={undefined}
-        onPointerLeaveCapture={undefined}
-      />
+        <MaterialInput
+            {...props}
+            // Explicitly set these as undefined to satisfy both TypeScript and runtime
+            crossOrigin={undefined}
+            onPointerEnterCapture={undefined}
+            onPointerLeaveCapture={undefined}
+        />
     );
-  };
+};
 
 const UserLogin: React.FC = () => {
     const {
-        imageIndex, images, isLoading, formik, forgotPasswordEmail, emailError, isOpen, showPassword,
+
+        user, imageIndex, images, isLoading, formik, forgotPasswordEmail, emailError, isOpen, showPassword,
         onOpen, onOpenChange, togglePasswordVisibility, handleEmailChange, handleForgotPassword, handleGoogleSuccess
     } = useLoginUser()
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (user) {
+            navigate(USER.HOME);
+        }
+    }, [navigate, user]);
 
     if (isLoading) {
         return <Loader />

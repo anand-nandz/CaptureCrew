@@ -15,7 +15,6 @@ export const useBlockCheck = () => {
     const location = useLocation();
     const navigate = useNavigate();
   const dispatch = useDispatch();
-    // Get authentication states only for user and vendor
     const userSignedIn = useSelector((state: UserRootState) => state.user.isUserSignedIn);
     const vendorSignedIn = useSelector((state: VendorRootState) => state.vendor.isVendorSignedIn);
 
@@ -30,7 +29,6 @@ export const useBlockCheck = () => {
         });
     
         if (result.isConfirmed) {
-          // Clear local storage
           const tokenKey = `${type}Token`;
           const refreshTokenKey = `${type}Refresh`;
           localStorage.removeItem(tokenKey);
@@ -39,9 +37,7 @@ export const useBlockCheck = () => {
           if (type === 'user') {            
             dispatch(userLogout());
             navigate(USER.LOGIN);
-        } else {
-            console.log('testinggg');
-            
+        } else {            
             dispatch(vendorLogout());
             navigate(VENDOR.LOGIN);
         }
@@ -50,9 +46,7 @@ export const useBlockCheck = () => {
     
 
     const checkBlockStatus = async () => {
-      
         try {
-            // Only check vendor and user routes
             if (location.pathname.startsWith('/vendor') && vendorSignedIn) {
                 const response = await axiosInstanceVendor.get('/check-block-status');
                 console.log(response.data.isBlocked,'response block');
@@ -70,15 +64,12 @@ export const useBlockCheck = () => {
                     await handleBlockedAccount('user');
                   }
             }
-            
-
-            
+                   
         } catch (error) {
             console.error('Block check failed:', error);
             if (error instanceof AxiosError) {
             if (error?.response?.status === 403 && 
                 error?.response?.data?.message === 'Blocked by Admin') {
-                // Show SweetAlert for blocked account
                 const accountType = location.pathname.startsWith('/vendor') ? 'vendor' : 'user';
           await handleBlockedAccount(accountType);
             }
@@ -87,7 +78,6 @@ export const useBlockCheck = () => {
     };
 
     useEffect(() => {
-        // Check block status on route changes if user or vendor is authenticated
         if (userSignedIn || vendorSignedIn) {
             checkBlockStatus();
         }

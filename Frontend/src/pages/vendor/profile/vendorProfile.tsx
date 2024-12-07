@@ -21,6 +21,8 @@ function VendorProfile() {
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [bookingCount, setBookingCount] = useState(0);
+
     const navigate = useNavigate();
 
 
@@ -54,6 +56,22 @@ function VendorProfile() {
         fetchProfileData();
     }, [fetchProfileData]);
 
+    useEffect(() => {
+        const fetchBookingCount = async () => {
+            try {
+                const response = await axiosInstanceVendor.get('/bookings');                
+                setBookingCount(response.data.bookingConfirmed.length);
+            } catch (error) {
+                console.error('Error fetching booking count:', error);
+                showToastMessage('Error fetching booking count', 'error');
+            }
+        };
+
+        fetchBookingCount();
+        const interval = setInterval(fetchBookingCount, 60000); 
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handleSaveProfile = useCallback(async (updates: FormData) => {
         try {
@@ -209,7 +227,7 @@ function VendorProfile() {
                                     </div>
                                     <div className="text-center p-4 bg-white rounded-lg">
                                         <Typography className="text-2xl font-bold text-black" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                                            {vendor.totalBooking}
+                                            {bookingCount}
                                         </Typography>
                                         <Typography className="text-sm text-gray-600" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                                             Bookings

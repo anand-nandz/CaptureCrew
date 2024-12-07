@@ -15,6 +15,10 @@ import PackageListing from "../pages/vendor/bookings/PackageListing";
 import AvailableDate from "../pages/vendor/bookings/AvailableDate";
 import BookingVendor from "../pages/vendor/bookings/BookingVendor";
 import TVScreen from "@/components/common/404";
+import WalletDashboard from "@/pages/common/wallet-dash";
+import Chat from "@/pages/vendor/chat/ChatVendor";
+import VendorReviewList from "@/pages/vendor/bookings/ClientReviews";
+import RevenueChartVendor from "@/components/vendor/RevenueCardVendor";
 export const VendorRoutes = () => {
  
   return (
@@ -37,6 +41,10 @@ export const VendorRoutes = () => {
           <Route path={`/add-package`} element={<AddPackage/>}/>
           <Route path={`/dateAvailabilty`} element={<AvailableDate/>}/>
           <Route path={`/requestBookings`} element={<BookingVendor/>} />
+          <Route path={`/chat`} element={<Chat/>}/>
+          <Route path={`/review`} element={<VendorReviewList/>}/>
+          <Route path={`/wallet`} element={<WalletDashboard isVendor={true}/>} />
+          <Route path={`/stats`} element={<RevenueChartVendor/> } />
           
         </Route>
         <Route path="*" element={<TVScreen />} />

@@ -30,7 +30,7 @@ const HeroBanner = () => {
           placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}
-          className="mb-4 text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold font-lemon animate-fadeIn"
+          className="mb-4 text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold font-lemon animate-fadeIn "
         >
           Craft Unforgettable Moments: Your Event Starts Here
         </Typography>

@@ -7,6 +7,7 @@ import {
     Button,
     IconButton,
     Box,
+    Alert,
 } from '@mui/material';
 import { Eye, EyeOff } from 'lucide-react';
 import CloseIcon from '@mui/icons-material/Close';
@@ -20,6 +21,7 @@ interface PasswordChangeDetails {
     onClose: () => void;
     onSave: (data: PasswordFormData) => Promise<void>;
 }
+
 const initialValues = {
     currentPassword: '',
     newPassword: '',
@@ -35,15 +37,22 @@ export interface PasswordFormData {
 interface ValidationErrors {
     password?: string;
     confirmPassword?: string;
-    currentPassword ?:string;
+    currentPassword?: string;
 }
 
 const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose, onSave }) => {
-    const { showPassword, togglePasswordVisibility, showPassword1, togglePasswordVisibility1, showPassword2, togglePasswordVisibility2 } = useUserSignUp()
+    const { 
+        showPassword, 
+        togglePasswordVisibility, 
+        showPassword1, 
+        togglePasswordVisibility1, 
+        showPassword2, 
+        togglePasswordVisibility2 
+    } = useUserSignUp();
 
     const [formData, setFormData] = useState<PasswordFormData>(initialValues);
-
     const [errors, setErrors] = useState<ValidationErrors>({});
+    const [apiError, setApiError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -51,19 +60,25 @@ const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose,
             ...prev,
             [name]: value
         }));
-        setErrors({});
+        // Clear specific field error when user starts typing
+        setErrors(prev => ({
+            ...prev,
+            [name]: ''
+        }));
+        // Clear any previous API error
+        setApiError(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setApiError(null);
 
-        
+        // Validate passwords
         const validationErrors = validatePassword({
             password: formData.newPassword,
             confirmPassword: formData.confirmPassword
         });
 
-        
         const allErrors = {
             ...validationErrors,
             currentPassword: !formData.currentPassword ? 'Current password is required' : ''
@@ -71,38 +86,48 @@ const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose,
 
         setErrors(allErrors);
 
+        // Only proceed if there are no validation errors
         if (!Object.values(allErrors).some(error => error !== '')) {
             try {
-                const token = localStorage.getItem('userToken');
-                if (!token) {
-                    showToastMessage('Authentication required', 'error');
-                    return;
-                }
-
                 await onSave(formData);
-                handleClose()
+                handleClose();
             } catch (error) {
                 if (axios.isAxiosError(error)) {
-                console.error('Error changing password:', error);
-                const errorMessage = error.response?.data?.message || 'Error changing password';
-                showToastMessage(errorMessage, 'error');
-                
+                    // More detailed error handling
+                    const errorMessage = error.response?.data?.message || 
+                                         error.response?.data?.error || 
+                                         'Error changing password';
+                    
+                    // Set API error to display in the modal
+                    setApiError(errorMessage);
+                    
+                    // Also show toast for additional visibility
+                    showToastMessage(errorMessage, 'error');
                 } else {
-                    console.error('Error changing password:', error);
-                    showToastMessage('Unexpected error occurred', 'error');
+                    // Handle unexpected errors
+                    const unexpectedError = error instanceof Error 
+                        ? error.message 
+                        : 'Unexpected error occurred';
+                    
+                    setApiError(unexpectedError);
+                    showToastMessage(unexpectedError, 'error');
                 }
             }
         }
     };
+
     const handleClose = () => {
         setFormData(initialValues); 
-        setErrors({});                
+        setErrors({});
+        setApiError(null);                
         onClose();                     
     };
+
     useEffect(() => {
         if (!isOpen) {
             setFormData(initialValues); 
-            setErrors({});                
+            setErrors({});
+            setApiError(null);                
         }
     }, [isOpen]);
 
@@ -120,6 +145,12 @@ const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose,
                         <CloseIcon />
                     </IconButton>
                 </Box>
+
+                {apiError && (
+                    <Box sx={{ mb: 2 }}>
+                        <Alert severity="error">{apiError}</Alert>
+                    </Box>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <DialogContent sx={{ p: 1 }}>

@@ -1,66 +1,18 @@
 import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/react";
 import { Info, CreditCard } from "lucide-react";
+import { BookingDetailsModalProps } from "./BookingRequestDetails";
 
-interface CustomizationOption {
-  _id: string;
-  type: string;
-  description: string;
-  price: number;
-  unit?: string;
-}
 
-interface Vendor {
-  name: string;
-  companyName: string;
-  city: string;
-  contactinfo: string;
-}
+const PriceBreakdown:React.FC<{ booking: BookingDetailsModalProps['booking'] }> = ({ booking }) => {
+  const basePrice = booking.noOfDays * (booking.packageId.price || 0); 
 
-interface BookingType {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  venue: string;
-  serviceType: string;
-  startingDate: string;
-  totalPrice: number;
-  noOfDays: number;
-  message: string;
-  bookingStatus: string;
-  rejectionReason?: string;
-  packageId: {
-    price?: number;
-    description: string;
-    photographerCount: number;
-    features: string[];
-    customizationOptions: CustomizationOption[];
-  };
-  vendor_id: Vendor;
-  customizations: string[];
-  createdAt: string;
-}
+  const customizationOptions = booking.packageId?.customizationOptions || [];
 
-interface PriceBreakdownProps {
-  booking: BookingType;
-}
-
-const PriceBreakdown: React.FC<PriceBreakdownProps> = ({ booking }) => {
-  // Calculate base price (number of days * package price)
-  const basePrice = booking.noOfDays * (booking.packageId.price || 0); // Added fallback for optional price
-  
-  // Find selected customizations by matching IDs
-  const selectedCustomizations = booking.packageId.customizationOptions.filter(
-    (option: CustomizationOption) => booking.customizations.includes(option._id)
+  const selectedCustomizations = customizationOptions.filter(option => 
+    booking.customizations && booking.customizations.includes(option._id)
   );
-  
-//   // Calculate total customization price
-//   const customizationTotal = selectedCustomizations.reduce(
-//     (total: number, option: CustomizationOption) => total + option.price, 
-//     0
-//   );
 
-  // Format price to INR currency
+
   const formatPrice = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -106,7 +58,7 @@ const PriceBreakdown: React.FC<PriceBreakdownProps> = ({ booking }) => {
             {selectedCustomizations.length > 0 && (
               <div className="space-y-2">
                 <div className="text-xs font-medium">Added Customizations:</div>
-                {selectedCustomizations.map((option: CustomizationOption) => (
+                {selectedCustomizations.map((option) => (
                   <div key={option._id} className="ml-4 text-sm text-gray-600">
                     <div className="flex justify-between">
                     {`${option.type} - ${formatPrice(option.price)}`}

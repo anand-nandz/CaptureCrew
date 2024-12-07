@@ -14,9 +14,9 @@ interface PrivateRouteProps {
 }
 
 const UnifiedPrivateRoute: React.FC<PrivateRouteProps> = ({ routeType }) => {
-  const userState = useSelector((state: UserRootState) => state.user.userData);
+  const userState = useSelector((state: UserRootState) => state.user.userData);  
   const userSignedIn = useSelector((state: UserRootState) => state.user.isUserSignedIn);
-  
+
   const vendorState = useSelector((state: VendorRootState) => state.vendor.vendorData);
   const vendorSignedIn = useSelector((state: VendorRootState) => state.vendor.isVendorSignedIn);
 
