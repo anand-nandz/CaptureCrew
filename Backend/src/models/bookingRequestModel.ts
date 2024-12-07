@@ -5,7 +5,8 @@ export enum BookingAcceptanceStatus {
     Requested = 'requested',
     Accepted = 'accepted',
     Rejected = 'rejected',
-    Revoked = 'revoked'
+    Revoked = 'revoked',
+    PaymentOverdue = 'overdue'
 }
 
 export interface BookingInterface {
@@ -25,10 +26,11 @@ export interface BookingInterface {
     noOfDays: number;
     bookingStatus: BookingAcceptanceStatus;
     rejectionReason?: string;
+    requestedDates?: string[];
     advancePaymentDueDate: Date;
     advancePayment: {
         amount: number;
-        status: 'pending' | 'completed';
+        status: 'pending' | 'completed' | 'overdue';
         paidAt?: Date;
     };
 }
@@ -90,7 +92,7 @@ const BookingRequestSchema = new Schema<BookingReqDocument>({
     },
     customizations: [{
         type: Schema.Types.ObjectId,
-        ref: 'CustomizationOption'  // if you want to reference the options
+        ref: 'CustomizationOption' 
     }],
     noOfDays: {
         type: Number,
@@ -122,11 +124,15 @@ const BookingRequestSchema = new Schema<BookingReqDocument>({
         },
         status: {
             type: String,
-            enum: ['pending', 'completed'],
+            enum: ['pending', 'completed', 'overdue'],
             default: 'pending'
         },
         paidAt: Date
-    }
+    },
+    requestedDates: [{
+        type: String, 
+    }],
+    
 }, { timestamps: true })
 
 BookingRequestSchema.index({

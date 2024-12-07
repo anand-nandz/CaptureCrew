@@ -17,7 +17,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
 
             const [year, month, day] = startingDate.split('-')
             let newDate = `${day}/${month}/${year}`
-            console.log(newDate, 'newDate in the check is availble');
 
             if (vendor) {
                 if (vendor.bookedDates.includes(newDate)) {
@@ -98,8 +97,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
             };
             const newBookingData = await BookingRequest.create(bookingData)
             newBookingData.save()
-            console.log(newBookingData, 'newbookingdat in  repository');
-
             return newBookingData
         } catch (error) {
             console.error('Error in saving BookingReq:', error);
@@ -119,7 +116,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
                 })
                 .sort({ createdAt: -1 })
                 .lean()
-            console.log('bboking req userSide :', bookingReq);
 
             return bookingReq
         } catch (error) {
@@ -159,16 +155,33 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
 
     async deleteReq(bookingId: string, userId: string): Promise<boolean> {
         try {
-            const booking = await BookingRequest.findOne({ _id: bookingId, user_id: userId });
-            if (booking?.bookingStatus === BookingAcceptanceStatus.Accepted || booking?.bookingStatus === BookingAcceptanceStatus.Rejected) {
-                throw new CustomError(`Booking has been ${booking.bookingStatus} alraedy.Refresh the page`, 400)
-            }
+            const booking = await BookingRequest.findOneAndUpdate(
+                {
+                    _id: bookingId,
+                    user_id: userId,
+                    bookingStatus: BookingAcceptanceStatus.Requested
+                },
+                {
+                    $set: {bookingStatus: BookingAcceptanceStatus.Revoked}
+                },
+                {
+                    new: true
+                }
+            );
+
             if (!booking) {
-                throw new CustomError('Booking not found', 400)
+                const existingBooking =  await BookingRequest.findOne(
+                    {_id: bookingId, user_id: userId}
+                );
+
+                if(!existingBooking){
+                    throw new CustomError('Booking not Found', 404)
+                }
+                throw new CustomError(
+                    `Cannot revoke booking. Current status: ${existingBooking.bookingStatus}`,
+                    400
+                )
             }
-            booking.bookingStatus = BookingAcceptanceStatus.Revoked
-            await booking.save();
-            console.log(booking, 'book after delete');
 
             return true
         } catch (error) {
@@ -186,9 +199,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
                 },
                 { new: true }
             )
-
-            console.log(update, 'updated');
-
             return true
 
         } catch (error) {
@@ -202,24 +212,31 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
             await Vendor.findByIdAndUpdate(
                 vendorId,
                 {
-                    $pull: { bookedDates: { $in: datesToRemove } }
+                    $pull: { requestedDates: { $in: datesToRemove } }
                 }
             );
         } catch (error) {
             console.error('Error rolling back vendor dates:', error);
-            // Log this error but don't throw, as this is already in an error handling block
         }
     }
 
-    async getAllBookings(){
+
+    async overdueBookings() {
+        const now = new Date();
         try {
-            const allBookings = await BookingRequest.find()
-            return allBookings
+            const result = await BookingRequest.find({
+                bookingStatus: BookingAcceptanceStatus.Accepted,
+                advancePaymentDueDate: { $lt: now },
+                'advancePayment.status': 'pending'
+            }).populate('vendor_id', 'email bookedDates')
+            return result
         } catch (error) {
-            console.error('Error in getting all booking Req:', error);
+            console.error('Error in finding overdue b0oking dates:', error);
             throw error;
         }
     }
+
+
 
 
 }
