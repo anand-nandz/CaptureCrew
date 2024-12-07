@@ -3,6 +3,10 @@ import { Button, Pagination } from "@nextui-org/react";
 import { useState } from "react";
 import BookingDetailsModal from "../common/BookingRequestDetails";
 import Swal from "sweetalert2";
+import { axiosInstance } from "@/config/api/axiosInstance";
+import { showToastMessage } from "@/validations/common/toast";
+import { AxiosError } from "axios";
+import PaymentMethodModal, { PaymentBookingData } from "@/pages/user/bookings/PaymentMethodModal";
 
 type BookingTableProps = {
   title: string;
@@ -11,6 +15,28 @@ type BookingTableProps = {
   onCancel?: (id: string) => Promise<void>;
   onAccept?: (id: string, errorMessage?: string) => Promise<void>;
   onReject?: (id: string, reason: string) => Promise<void>;
+};
+interface BookingError extends Error {
+  code?: string;
+  details?: string;
+}
+const convertToPaymentBookingData = (booking: Booking): PaymentBookingData => {
+  return {
+    _id: booking._id,
+    bookingReqId: booking.bookingReqId,
+    vendor_id: booking.vendor_id ? {
+      companyName: booking.vendor_id.companyName,
+      _id: booking.vendor_id._id
+    } : undefined,
+    vendorId: booking.vendor_id ? {
+      companyName: booking.vendor_id.companyName,
+      _id: booking.vendor_id._id
+    } : undefined,
+    advancePayment: {
+      amount: booking.advancePayment?.amount || 0,
+      status: booking.advancePayment?.status || 'pending'
+    },
+  }
 };
 
 
@@ -27,6 +53,11 @@ export const BookingTable: React.FC<BookingTableProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
+
+
+
 
   const getStatusColor = (status: BookingAcceptanceStatus) => {
     switch (status) {
@@ -35,6 +66,8 @@ export const BookingTable: React.FC<BookingTableProps> = ({
       case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'overdue':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -46,120 +79,287 @@ export const BookingTable: React.FC<BookingTableProps> = ({
   const endIndex = startIndex + itemsPerPage;
   const currentBookings = bookings.slice(startIndex, endIndex);
 
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
+  const handleActionClick = async (
+    bookingId: string,
+    action: 'cancel' | 'accept' | 'reject',
+    errorMessage?: string
+  ) => {
+    console.log(`Processing ${action} action for booking ${bookingId}`);
 
-  const handleActionClick = async (bookingId: string, action: 'cancel' | 'accept' | 'reject', errorMessage?: string) => {
-    console.log(errorMessage, 'errormessage');
+    const handleError = async (error: BookingError, action: string) => {
+      console.error(`Error ${action}ing booking:`, error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage || `Failed to ${action} booking`,
+        confirmButtonText: 'OK'
+      });
+    };
 
+    const showSuccess = async (action: string) => {
+      await Swal.fire({
+        icon: 'success',
+        title: `${action.charAt(0).toUpperCase() + action.slice(1)}ed!`,
+        text: `The booking has been ${action}ed successfully.`,
+        confirmButtonText: 'OK'
+      });
+    };
 
-    if (action === 'reject') {
-      if (!onReject) {
-        await Swal.fire(
-          'Error',
-          'Reject action is not available',
-          'error'
-        );
-        return;
-      }
-      const { value: rejectionReason } = await Swal.fire({
-        title: 'Rejection Reason',
-        input: 'textarea',
-        inputLabel: 'Please provide a reason for rejection',
-        inputPlaceholder: 'Enter your reason here...',
-        inputValidator: (value) => {
-          if (!value) {
-            return 'You need to provide a reason for rejection!';
+    try {
+      switch (action) {
+        case 'reject': {
+          if (!onReject) {
+            await Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Reject action is not available',
+              confirmButtonText: 'OK'
+            });
+            return;
           }
-          return null;
-        },
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Reject Booking'
-      });
 
-      if (!rejectionReason) return;
+          const { value: rejectionReason, dismiss } = await Swal.fire({
+            title: 'Rejection Reason',
+            input: 'textarea',
+            inputLabel: 'Please provide a reason for rejection',
+            inputPlaceholder: 'Enter your reason here...',
+            inputValidator: (value) => {
+              if (!value || value.trim() === '') {
+                return 'You need to provide a reason for rejection!';
+              }
+              if (value.length < 10) {
+                return 'Please provide a more detailed reason (minimum 10 characters)';
+              }
+              return null;
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Continue'
+          });
 
-      const confirmResult = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'Do you want to reject this booking?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, reject booking!'
-      });
+          if (dismiss || !rejectionReason) return;
 
-      if (confirmResult.isConfirmed) {
-        try {
-          // onReject is guaranteed to exist because of the props interface
-          await onReject(bookingId, rejectionReason);
-          await Swal.fire(
-            'Rejected!',
-            'The booking has been rejected.',
-            'success'
-          );
-        } catch (error) {
-          await Swal.fire(
-            'Error',
-            errorMessage || 'Failed to reject booking',
-            'error'
+          const confirmResult = await Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you want to reject this booking?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, reject booking!'
+          });
 
-          );
-          console.error('Error rejecting booking:', error);
+          if (confirmResult.isConfirmed) {
+            await onReject(bookingId, rejectionReason);
+            await showSuccess('reject');
+          }
+          break;
         }
-      }
-    } else {
 
+        case 'accept':
+        case 'cancel': {
+          const actionHandler = {
+            cancel: onCancel,
+            accept: onAccept
+          }[action];
 
-      const actionHandler = {
-        cancel: onCancel,
-        accept: onAccept,
-      }[action];
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: `Do you want to ${action} this booking?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: `Yes, ${action} booking!`
-      });
+          if (!actionHandler) {
+            await Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: `${action} action is not available`,
+              confirmButtonText: 'OK'
+            });
+            return;
+          }
 
-      if (result.isConfirmed && actionHandler) {
-        try {
-          await actionHandler(bookingId);
-          await Swal.fire(
-            `${action.charAt(0).toUpperCase() + action.slice(1)}!`,
-            `The booking has been ${action}d.`,
-            'success'
-          );
-        } catch (error) {
-          await Swal.fire(
-            'Error',
-            errorMessage || `Failed to ${action} booking`,
-            'error'
-          );
-          console.error('Error cancelling booking:', error);
+          const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: `Do you want to ${action} this booking?`,
+            icon: action === 'cancel' ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonColor: action === 'cancel' ? '#d33' : '#3085d6',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `Yes, ${action} booking!`
+          });
+
+          if (result.isConfirmed) {
+            await actionHandler(bookingId);
+            if (action === 'accept') {
+              await showSuccess(action);
+            }
+
+          }
+          break;
         }
+
+        default:
+          throw new Error(`Unsupported action: ${action}`);
       }
+    } catch (error) {
+      await handleError(error as BookingError, action);
     }
-
-
   };
-
-
-
-
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB');
   };
-  console.log(bookings, 'bbbbbbbbbbbb');
+
+  const handlePayNow = async (booking: Booking) => {
+    setSelectedBookingForPayment(booking);
+    setIsPaymentModalOpen(true);
+  };
+
+  const processPayment = async (bookingData: PaymentBookingData, paymentMethod: string) => {
+    try {
+      const originalBooking = bookings.find(b => b._id === bookingData._id);
+      if (!originalBooking) {
+        throw new Error('Booking not found');
+      }
+      const vendorId = bookingData.vendor_id?._id || bookingData.vendorId?._id;
+      if (!vendorId) {
+        showToastMessage("Vendor information is missing", 'error');
+        return;
+      }
+
+
+      const response = await axiosInstance.post('/isBookingAccepted', {
+        vendorId: vendorId,
+        bookingId: bookingData._id
+      });
+
+      if (!response.data.success) {
+        showToastMessage("Unable to process payment at this time", 'error');
+        return;
+      }
+
+      const bookingStatus = response.data.result;
+      if (bookingStatus.bookingStatus !== BookingAcceptanceStatus.Accepted) {
+        showToastMessage("Your request is not accepted yet", 'error');
+        return;
+      }
+
+      const paymentEndpoint = paymentMethod === 'stripe' ? '/stripe-payment' : '/razorpay-payment';
+      const paymentResponse = await axiosInstance.post(paymentEndpoint, {
+        companyName: originalBooking.vendor_id.bookedDates,
+        bookingData: bookingStatus,
+        paymentMethod
+      });
+
+      if (paymentResponse.data.success && paymentResponse.data.result.url) {
+        window.location.href = paymentResponse.data.result.url;
+      } else {
+        showToastMessage(paymentResponse.data.message || "Payment URL generation failed", 'error');
+      }
+
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      if (error instanceof AxiosError) {
+        showToastMessage(error.response?.data.message || 'Error processing payment', 'error');
+      } else {
+        showToastMessage('An unknown error occurred', 'error');
+      }
+    }
+  };
+
+  // const processPayment = async (booking: PaymentBookingData, paymentMethod: string) => {
+  //   try {
+  //     const response = await axiosInstance.post('/isBookingAccepted', {
+  //       vendorId: booking.vendor_id._id,
+  //       bookingId: booking._id
+  //     });
+
+  //     const bookingData = response.data.result;
+
+  //     if (!response.data.success) {
+  //       showToastMessage("Unable to process payment at this time", 'error');
+  //       return;
+  //     }
+
+  //     if (bookingData.bookingStatus !== BookingAcceptanceStatus.Accepted) {
+  //       showToastMessage("Your request is not accepted yet", 'error');
+  //       return;
+  //     }
+
+  //     const paymentData = {
+  //       companyName: booking.vendor_id.bookedDates,
+  //       bookingData,
+  //       paymentMethod 
+  //     };
+
+  //     const paymentEndpoint = paymentMethod === 'stripe' ? '/stripe-payment' : '/razorpay-payment';
+
+  //     const paymentResponse = await axiosInstance.post(paymentEndpoint, paymentData);
+
+  //     if (paymentResponse.data.success) {
+  //       const checkoutUrl = paymentResponse?.data.result.url;
+  //       if (checkoutUrl) {
+  //         window.location.href = checkoutUrl;
+  //       } else {
+  //         showToastMessage("Payment URL generation failed", 'error');
+  //       }
+  //     } else {
+  //       showToastMessage(paymentResponse.data.message || "Payment initialization failed", 'error');
+  //     }
+
+  //   } catch (error) {
+  //     console.error('Error processing payment:', error);
+  //     if (error instanceof AxiosError) {
+  //       showToastMessage(error.response?.data.message || 'Error processing payment', 'error');
+  //     } else {
+  //       showToastMessage('An unknown error occurred', 'error');
+  //     }
+  //   }
+  // };
+
+
+  // const handlePayNow = async (booking: Booking) => {
+  //   try {
+  //     const response = await axiosInstance.post('/isBookingAccepted', {
+  //       vendorId: booking.vendor_id._id,
+  //       bookingId: booking._id
+  //     });
+  //     const bookingData = response.data.result
+  //     console.log(bookingData, 'check booing acceapted and slot also in payment');
+
+  //     if (response.data.success && bookingData.bookingStatus === BookingAcceptanceStatus.Accepted) {
+  //       const companyName = booking.vendor_id.bookedDates
+  //       const paymentResponse = await axiosInstance.post('/stripe-payment', {
+  //         companyName,
+  //         bookingData
+  //       })
+  //       console.log(paymentResponse, 'reasponse after payment');
+
+  //       const checkoutUrl = paymentResponse?.data.result.url;
+  //       if (checkoutUrl) {
+  //         window.location.href = checkoutUrl;
+  //       } else {
+  //         showToastMessage("Payment URL generation failed", 'error');
+  //       }
+
+
+  //     } else if (response.data.success && bookingData.bookingStatus === BookingAcceptanceStatus.Requested) {
+  //       showToastMessage("Your request is not accepted yet", 'error')
+  //     }
+
+
+  //   } catch (error) {
+  //     console.error('Error fetching posts:', error)
+  //     if (error instanceof AxiosError) {
+  //       showToastMessage(error.response?.data.message, 'error')
+  //     } else {
+  //       showToastMessage('failed to load post', 'error')
+  //     }
+  //   }
+  // };
+
 
   return (
     <div className="overflow-x-auto">
@@ -237,9 +437,15 @@ export const BookingTable: React.FC<BookingTableProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {currentBookings.length === 0 ? (
-            <div>
+            <tr>
+              <td colSpan={9} className="px-6 py-4 mt-5 text-center text-gray-500">
+                {`No bookings available at the moment.`}
+                <br />
+                {`Please check back later or create a new booking.`}
+              </td>
+            </tr>
 
-            </div>
+
           ) : (
             <>
               {currentBookings.map((booking, index) => (
@@ -362,15 +568,17 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                           </Button>
                         )}
                         {booking.bookingStatus === 'accepted' &&
-                          booking.advancePaymentDueDate &&
+                          booking.advancePaymentDueDate && booking.advancePayment?.status === 'pending' &&
                           new Date(booking.advancePaymentDueDate) > new Date() && (
                             <Button
                               size="sm"
-                              color="primary"
+                              className="bg-custom-button hover:bg-custom-button-hover text-white"
+                              onClick={() => handlePayNow(booking)}
                             >
                               Pay Now
                             </Button>
                           )}
+
                         {booking.bookingStatus === 'rejected' || booking.bookingStatus === 'revoked' && (
                           <Button
                             size="sm"
@@ -385,6 +593,17 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                   )}
                 </tr>
               ))}
+              {selectedBookingForPayment && (
+                <PaymentMethodModal
+                  isOpen={isPaymentModalOpen}
+                  onClose={() => {
+                    setIsPaymentModalOpen(false);
+                    setSelectedBookingForPayment(null);
+                  }}
+                  booking={selectedBookingForPayment}
+                  onProcessPayment={processPayment}
+                />
+              )}
               {selectedBooking && (
                 <BookingDetailsModal
                   isOpen={isDetailsModalOpen}
@@ -477,14 +696,6 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                         </Button>
                       </>
                     )}
-                    {booking.bookingStatus === 'accepted' && (
-                      <Button
-                        size="sm"
-                        color="primary"
-                      >
-                        Pay Now
-                      </Button>
-                    )}
                     {booking.bookingStatus === 'rejected' && (
                       <Button
                         size="sm"
@@ -535,6 +746,28 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                       >
                         Revoke
                       </Button>
+                    )}
+                    {booking.bookingStatus === 'accepted' &&
+                      booking.advancePaymentDueDate && booking.advancePayment?.status === 'pending' &&
+                      new Date(booking.advancePaymentDueDate) > new Date() && (
+                        <Button
+                          size="sm"
+                          color="primary"
+                          onClick={() => handlePayNow(booking)}
+                        >
+                          Pay Now
+                        </Button>
+                      )}
+                    {selectedBookingForPayment && (
+                      <PaymentMethodModal
+                        isOpen={isPaymentModalOpen}
+                        onClose={() => {
+                          setIsPaymentModalOpen(false);
+                          setSelectedBookingForPayment(null);
+                        }}
+                        booking={convertToPaymentBookingData(selectedBookingForPayment)}
+                        onProcessPayment={processPayment}
+                      />
                     )}
                   </div>
                 </>
