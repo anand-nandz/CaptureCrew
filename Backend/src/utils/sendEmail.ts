@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { emailTemplates } from './emailTemplates';
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -15,11 +14,11 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-export async function sendEmail(to: string, subject: string, htmlBody: string) {
+export async function sendEmail(to: string | string[], subject: string, htmlBody: string) {
   try {
     const mailOptions = {
       from: process.env.USER_EMAIL,
-      to,
+      to: Array.isArray(to) ? to.join(', ') : to,
       subject,
       html: htmlBody
     };
