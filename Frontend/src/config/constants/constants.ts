@@ -10,7 +10,12 @@ export const USER ={
     BOOKING : '/bookings',
     POST : '/viewPosts',
     PORTFOLIO : '/portfolio',
-    SERVICE_AVAILABILTY : '/serviceAvailabilty'
+    SERVICE_AVAILABILTY : '/serviceAvailabilty',
+    PAYMENT_SUCCESS : '/paymentSuccess',
+    PAYMENT_FAILURE :`/paymentFailed`,
+    WALLET: '/wallet',
+    CHAT: '/chat',
+    ABOUT_US:'/aboutus'
 
 }
 
@@ -30,6 +35,11 @@ export const VENDOR ={
     ADD_PACKAGE : '/vendor/add-package',
     DATE_AVAILABILTY : '/vendor/dateAvailabilty',
     REQUEST_BOOKING : '/vendor/requestBookings',
+    WALLET: '/vendor/wallet',
+    CHAT: '/vendor/chat',
+    REVIEW: '/vendor/review',
+    STATS: '/vendor/stats',
+
 }
 
 
@@ -39,7 +49,8 @@ export const ADMIN ={
     USERS : '/users' ,
     VENDORS : '/vendors',
     POST : '/view-all-posts',
-    ALLBOOKINGS: '/all-bookingsReqs'
+    ALLBOOKINGS: '/all-bookingsReqs',
+    REPORT: '/client-report'
 }
 
 
