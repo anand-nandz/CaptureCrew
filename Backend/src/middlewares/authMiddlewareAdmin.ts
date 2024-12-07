@@ -18,16 +18,15 @@ export const authTokenAdmin = (req: AuthRequest, res: Response, next: NextFuncti
     res.status(401).json({ message: 'Authentication required' });
     return;
   }
-
+  
   jwt.verify(token, process.env.JWT_SECRET_KEY!, (err, decoded) => {
     if (err) {
-      res.status(401).json({ message: 'Token is not valid' });
+      res.status(403).json({ message: 'Token is not valid' });
       return;
     }
-   
-
+       
     const admin = decoded as UserJwtPayload;  
-     
+
      
     if (admin && admin._id) {
       req.admin = {
