@@ -1,27 +1,167 @@
 import { BaseRepository } from "./baseRepository";
 
-import Booking,{ BookingDocument ,BookingInterface, BookingStatus, PaymentStatus} from "../models/bookingModel";
+import Booking, { BookingDocument } from "../models/bookingModel";
 import { CustomError } from "../error/customError";
+import { BookingStatus, PaymentStatus } from "../enums/commonEnums";
+import { BookingInterface } from "../interfaces/commonInterfaces";
+import { IBookingRepository } from "../interfaces/repositoryInterfaces/booking.Repository.interface";
+import mongoose from "mongoose";
 
 
-class BookingRepo extends BaseRepository<BookingDocument> {
+class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRepository {
     constructor() {
         super(Booking)
     }
 
-    async findBookingConfirmedReqs(userId: string): Promise<BookingInterface[] | null> {
+    async saveBooking(bookingData: Partial<BookingInterface>): Promise<BookingInterface> {
+        const confirmedBooking = new Booking(bookingData);
+        return await confirmedBooking.save();
+    }
+
+
+    findBookingConfirmedReqs = async (userId: string): Promise<BookingInterface[] | null> => {
         try {
-            const ConfirmedBooking = await Booking
-                .find({ userId: userId })
-                .populate('userId', 'name email contactinfo isActive transactions')
-                .populate('vendorId', 'name companyName bookedDates contactinfo city isActive transactions')
-                .populate({
-                    path: 'packageId',
-                    model: 'Package', 
-                    select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
-                })
-                .sort({ createdAt: -1 })
-                .lean()
+            console.log(userId);
+            console.log(typeof userId);
+            
+            
+            // const ConfirmedBooking = await Booking
+            //     .find({ userId: userId })
+            //     .populate('userId', 'name email contactinfo isActive transactions')
+            //     .populate('vendorId', 'name companyName bookedDates contactinfo city isActive transactions')
+            //     .populate({
+            //         path: 'packageId',
+            //         model: 'Package',
+            //         select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
+            //     })
+            //     .populate({
+            //         path: 'reviews',
+            //         model: 'Review', // Ensure 'Review' is the correct model name in your codebase
+            //         match: { userId: userId }, // Fetch reviews only for the current user
+            //         select: 'rating content createdAt updatedAt', // Select specific fields if needed
+            //     })
+            //     .sort({ createdAt: -1 })
+            //     .lean()
+
+            //     console.log(ConfirmedBooking,'ConfirmedBooking reviesadded');
+
+            const ConfirmedBooking = await Booking.aggregate([
+                {
+                    $match: { userId: new mongoose.Types.ObjectId(userId) } // Match bookings by userId
+                },
+                {
+                    $lookup: {
+                        from: 'users', // Collection name for users
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userDetails'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'vendors', // Collection name for vendors
+                        localField: 'vendorId',
+                        foreignField: '_id',
+                        as: 'vendorDetails'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'packages', // Collection name for packages
+                        localField: 'packageId',
+                        foreignField: '_id',
+                        as: 'packageDetails'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'reviews', // Collection name for reviews
+                        let: { bookingId: '$_id', userId: new mongoose.Types.ObjectId(userId) },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$bookingId', '$$bookingId'] },
+                                            { $eq: ['$userId', '$$userId'] }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                $project: {
+                                    _id: 1,
+                                    bookingId: 1,
+                                    rating: 1,
+                                    content: 1,
+                                    userId: 1,
+                                    vendorId: 1,
+                                    createdAt: 1,
+                                    updatedAt: 1
+                                }
+                            }
+                        ],
+                        as: 'reviews'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        bookingId: 1,
+                        clientName: 1,
+                        email: 1,
+                        phone: 1,
+                        venue: 1,
+                        serviceType: 1,
+                        startingDate: 1,
+                        noOfDays: 1,
+                        totalAmount: 1,
+                        advancePayment: 1,
+                        finalPayment: 1,
+                        bookingStatus: 1,
+                        requestedDates: 1,
+                        customizations: 1,
+                        createdAt: 1,
+                        updatedAt: 1,
+                        userId: {
+                            _id: { $arrayElemAt: ['$userDetails._id', 0] },
+                            name: { $arrayElemAt: ['$userDetails.name', 0] },
+                            email: { $arrayElemAt: ['$userDetails.email', 0] },
+                            contactinfo: { $arrayElemAt: ['$userDetails.contactinfo', 0] },
+                            transactions: { $arrayElemAt: ['$userDetails.transactions', 0] },
+                            isActive: { $arrayElemAt: ['$userDetails.isActive', 0] }
+                        },
+                        vendorId: {
+                            _id: { $arrayElemAt: ['$vendorDetails._id', 0] },
+                            name: { $arrayElemAt: ['$vendorDetails.name', 0] },
+                            companyName: { $arrayElemAt: ['$vendorDetails.companyName', 0] },
+                            contactinfo: { $arrayElemAt: ['$vendorDetails.contactinfo', 0] },
+                            city: { $arrayElemAt: ['$vendorDetails.city', 0] },
+                            isActive: { $arrayElemAt: ['$vendorDetails.isActive', 0] },
+                            transactions: { $arrayElemAt: ['$vendorDetails.transactions', 0] },
+                            bookedDates: { $arrayElemAt: ['$vendorDetails.bookedDates', 0] }
+                        },
+                        packageId: {
+                            _id: { $arrayElemAt: ['$packageDetails._id', 0] },
+                            description: { $arrayElemAt: ['$packageDetails.description', 0] },
+                            features: { $arrayElemAt: ['$packageDetails.features', 0] },
+                            photographerCount: { $arrayElemAt: ['$packageDetails.photographerCount', 0] },
+                            price: { $arrayElemAt: ['$packageDetails.price', 0] },
+                            customizationOptions: { $arrayElemAt: ['$packageDetails.customizationOptions', 0] }
+                        },
+                        reviews: { $arrayElemAt: ['$reviews', 0] } // Extract the first (and only) review
+                    }
+                },
+                {
+                    $sort: { createdAt: -1 } // Sort by createdAt in descending order
+                }
+            ]);
+            
+            
+            
+            console.log(ConfirmedBooking, 'ConfirmedBooking with reviews added');
+            
+
 
             return ConfirmedBooking
         } catch (error) {
@@ -30,14 +170,14 @@ class BookingRepo extends BaseRepository<BookingDocument> {
         }
     }
 
-    async findBookingConfirmedReqsV(vendorId: string): Promise<BookingInterface[] | null> {
+    findBookingConfirmedReqsV = async (vendorId: string): Promise<BookingInterface[] | null> => {
         try {
             const ConfirmedBooking = await Booking
                 .find({ vendorId: vendorId })
                 .populate('vendorId', 'name companyName bookedDates contactinfo city isActive')
                 .populate({
                     path: 'packageId',
-                    model: 'Package', 
+                    model: 'Package',
                     select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
                 })
                 .sort({ createdAt: -1 })
@@ -50,34 +190,34 @@ class BookingRepo extends BaseRepository<BookingDocument> {
         }
     }
 
-    async getBookingReqsVendor(vendorId: string): Promise<BookingInterface[] | null> {
-        try {
-            const bookingReq = await Booking
-                .find({ vendor_id: vendorId })
-                .populate('user_id', 'name email contactinfo isActive')
-                .populate('vendor_id', 'name companyName bookedDates contactinfo city isActive')
-                .populate({
-                    path: 'packageId',
-                    model: 'Package', 
-                    select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
-                })
-                .sort({ createdAt: -1 })
-                .lean();
+    // async getBookingReqsVendor(vendorId: string): Promise<BookingInterface[] | null> {
+    //     try {
+    //         const bookingReq = await Booking
+    //             .find({ vendor_id: vendorId })
+    //             .populate('user_id', 'name email contactinfo isActive')
+    //             .populate('vendor_id', 'name companyName bookedDates contactinfo city isActive')
+    //             .populate({
+    //                 path: 'packageId',
+    //                 model: 'Package', 
+    //                 select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
+    //             })
+    //             .sort({ createdAt: -1 })
+    //             .lean();
 
 
-            const validBookings = bookingReq.filter(booking => booking.packageId !== null);
+    //         const validBookings = bookingReq.filter(booking => booking.packageId !== null);
 
-            return validBookings;
-        } catch (error) {
-            console.error('Error in getBookingReqsVendor:', error);
-            throw error;
-        }
-    }
+    //         return validBookings;
+    //     } catch (error) {
+    //         console.error('Error in getBookingReqsVendor:', error);
+    //         throw error;
+    //     }
+    // }
 
-    async updatePayment(bookingId: string, amountPaid: number, paymentId: string, paymentType:'finalAmount'): Promise<BookingDocument> {
+    updatePayment = async(bookingId: string, amountPaid: number, paymentId: string, paymentType: 'finalAmount'): Promise<BookingDocument> =>{
         try {
             const booking = await this.getById(bookingId);
-            
+
             if (!booking) {
                 throw new CustomError('Booking not found', 404);
             }
@@ -100,14 +240,14 @@ class BookingRepo extends BaseRepository<BookingDocument> {
                     paymentId: paymentId || '',
                     paidAt: new Date(),
                 };
+
                 booking.bookingStatus = BookingStatus.Completed
 
-                
             } else {
                 throw new CustomError('Invalid payment type.', 400);
             }
 
-            const updatedBooking = await booking.save();            
+            const updatedBooking = await booking.save();
             return updatedBooking;
 
         } catch (error) {
@@ -119,26 +259,35 @@ class BookingRepo extends BaseRepository<BookingDocument> {
         }
     }
 
-    
-    async getAllBookings(){
+    getAllBookings = async (search?: string): Promise<BookingInterface[]> => {
         try {
-         const bookings = await Booking.find()
-         .populate('userId')
-         .populate('vendorId')
-         .populate('packageId')
-         .sort({createdAt: -1})
-            
-         return bookings
+            let query: { [key: string]: any } = {};
+
+            if (search) {
+                query = {
+                    $or: [
+                        { bookingId: { $regex: search, $options: 'i' } },
+                        { serviceType: { $regex: search, $options: 'i' } },
+                       
+                    ]
+                }
+            }
+
+            const bookings = await Booking.find(query)
+                .populate('userId')
+                .populate('vendorId')
+                .populate('packageId')
+                .sort({ createdAt: -1 })
+
+            return bookings
         } catch (error) {
             console.error('Error in getting all booking Req:', error);
             throw error;
         }
     }
 
-    async findBooking(bookingId: string): Promise<BookingDocument | null> {
+    findBooking = async(bookingId: string): Promise<BookingDocument | null> =>{
         try {
-            console.log(bookingId);
-            
             const ConfirmedBooking = await Booking
                 .findOne({ bookingId: bookingId })
                 .populate('userId', 'name email contactinfo')
@@ -153,8 +302,145 @@ class BookingRepo extends BaseRepository<BookingDocument> {
         }
     }
 
-   
+    async updateBookingStatus(bookingId: string, update: object): Promise<void> {
+        await Booking.findByIdAndUpdate(bookingId, update);
+    }
+
+    getRevenueData = async (
+        vendorId: string,
+        start: Date,
+        end: Date,
+        groupBy: object,
+        sortField: string
+    ): Promise<{ _id: { [key: string]: number }; totalRevenue: number }[]> => {
+        try {
+            const revenueData = await Booking.aggregate([
+                {
+                    $match: {
+                        vendorId: new mongoose.Types.ObjectId(vendorId),
+                    },
+                },
+                {
+                    $project: {
+                        validAdvanceAmount: {
+                            $cond: [
+                                { $eq: ['$advancePayment.status', 'completed'] },
+                                '$advancePayment.amount',
+                                0
+                            ]
+                        },
+                        validFinalAmount: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ['$finalPayment.status', 'completed'] },
+                                        { $ne: ['$finalPayment.paidAt', null] }
+                                    ]
+                                },
+                                '$finalPayment.amount',
+                                0
+                            ]
+                        },
+                        paidAt: {
+                            $ifNull: ['$finalPayment.paidAt', '$advancePayment.paidAt']
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        totalAmount: { $add: ['$validAdvanceAmount', '$validFinalAmount'] },
+                        paidAt: 1
+                    }
+                },
+                {
+                    $match: {
+                        paidAt: { $gte: start, $lt: end }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            [sortField]: groupBy
+                        },
+                        totalRevenue: { $sum: '$totalAmount' }
+                    }
+                },
+                { $sort: { [`_id.${sortField}`]: 1 } }
+            ]);
+
+            return revenueData;
+        } catch (error) {
+            console.error('Error fetching revenue data in repository:', error);
+            throw new Error('Unable to fetch revenue data');
+        }
+    }
+
+
+    getAllRevenueData = async (
+        start: Date,
+        end: Date,
+        groupBy: object,
+        sortField: string
+    ): Promise<{ _id: { [key: string]: number }; totalRevenue: number }[]> => {
+        try {
+            const revenueData = await Booking.aggregate([
+                {
+                    $project: {
+                        validAdvanceAmount: {
+                            $cond: [
+                                { $eq: ['$advancePayment.status', 'completed'] },
+                                '$advancePayment.amount',
+                                0
+                            ]
+                        },
+                        validFinalAmount: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ['$finalPayment.status', 'completed'] },
+                                        { $ne: ['$finalPayment.paidAt', null] }
+                                    ]
+                                },
+                                '$finalPayment.amount',
+                                0
+                            ]
+                        },
+                        paidAt: {
+                            $ifNull: ['$finalPayment.paidAt', '$advancePayment.paidAt']
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        totalAmount: { $add: ['$validAdvanceAmount', '$validFinalAmount'] },
+                        paidAt: 1
+                    }
+                },
+                {
+                    $match: {
+                        paidAt: { $gte: start, $lt: end }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            [sortField]: groupBy
+                        },
+                        totalRevenue: { $sum: '$totalAmount' }
+                    }
+                },
+                { $sort: { [`_id.${sortField}`]: 1 } }
+            ]);
+
+            return revenueData;
+        } catch (error) {
+            console.error('Error fetching revenue data in repository:', error);
+            throw new Error('Unable to fetch revenue data');
+        }
+    }
+
+
 
 }
 
-export default new BookingRepo();
+export default BookingRepo;

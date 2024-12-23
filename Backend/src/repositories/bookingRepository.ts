@@ -1,12 +1,15 @@
 import mongoose from "mongoose";
-import BookingRequest, { BookingAcceptanceStatus, BookingInterface, BookingReqDocument } from "../models/bookingRequestModel";
+import BookingRequest, { BookingReqDocument } from "../models/bookingRequestModel";
 import Vendor, { VendorDocument } from "../models/vendorModel";
 import { BaseRepository } from "./baseRepository";
 import { CustomError } from "../error/customError";
 import generateUniqueId from "../utils/extraUtils";
+import { IBookingReqRepository } from "../interfaces/repositoryInterfaces/bookingReq.Repository.Interface";
+import { BookingReqInterface } from "../interfaces/commonInterfaces";
+import { BookingAcceptanceStatus } from "../enums/commonEnums";
 
 
-class BookingRepository extends BaseRepository<BookingReqDocument> {
+class BookingRepository extends BaseRepository<BookingReqDocument> implements IBookingReqRepository{
     constructor() {
         super(BookingRequest)
     }
@@ -27,7 +30,7 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
             }
 
         } catch (error) {
-            return undefined
+            throw error
         }
     }
 
@@ -46,7 +49,7 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
         message: string,
         bookingStatus: BookingAcceptanceStatus,
         customizations: string[] | undefined,
-    ): Promise<BookingInterface | null> {
+    ): Promise<BookingReqInterface | null> {
         try {
             const existingBooking = await BookingRequest.findOne({
                 vendor_id: new mongoose.Types.ObjectId(vendorId),
@@ -104,14 +107,14 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
         }
     }
 
-    async findBookingRequests(userId: string): Promise<BookingInterface[] | null> {
+    findBookingRequests = async(userId: string): Promise<BookingReqInterface[] | null> =>{
         try {
             const bookingReq = await BookingRequest
                 .find({ user_id: userId })
                 .populate('vendor_id', 'name companyName bookedDates contactinfo city isActive')
                 .populate({
                     path: 'packageId',
-                    model: 'Package', // Make sure this matches your Package model name
+                    model: 'Package', 
                     select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
                 })
                 .sort({ createdAt: -1 })
@@ -124,7 +127,23 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
         }
     }
 
-    async getBookingReqsVendor(vendorId: string): Promise<BookingInterface[] | null> {
+    findBookingById = async(userId: string, vendorId: string, bookingId: string): Promise<BookingReqDocument | null> =>{
+        try {
+            const bookingData = await BookingRequest.findOne({
+                user_id: userId,
+                vendor_id: vendorId,
+                _id: bookingId
+            })
+
+            if(!bookingData) return null
+            return bookingData
+        } catch (error) {
+            console.error('Error in findBookingById:', error);
+            throw error;
+        }
+    }
+
+    getBookingReqsVendor = async(vendorId: string): Promise<BookingReqInterface[] | null> =>{
         try {
             const bookingReq = await BookingRequest
                 .find({ vendor_id: vendorId })
@@ -139,7 +158,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
                 .lean();
 
 
-            // Filter out any bookings with invalid package references
             const validBookings = bookingReq.filter(booking => booking.packageId !== null);
 
             // if (validBookings.length !== bookingReq.length) {
@@ -162,33 +180,31 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
                     bookingStatus: BookingAcceptanceStatus.Requested
                 },
                 {
-                    $set: {bookingStatus: BookingAcceptanceStatus.Revoked}
+                    $set: { bookingStatus: BookingAcceptanceStatus.Revoked }
                 },
                 {
                     new: true
                 }
             );
-
+    
             if (!booking) {
-                const existingBooking =  await BookingRequest.findOne(
-                    {_id: bookingId, user_id: userId}
-                );
-
-                if(!existingBooking){
-                    throw new CustomError('Booking not Found', 404)
-                }
+                // Combine status and existence check in a single query
                 throw new CustomError(
-                    `Cannot revoke booking. Current status: ${existingBooking.bookingStatus}`,
-                    400
-                )
+                    'Booking not found or status is not "Requested"',
+                    404
+                );
             }
-
-            return true
-        } catch (error) {
+    
+            return true;
+        }  catch (error) {
             console.error('Error in deleteing boking Req:', error);
             throw error;
         }
     }
+
+    async deleteBookingRequest(bookingId: string): Promise<void> {
+        await BookingRequest.findByIdAndDelete(bookingId);
+      }
 
     async acceptUpdate(vendorId: string, requestedDates: string[]): Promise<boolean> {
         try {
@@ -199,15 +215,19 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
                 },
                 { new: true }
             )
+            if (!update) {
+                console.error(`Vendor with ID ${vendorId} not found or update failed.`);
+                return false;
+            }
             return true
 
         } catch (error) {
             console.error('Error in accepting booking Req:', error);
-            throw error;
+            throw new Error('Failed to update vendor with requested dates.');
         }
     }
 
-    async rollbackVendorDates(vendorId: string, datesToRemove: string[]): Promise<void> {
+    rollbackVendorDates = async(vendorId: string, datesToRemove: string[]): Promise<void> =>{
         try {
             await Vendor.findByIdAndUpdate(
                 vendorId,
@@ -219,7 +239,6 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
             console.error('Error rolling back vendor dates:', error);
         }
     }
-
 
     async overdueBookings() {
         const now = new Date();
@@ -236,9 +255,27 @@ class BookingRepository extends BaseRepository<BookingReqDocument> {
         }
     }
 
-
-
+    validateBooking=  async(bookingId: string, userId: string, expectedStatus: BookingAcceptanceStatus): Promise<BookingReqDocument> =>{
+        const booking = await BookingRequest.findOne({
+            _id: bookingId,
+            user_id: userId
+        });
+    
+        if (!booking) {
+            throw new CustomError('Booking not Found', 404);
+        }
+    
+        if (booking.bookingStatus !== expectedStatus) {
+            throw new CustomError(
+                `Cannot perform operation. Current status: ${booking.bookingStatus}`,
+                400
+            );
+        }
+    
+        return booking;
+    }
+    
 
 }
 
-export default new BookingRepository();
+export default BookingRepository;

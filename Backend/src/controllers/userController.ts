@@ -2,58 +2,76 @@ import { Request, Response } from "express";
 import generateOTP from "../utils/generateOtp";
 import { handleError } from "../utils/handleError";
 import { CustomError } from "../error/customError";
-import userService, { GoogleUserData } from "../services/userService";
-import userRepository from "../repositories/userRepository";
 import Jwt from "jsonwebtoken";
 import { AuthenticatedRequest } from "../types/userTypes";
 import jwt from 'jsonwebtoken';
-import vendorService from "../services/vendorService";
-
-
-interface DecodedData {
-    name: string;
-    email: string;
-    picture?: string;
-    sub: string
-}
-
-interface UserSession {
-    email: string;
-    password: string;
-    name: string;
-    contactinfo: string;
-    otpCode: string | undefined
-    otpSetTimestamp: number | undefined;
-    otpExpiry: number;
-    resendTimer: number;
-}
-
-interface OTP {
-    otp: string | undefined;
-    email: string;
-    otpSetTimestamp: number | undefined
-}
+import { GoogleUserData, IDecodedData, IUserSession } from "../interfaces/commonInterfaces";
+import { IUserService } from "../interfaces/serviceInterfaces/user.Service.Interface";
+import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
+import { OTP_EXPIRY_TIME, RESEND_COOLDOWN } from "../enums/commonEnums";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 declare module 'express-session' {
     interface Session {
-        user?: UserSession;
+        user?: IUserSession;
     }
 }
-
-
-
-const OTP_EXPIRY_TIME = 2 * 60 * 1000;
-const RESEND_COOLDOWN = 2 * 60 * 1000;
-
 class UserController {
-    async UserSignUp(req: Request, res: Response): Promise<void> {
+
+    private userService: IUserService;
+    private vendorService: IVendorService;
+
+    constructor(userService: IUserService,vendorService: IVendorService) {
+        this.userService = userService;
+        this.vendorService =vendorService
+    }
+
+    Login = async (req: Request, res: Response) => {
+
+        try {
+            const { email, password } = req.body;
+            const serviceResponse = await this.userService.login(email, password);
+
+            res.cookie('refreshToken', serviceResponse.refreshToken, {
+                httpOnly: true, secure: process.env.NODE_ENV === 'production',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            })
+
+            res.status(HTTP_statusCode.OK).json({
+                token: serviceResponse.token,
+                user: serviceResponse.user,
+                message: serviceResponse.message
+            })
+
+        } catch (error) {
+
+            handleError(res, error, 'Login')
+        }
+    }
+
+    UserLogout = async (req: Request, res: Response): Promise<void> => {
+        try {
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
+            })
+            res.status(HTTP_statusCode.OK).json({ message: 'User logout Successfully...' })
+        } catch (error) {
+            handleError(res, error, 'UserLogout')
+        }
+    }
+
+
+    UserSignUp = async (req: Request, res: Response): Promise<void> => {
         try {
             const { email, password, name, contactinfo } = req.body;
             const otpCode = await generateOTP(email);
+            console.log(otpCode, 'otpcode');
 
             if (otpCode !== undefined) {
                 const otpSetTimestamp = Date.now();
-                const userData: UserSession = {
+                const userData: IUserSession = {
                     email: email,
                     password: password,
                     name: name,
@@ -69,10 +87,10 @@ class UserController {
                 req.session.save((err) => {
                     if (err) {
                         console.error('Session save error:', err);
-                        throw new CustomError('Error saving session', 500);
+                        throw new CustomError('Error saving session', HTTP_statusCode.InternalServerError);
                     }
 
-                    res.status(200).json({
+                    res.status(HTTP_statusCode.OK).json({
                         message: `OTP sent to Email for Verification`,
                         email: email,
                         otpExpiry: userData.otpExpiry,
@@ -81,62 +99,62 @@ class UserController {
                 });
 
             } else {
-                throw new CustomError("Couldn't generate OTP", 500);
+                throw new CustomError("Couldn't generate OTP", HTTP_statusCode.InternalServerError);
             }
         } catch (error) {
             handleError(res, error, 'UserSignUp')
         }
     }
 
-    async VerifyOTP(req: Request, res: Response): Promise<void> {
+    VerifyOTP = async (req: Request, res: Response): Promise<void> => {
         try {
             const { otp } = req.body;
             const userData = req.session.user;
 
             if (!userData) {
-                throw new CustomError('Session expired. Please sign up again.', 400);
+                throw new CustomError('Session expired. Please sign up again.', HTTP_statusCode.BadRequest);
             }
             const currentTime = Date.now();
 
             if (currentTime > userData.otpExpiry) {
-                throw new CustomError('OTP has expired. Please request a new one.', 400);
+                throw new CustomError('OTP has expired. Please request a new one.', HTTP_statusCode.BadRequest);
             }
 
             if (otp === userData.otpCode) {
-                const user = await userService.signup(
+                const user = await this.userService.signup(
                     userData.email,
                     userData.password,
                     userData.name,
                     userData.contactinfo,
-                    res
                 );
+
                 delete req.session.user
                 req.session.save((err) => {
                     if (err) console.error('Error saving session after clearing user data:', err);
                 });
 
+
                 res.status(201).json({ user, message: 'Account created successfully!' });
             } else {
-                throw new CustomError('Invalid Otp !!', 400)
+                throw new CustomError('Invalid Otp !!', HTTP_statusCode.BadRequest)
             }
         } catch (error) {
             handleError(res, error, 'VerifyOTP')
         }
     }
 
-    async ResendOtp(req: Request, res: Response): Promise<void> {
+    ResendOtp = async (req: Request, res: Response): Promise<void> => {
         try {
-            const userData: UserSession | undefined = req.session.user;
-
+            const userData: IUserSession | undefined = req.session.user;            
             if (!userData) {
-                throw new CustomError('Session expired. Please sign up again.', 400);
+                throw new CustomError('Session expired. Please sign up again.', HTTP_statusCode.BadRequest);
             }
             const currentTime = Date.now();
             if (currentTime < userData.resendTimer) {
                 const waitTime = Math.ceil((userData.resendTimer - currentTime) / 1000);
                 throw new CustomError(`Please wait ${waitTime} seconds before requesting new OTP`, 429);
             }
-            const newOtp = await userService.resendNewOtp(userData.email)
+            const newOtp: string = await this.userService.resendNewOtp(userData.email)
 
             req.session.user = {
                 ...userData,
@@ -146,7 +164,7 @@ class UserController {
                 resendTimer: currentTime + RESEND_COOLDOWN
             };
 
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 message: 'New OTP sent to email',
                 otpExpiry: currentTime + OTP_EXPIRY_TIME,
                 resendAvailableAt: currentTime + RESEND_COOLDOWN
@@ -158,22 +176,121 @@ class UserController {
         }
     }
 
-    async googleSignUp(req: Request, res: Response): Promise<void> {
+    create_RefreshToken = async (req: Request, res: Response): Promise<void> => {
+        try {
+
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                throw new CustomError('No refresh token provided', 401);
+            }
+
+            try {
+                const newAccessToken = await this.userService.create_RefreshToken(refreshToken);
+                res.status(HTTP_statusCode.OK).json({ token: newAccessToken });
+            } catch (error) {
+                if (error instanceof jwt.TokenExpiredError) {
+                    res.clearCookie('refreshToken');
+                    throw new CustomError('Refresh token expired', 401);
+                }
+                throw error;
+            }
+
+        } catch (error) {
+            handleError(res, error, 'CreateRefreshToken')
+        }
+    }
+
+    checkBlockStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?._id
+
+            if (!userId) {
+                throw new CustomError('User not found', 404)
+            }
+            const user = await this.userService.checkBlock(userId.toString())
+            if (!user) {
+                throw new CustomError('User not found', 404)
+            }
+
+            if (!user.isActive) {
+                res.status(HTTP_statusCode.NoAccess).json({
+                    message: 'Blocked by Admin',
+                    isBlocked: true
+                })
+                return
+            }
+            res.status(HTTP_statusCode.OK).json({
+                isBlocked: false
+            });
+        } catch (error) {
+            handleError(res, error, 'checkBlockStatus');
+        }
+    }
+
+    forgotPassword = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { email } = req.body
+
+            if (!email) {
+                throw new CustomError('Email is required', HTTP_statusCode.BadRequest);
+            }
+            await this.userService.handleForgotPassword(email)
+            res.status(HTTP_statusCode.OK).json({ message: 'Password reset link sent to your email' });
+
+        } catch (error) {
+            handleError(res, error, 'forgotPassword')
+        }
+    }
+
+    changeForgotPassword = async (req: Request, res: Response): Promise<void> => {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        try {
+            if (!token) {
+                throw new CustomError('Session Expired', HTTP_statusCode.BadRequest)
+            } else if (!password) {
+                throw new CustomError("Password required", HTTP_statusCode.BadRequest)
+            }
+
+            await this.userService.newPasswordChange(token, password)
+            res.status(HTTP_statusCode.OK).json({ message: 'Password Reset Successfull' })
+
+        } catch (error) {
+            handleError(res, error, 'changePassword')
+        }
+    }
+
+    validateResetToken = async (req: Request, res: Response): Promise<void> => {
+        const { token } = req.params;
+        try {
+            if (!token) {
+                throw new CustomError('Token is required', HTTP_statusCode.BadRequest);
+            }
+            const isValid = await this.userService.validateToken(token);
+            if (isValid) res.status(HTTP_statusCode.OK).json({ isValid });
+
+        } catch (error) {
+            res.status(HTTP_statusCode.BadRequest).json({ message: (error as Error).message });
+        }
+    }
+
+    googleSignUp = async (req: Request, res: Response): Promise<void> => {
         try {
 
             const token = req.body.credential
-            const decodedData = Jwt.decode(token) as DecodedData;
+            const decodedData = Jwt.decode(token) as IDecodedData;
 
 
             if (!decodedData) {
-                throw new CustomError('Invalid token', 400);
+                throw new CustomError('Invalid token', HTTP_statusCode.BadRequest);
             }
-            const { name, email, sub: googleId }: DecodedData = decodedData;
+            const { name, email, sub: googleId }: IDecodedData = decodedData;
 
-            const user = await userService.googleSignup({ name, email, googleId });
+            const user = await this.userService.googleSignup({ name, email, googleId });
 
             if (user) {
-                res.status(200).json({
+                res.status(HTTP_statusCode.OK).json({
                     success: true,
                     message: 'User saved successfully'
                 }),
@@ -185,13 +302,13 @@ class UserController {
         }
     }
 
-    async googleAuth(req: Request, res: Response): Promise<void> {
+    googleAuth = async (req: Request, res: Response): Promise<void> => {
         try {
             const { credential } = req.body
-            const decodedToken = Jwt.decode(credential) as DecodedData;
+            const decodedToken = Jwt.decode(credential) as IDecodedData;
 
             if (!decodedToken || !decodedToken.email) {
-                throw new CustomError('Invalid Google token', 400)
+                throw new CustomError('Invalid Google token', HTTP_statusCode.BadRequest)
             }
 
             const googleUserData: GoogleUserData = {
@@ -201,14 +318,14 @@ class UserController {
                 picture: decodedToken.picture
             }
 
-            const { user, isNewUser, token, refreshToken } = await userService.authenticateGoogleLogin(googleUserData, res);
+            const { user, isNewUser, token, refreshToken } = await this.userService.authenticateGoogleLogin(googleUserData);
             if (user.isActive) {
 
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true, secure: process.env.NODE_ENV === 'production',
                     maxAge: 7 * 24 * 60 * 60 * 1000
                 })
-                res.status(200).json({
+                res.status(HTTP_statusCode.OK).json({
                     user,
                     token,
                     message: isNewUser
@@ -221,7 +338,7 @@ class UserController {
                     httpOnly: true, secure: process.env.NODE_ENV === 'production',
                     maxAge: 7 * 24 * 60 * 60 * 1000
                 })
-                res.status(200).json({
+                res.status(HTTP_statusCode.OK).json({
                     user,
                     token,
                 });
@@ -233,218 +350,78 @@ class UserController {
         }
     }
 
-    async Login(req: Request, res: Response): Promise<void> {
-        try {
-            const { email, password } = req.body;
-
-            const { token, refreshToken, user, message } = await userService.login(email, password);
-
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true, secure: process.env.NODE_ENV === 'production',
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            })
-
-            res.status(200).json({ token, user, message })
-
-        } catch (error) {
-            handleError(res, error, 'Login')
-        }
-    }
-
-    async CreateRefreshToken(req: Request, res: Response): Promise<void> {
-        try {
-
-            const refreshToken = req.cookies.refreshToken;
-
-            if (!refreshToken) {
-                throw new CustomError('No refresh token provided', 401);
-            }
-
-            try {
-                const newAccessToken = await userService.createRefreshToken(refreshToken);
-                res.status(200).json({ token: newAccessToken });
-            } catch (error) {
-                if (error instanceof jwt.TokenExpiredError) {
-                    res.clearCookie('refreshToken');
-                    throw new CustomError('Refresh token expired', 401);
-                }
-                throw error;
-            }
-
-
-
-        } catch (error) {
-            handleError(res, error, 'CreateRefreshToken')
-        }
-    }
-
-    async UserLogout(req: Request, res: Response): Promise<void> {
-        try {
-            res.clearCookie('refreshToken', {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict'
-            })
-            res.status(200).json({ message: 'User logout Successfully...' })
-        } catch (error) {
-            handleError(res, error, 'UserLogout')
-        }
-    }
-
-    async checkBlockStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
-        try {
-            const userId = req.user?._id
-
-            if (!userId) {
-                throw new CustomError('User not found', 404)
-            }
-            const user = await userRepository.getById(userId.toString())
-            if (!user) {
-                throw new CustomError('User not found', 404)
-            }
-
-            if (!user.isActive) {
-                res.status(403).json({
-                    message: 'Blocked by Admin',
-                    isBlocked: true
-                })
-                return
-            }
-
-            res.status(200).json({
-                isBlocked: false
-            });
-        } catch (error) {
-            handleError(res, error, 'checkBlockStatus');
-        }
-    }
-
-
-    async forgotPassword(req: Request, res: Response): Promise<void> {
-        try {
-            const { email } = req.body
-            console.log(email);
-            
-            if (!email) {
-                throw new CustomError('Email is required', 400);
-            }
-
-            await userService.handleForgotPassword(email)
-            res.status(200).json({ message: 'Password reset link sent to your email' });
-
-        } catch (error) {
-            handleError(res, error, 'forgotPassword')
-        }
-    }
-
-    async changeForgotPassword(req: Request, res: Response): Promise<void> {
-        const { token } = req.params;
-        const { password } = req.body;
-        
-        try {
-            if (!token) {
-                throw new CustomError('Session Expired', 400)
-            } else if (!password) {
-                throw new CustomError("Password required", 400)
-            }
-
-            let updated = await userService.newPasswordChange(token, password)
-            res.status(200).json({ message: 'Password Reset Successfull' })
-
-        } catch (error) {
-            handleError(res, error, 'changePassword')
-        }
-    }
-
-    async validateResetToken(req: Request, res: Response): Promise<void> {
-        const { token } = req.params;
-        try {
-            if (!token) {
-                throw new CustomError('Token is required', 400);
-            }
-            const isValid = await userService.validateToken(token);
-            res.status(200).json({ isValid });
-        } catch (error) {
-            res.status(400).json({ message: (error as Error).message });
-        }
-    }
-
-    async getUserProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    getUserProfile = async(req: AuthenticatedRequest, res: Response): Promise<void> => {
         try {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const result = await userService.getUserProfileService(userId.toString())
-            console.log(result,'profile details');
-            
-            res.status(200).json(result);
+            const result = await this.userService.getUserProfileService(userId.toString())
+            res.status(HTTP_statusCode.OK).json(result);
         } catch (error) {
             handleError(res, error, 'getUser');
         }
     }
 
-    async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    updateProfile = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { name, contactinfo } = req.body
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
             if ((!name && !contactinfo && !req.file) ||
                 (name === '' && contactinfo === '' && !req.file)) {
-                res.status(400).json({
+                res.status(HTTP_statusCode.BadRequest).json({
                     message: 'At least one field (name, contact info, or image) is required'
                 });
                 return;
             }
 
-            const user = await userService.updateProfileService(name, contactinfo, userId, req.file || null)
+            const user = await this.userService.updateProfileService(name, contactinfo, userId, req.file || null)
 
-            res.status(200).json({user});
+            res.status(HTTP_statusCode.OK).json({user});
         } catch (error) {
             handleError(res, error, 'updateProfile')
         }
     }
 
-    async changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+    changePassword = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { currentPassword, newPassword } = req.body
-            console.log(currentPassword,newPassword);
-            
+
             const userId = req.user?._id;
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
-            const passwordCheck = await userService.passwordCheckUser(currentPassword, newPassword, userId)
+            await this.userService.passwordCheckUser(currentPassword, newPassword, userId)
 
-            res.status(200).json({ message: "Password reset successfully." });
+            res.status(HTTP_statusCode.OK).json({ message: "Password reset successfully." });
         } catch (error) {
             handleError(res, error, 'changePassword')
         }
     }
 
-    
-    async getUser(req:Request , res:Response) : Promise<void> {
+    getUser = async(req:Request , res:Response) : Promise<void> =>{
         try {
             const userId: string = req.query.userId as string
             if(!userId){
-                res.status(400).json({message:'UserId is missing'})
+                res.status(HTTP_statusCode.BadRequest).json({message:'UserId is missing'})
                 return
             }
 
-            const data = await userService.getSingleUser(userId)
+            const data = await this.userService.getSingleUser(userId)
             if(!data){
-                res.status(400).json({message: "User not Found."})
+                res.status(HTTP_statusCode.BadRequest).json({message: "User not Found."})
             } else {
-                res.status(200).json({data: data})
+                res.status(HTTP_statusCode.OK).json({data: data})
             }
 
         } catch (error) {
@@ -452,16 +429,15 @@ class UserController {
         }
     }
 
-    
-    async getAllVendors(req:Request , res:Response) : Promise<void> {
+    getAllVendors= async(req:Request , res:Response) : Promise<void> => {
         try {
             const page = parseInt(req.query.page as string) || 1
             const limit = parseInt(req.query.limit as string) || 6
             const search = req.query.search as string || '' ;
             const status = req.query.status as string;
-            const result = await vendorService.getVendors(page, limit, search,status)
-            
-            res.status(200).json({
+            const result = await this.vendorService.getVendors(page, limit, search,status)
+
+            res.status(HTTP_statusCode.OK).json({
                 vendors: result.vendors,
                 totalPages : result.totalPages,
                 currentPage : page,
@@ -473,11 +449,32 @@ class UserController {
         }
     }
 
-  
+    getUsers = async(req: Request, res: Response): Promise<void> =>{
+        try {
+            const userId: string = req.query.userId as string
+            if(!userId){
+                res.status(HTTP_statusCode.BadRequest).json({message:'userId is missing'})
+                return
+            }
+
+            const data = await this.userService.getSingleUser(userId)
+            if(!data){
+                res.status(HTTP_statusCode.BadRequest).json({message: "user not Found."})
+            } else {
+                res.status(HTTP_statusCode.OK).json({data: data})
+            }
+        } catch (error) {
+            handleError(res,error,'getUsers')
+        }
+    }
+
+    
+
+
 
 }
 
-export default new UserController()
+export default UserController;
 
 
 

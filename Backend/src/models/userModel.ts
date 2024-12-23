@@ -1,23 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { Transaction, TransactionSchema } from '../utils/extraUtils';
-
-export interface User {
-  email: string;
-  password?: string;
-  name: string;
-  googleId?: string;
-  contactinfo?: string;
-  isActive: boolean;
-  isGoogleUser: boolean;
-  image?: string;
-  imageUrl?: string;
-  favourite?: string[];
-  walletBalance: number;
-  transactions?: Transaction[];
-  refreshToken?: string;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
-}
+import { TransactionSchema } from '../utils/extraUtils';
+import { User } from '../interfaces/commonInterfaces';
 
 export interface UserDocument extends User, Document {
   _id: mongoose.Types.ObjectId;

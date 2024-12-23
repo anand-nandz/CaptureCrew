@@ -1,19 +1,20 @@
 import mongoose from "mongoose";
 import Package, { PackageDocument } from "../models/packageModel";
 import { BaseRepository } from "./baseRepository";
-import { ServiceProvided } from "../models/postModel";
 import { CustomError } from "../error/customError";
+import { ServiceProvided } from "../enums/commonEnums";
+import { IPackageRepository } from "../interfaces/repositoryInterfaces/package.repository.intrface";
 
 
-class PackageRepository extends BaseRepository<PackageDocument>{
+class PackageRepository extends BaseRepository<PackageDocument> implements IPackageRepository{
     constructor(){
         super(Package)
     }
 
-    async checkExistingPackage (
+    checkExistingPackage = async(
         vendorId: mongoose.Types.ObjectId, 
         serviceType: ServiceProvided
-    ) : Promise<boolean>{
+    ) : Promise<boolean> =>{
         const existingPackage = await Package.findOne({
             vendor_id: vendorId,
             serviceType: serviceType
@@ -21,7 +22,7 @@ class PackageRepository extends BaseRepository<PackageDocument>{
         return !!existingPackage
     }
 
-    async getPkgs(vendorId: mongoose.Types.ObjectId) {
+    getPkgs = async(vendorId: mongoose.Types.ObjectId): Promise<PackageDocument[]> =>{
         try {
             const packages = await Package.find({vendor_id: vendorId})
             
@@ -34,4 +35,4 @@ class PackageRepository extends BaseRepository<PackageDocument>{
     
 }
 
-export default new PackageRepository();
+export default PackageRepository;

@@ -1,12 +1,13 @@
+import { IReviewRepository } from "../interfaces/repositoryInterfaces/review.Repository.interface";
 import Review, { ReviewDocument } from "../models/reviewModel";
 import { BaseRepository } from "./baseRepository";
 
-class ReviewRepository extends BaseRepository<ReviewDocument> {
+class ReviewRepository extends BaseRepository<ReviewDocument> implements IReviewRepository {
     constructor() {
         super(Review)
     }
 
-    async getReviewsByVendorId(vendorId: string, page: number, pageSize: number) {
+    getReviewsByVendorId = async(vendorId: string, page: number, pageSize: number): Promise<{ reviews: ReviewDocument[]; count: number }> =>{      
         const skip = (page - 1) * pageSize;
         const reviews = await Review.find({ vendorId: vendorId })
             .populate({
@@ -28,4 +29,4 @@ class ReviewRepository extends BaseRepository<ReviewDocument> {
     }
 }
 
-export default new ReviewRepository()
+export default ReviewRepository

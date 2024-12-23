@@ -1,31 +1,78 @@
 import { CustomError } from "../error/customError"
-import { AcceptanceStatus, VendorDocument } from "../models/vendorModel";
 import crypto from 'crypto';
-import vendorRepository from "../repositories/vendorRepository";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { emailTemplates } from "../utils/emailTemplates";
 import { sendEmail } from "../utils/sendEmail";
 import { s3Service } from "./s3Service";
-import { ServiceProvided } from "../models/postModel";
 import mongoose from "mongoose";
-import { CustomizationOption, PackageDocument } from "../models/packageModel";
+import { PackageDocument } from "../models/packageModel";
 import { validatePackageInput } from "../validations/packageValidation";
-import packageRepository from "../repositories/packageRepository";
 import moment from "moment";
-import bookingModel from "../models/bookingModel";
+import { AcceptanceStatus, BlockStatus, OTP_EXPIRY_TIME, RESEND_COOLDOWN, ServiceProvided } from "../enums/commonEnums";
+import { VendorDocument } from "../models/vendorModel";
+import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
+import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Repository.interface";
+import { CustomizationOption, FindAllVendorsResult, IVendorLoginResponse, Post, Vendor, VendorDetailsWithAll, VendorSession } from "../interfaces/commonInterfaces";
+import { createAccessToken, createRefreshToken } from "../config/jwt.config";
+import { IPackageRepository } from "../interfaces/repositoryInterfaces/package.repository.intrface";
+import { PostDocument } from "../models/postModel";
+import { IBookingRepository } from "../interfaces/repositoryInterfaces/booking.Repository.interface";
+import generateOTP from "../utils/generateOtp";
 
-interface VendorLoginResponse {
-    vendor: object,
-    message: string,
-    isNewVendor: boolean,
-    token: string,
-    refreshToken: string
-}
+class VendorService implements IVendorService {
 
 
-class VendorService {
-    async signup(
+    private vendorRepository: IVendorRepository;
+    private packageRepository: IPackageRepository;
+    private bookingRepo: IBookingRepository;
+
+    constructor(
+        vendorRepository: IVendorRepository,
+        packageRepository: IPackageRepository,
+        bookingRepo: IBookingRepository,
+    ) {
+        this.vendorRepository = vendorRepository;
+        this.packageRepository = packageRepository;
+        this.bookingRepo = bookingRepo;
+    }
+
+
+    registerVendor = async (data: {
+        email: string;
+        name: string;
+        password: string;
+        city: string;
+        contactinfo: string;
+        companyName: string;
+        about: string;
+    }): Promise<VendorSession> => {
+        const { email, name, password, city, contactinfo, companyName, about } = data;
+
+        const existingVendor = await this.vendorRepository.findByEmail(email);
+        if (existingVendor) throw new CustomError('Email already registered', 409);
+
+        const otpCode = await generateOTP(email);
+
+        if (!otpCode) throw new CustomError("Couldn't generate OTP", 500);
+
+        const otpSetTimestamp = Date.now();
+        return {
+            email,
+            password,
+            name,
+            contactinfo,
+            city,
+            companyName,
+            about,
+            otpCode,
+            otpSetTimestamp,
+            otpExpiry: otpSetTimestamp + OTP_EXPIRY_TIME,
+            resendTimer: otpSetTimestamp + RESEND_COOLDOWN,
+        };
+    }
+
+    signup = async (
         email: string,
         password: string,
         name: string,
@@ -33,14 +80,14 @@ class VendorService {
         city: string,
         companyName: string,
         about: string
-    ) {
+    ): Promise<{ vendor: VendorDocument }> => {
         try {
-            const existingVendor = await vendorRepository.findByEmail(email);
+            const existingVendor = await this.vendorRepository.findByEmail(email);
             if (existingVendor) throw new CustomError('Vendor already exists', 409);
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            const newVendor = await vendorRepository.create({
+            const newVendor = await this.vendorRepository.create({
                 email,
                 password: hashedPassword,
                 name,
@@ -54,19 +101,7 @@ class VendorService {
                 totalBooking: 0
             })
 
-            const token = jwt.sign(
-                { _id: newVendor._id },
-                process.env.JWT_SECRET_KEY!,
-                { expiresIn: '1h' }
-            );
-
-            const refreshToken = jwt.sign(
-                { _id: newVendor._id },
-                process.env.JWT_REFRESH_SECRET_KEY!,
-                { expiresIn: '1d' }
-            );
-
-            return { vendor: newVendor, token, refreshToken }
+            return { vendor: newVendor }
         } catch (error) {
             console.log('Error in Signup', error);
             if (error instanceof CustomError) {
@@ -77,9 +112,9 @@ class VendorService {
     }
 
 
-    async login(email: string, password: string): Promise<VendorLoginResponse> {
+    login = async (email: string, password: string): Promise<IVendorLoginResponse> => {
         try {
-            const existingVendor = await vendorRepository.findByEmail(email);
+            const existingVendor = await this.vendorRepository.findByEmail(email);
 
             if (!existingVendor) throw new CustomError('Vendor not Registered', 404);
 
@@ -93,7 +128,6 @@ class VendorService {
                     };
                 } catch (error) {
                     console.error('Error generating signed URL during login:', error);
-                    // Don't throw error, just continue with unsigned URL
                 }
             }
 
@@ -108,26 +142,12 @@ class VendorService {
             if (!passwordMatch) throw new CustomError('Incorrect Password ,Try again', 401)
             if (existingVendor.isActive === false) throw new CustomError('Account is Blocked by Admin', 403);
 
-            const token = jwt.sign(
-                { _id: existingVendor._id },
-                process.env.JWT_SECRET_KEY!,
-                {
-                    expiresIn: '1h'
-                }
-            )
+            const token = createAccessToken(existingVendor._id.toString())
 
             let { refreshToken } = existingVendor;
 
             if (!refreshToken || isTokenExpiringSoon(refreshToken)) {
-
-                refreshToken = jwt.sign(
-                    { _id: existingVendor._id },
-                    process.env.JWT_REFRESH_SECRET_KEY!,
-                    {
-                        expiresIn: '7d'
-                    }
-                )
-
+                refreshToken = createRefreshToken(existingVendor._id.toString())
                 existingVendor.refreshToken = refreshToken
                 await existingVendor.save()
             }
@@ -151,28 +171,21 @@ class VendorService {
         }
     }
 
-
-
-    async createRefreshToken(refreshToken: string) {
+    create_RefreshToken = async (refreshToken: string): Promise<string> => {
         try {
             const decodedToken = jwt.verify(
                 refreshToken,
                 process.env.JWT_REFRESH_SECRET_KEY!
             ) as { _id: string }
 
-            const vendor = await vendorRepository.getById(decodedToken._id);
+            const vendor = await this.vendorRepository.getById(decodedToken._id);
 
             if (!vendor || vendor.refreshToken !== refreshToken) {
                 throw new CustomError('Invalid refresh token', 401)
             }
 
-            const accessToken = jwt.sign(
-                { _id: vendor._id },
-                process.env.JWT_SECRET_KEY!,
-                { expiresIn: '1h' }
-            )
+            const accessToken = createAccessToken(vendor._id.toString())
             return accessToken;
-
 
         } catch (error) {
             console.error('Error while creatin refreshToken', error);
@@ -183,12 +196,29 @@ class VendorService {
         }
     }
 
-
-    async getVendors(page: number, limit: number, search: string, status?: string) {
+    checkBlock = async (vendorId: string): Promise<Vendor> => {
         try {
-            const result = await vendorRepository.findAllVendors(page, limit, search, status);
+            const vendor = await this.vendorRepository.getById(vendorId.toString())
+            if (vendor) return vendor
+            throw new CustomError('Vendor not found', 404)
+        } catch (error) {
+            console.error('Error while checking vendor ', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to check block status', 500);
+        }
+    }
+
+    getVendors = async (page: number, limit: number, search: string, status?: string): Promise<FindAllVendorsResult> => {
+        try {
+            const result = await this.vendorRepository.findAllVendors(page, limit, search, status);
             const updatedVendors = await Promise.all(
                 result.vendors.map(async (vendor) => {
+                    if (!vendor) {
+                        return undefined;
+                    }
+
                     try {
                         if (vendor.imageUrl === '') {
                             return { ...vendor }
@@ -225,13 +255,12 @@ class VendorService {
         }
     }
 
-    async verifyVendor(vendorId: string, status: AcceptanceStatus) {
+    verifyVendor = async (vendorId: string, status: AcceptanceStatus): Promise<{ success: boolean, message: string }> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId);
+            const vendor = await this.vendorRepository.getById(vendorId);
             if (!vendor) {
                 return { success: false, message: 'Vendor not found' };
             }
-
 
             vendor.isAccepted = status;
             vendor.isActive = status === AcceptanceStatus.Accepted;
@@ -264,19 +293,15 @@ class VendorService {
         }
     }
 
-
-
-
-    async SVendorBlockUnblock(vendorId: string): Promise<void> {
+    SVendorBlockUnblock = async (vendorId: string): Promise<BlockStatus> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId);
+            const vendor = await this.vendorRepository.getById(vendorId);
             if (!vendor) {
                 throw new CustomError('Vendor not Found', 404)
             }
-            console.log(vendor, 'vendor to be blocked sblock service');
-
             vendor.isActive = !vendor.isActive
             await vendor.save()
+            return vendor.isActive ? BlockStatus.UNBLOCK : BlockStatus.BLOCK;
         } catch (error) {
             console.error("Error in SVendorBlockUnblock", error);
             if (error instanceof CustomError) {
@@ -286,9 +311,9 @@ class VendorService {
         }
     }
 
-    async handleForgotPassword(email: string): Promise<void> {
+    handleForgotPassword = async (email: string): Promise<void> => {
         try {
-            const vendor = await vendorRepository.findByEmail(email)
+            const vendor = await this.vendorRepository.findByEmail(email)
             if (!vendor) {
                 throw new CustomError('User not exists', 404);
             }
@@ -316,12 +341,9 @@ class VendorService {
         }
     }
 
-    async newPasswordChange(token: string, password: string): Promise<void> {
+    newPasswordChange = async (token: string, password: string): Promise<void> => {
         try {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            const vendor = await vendorRepository.findByToken(token)
+            const vendor = await this.vendorRepository.findByToken(token)
 
             if (!vendor) {
                 throw new CustomError('Invalid token', 400);
@@ -330,7 +352,9 @@ class VendorService {
                 throw new CustomError('Password reset token has expired', 400);
             }
 
-            let updateSuccess = await vendorRepository.UpdatePassword(vendor._id, hashedPassword);
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            let updateSuccess = await this.vendorRepository.UpdatePassword(vendor._id, hashedPassword);
 
             if (!updateSuccess) {
                 throw new CustomError('Failed to Update password', 500)
@@ -346,8 +370,6 @@ class VendorService {
                 );
             }
 
-
-
         } catch (error) {
             console.error('Error in newPasswordChange:', error);
             if (error instanceof CustomError) {
@@ -357,9 +379,9 @@ class VendorService {
         }
     }
 
-    async validateToken(token: string): Promise<boolean> {
+    validateToken = async (token: string): Promise<boolean> => {
         try {
-            const vendor = await vendorRepository.findByToken(token)
+            const vendor = await this.vendorRepository.findByToken(token)
 
             if (!vendor) {
                 throw new CustomError('Invalid token', 400);
@@ -388,9 +410,9 @@ class VendorService {
         }
     }
 
-    async getVendorProfileService(vendorId: string) {
+    getVendorProfileService = async (vendorId: string): Promise<VendorDocument> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId.toString());
+            const vendor = await this.vendorRepository.getById(vendorId.toString());
 
             if (!vendor) {
                 throw new CustomError('Vendor not found', 400)
@@ -419,10 +441,18 @@ class VendorService {
         }
     }
 
-    async updateProfileService(name: string, contactinfo: string, companyName: string, city: string, about: string, files: Express.Multer.File | null, vendorId: any) {
+    updateProfileService = async (
+        name: string,
+        contactinfo: string,
+        companyName: string,
+        city: string,
+        about: string,
+        files: Express.Multer.File | null,
+        vendorId: any
+    ): Promise<VendorDocument | null> => {
         try {
 
-            const vendor = await vendorRepository.getById(vendorId.toString())
+            const vendor = await this.vendorRepository.getById(vendorId.toString())
             if (!vendor) {
                 throw new CustomError('User not found', 404)
             }
@@ -467,13 +497,13 @@ class VendorService {
                 throw new CustomError('No changes to update', 400);
             }
 
-            const updatedVendor = await vendorRepository.update(vendorId, updateData)
+            const updatedVendor = await this.vendorRepository.update(vendorId, updateData)
             if (!updatedVendor) {
                 throw new CustomError('Failed to update user', 500);
             }
             await updatedVendor.save();
 
-            const freshVendor = await vendorRepository.getById(vendorId.toString());
+            const freshVendor = await this.vendorRepository.getById(vendorId.toString());
             if (freshVendor?.imageUrl) {
                 try {
                     const imageUrl = await s3Service.getFile('captureCrew/vendor/photo/', freshVendor.imageUrl);
@@ -499,7 +529,7 @@ class VendorService {
     }
 
 
-    async addNewPkg(
+    addNewPkg = async (
         serviceType: ServiceProvided,
         price: number,
         description: string,
@@ -509,7 +539,7 @@ class VendorService {
         features: string[],
         customizationOptions: CustomizationOption[],
         vendorId: mongoose.Types.ObjectId
-    ): Promise<{ package: PackageDocument }> {
+    ): Promise<{ package: PackageDocument }> => {
         try {
             const durationNum = typeof duration === 'string' ? parseFloat(duration) : duration;
 
@@ -531,15 +561,13 @@ class VendorService {
                 )
             }
 
-            const exists = await packageRepository.checkExistingPackage(vendorId, serviceType);
+            const exists = await this.packageRepository.checkExistingPackage(vendorId, serviceType);
             if (exists) {
                 throw new CustomError(
                     `A package for ${serviceType} already exists for this vendor`,
                     409
                 )
             }
-            console.log(exists, 'exists or not');
-
 
             const packageData: Partial<PackageDocument> = {
                 vendor_id: vendorId,
@@ -555,9 +583,7 @@ class VendorService {
                 createdAt: new Date()
             };
 
-            const createdPackage = await packageRepository.create(packageData)
-            console.log(createdPackage, 'in service all done pkg creation');
-
+            const createdPackage = await this.packageRepository.create(packageData)
             return { package: createdPackage }
 
         } catch (error) {
@@ -569,7 +595,7 @@ class VendorService {
         }
     }
 
-    async updatePkg(
+    updatePkg = async (
         vendorId: mongoose.Types.ObjectId,
         packageId: string,
         serviceType?: ServiceProvided,
@@ -580,10 +606,9 @@ class VendorService {
         videographerCount?: number,
         features?: string[],
         customizationOptions?: CustomizationOption[],
-    ): Promise<{ package: PackageDocument }> {
+    ): Promise<{ package: PackageDocument }> => {
         try {
-            const existingPkg = await packageRepository.getById(packageId);
-            console.log(existingPkg, 'existing package');
+            const existingPkg = await this.packageRepository.getById(packageId);
 
             if (!existingPkg) {
                 throw new CustomError('Package not found', 404)
@@ -602,7 +627,6 @@ class VendorService {
                 features,
                 customizationOptions
             };
-            console.log(updatedData, 'updatesd daata i serive');
 
 
             const validationResult = await validatePackageInput(updatedData);
@@ -613,8 +637,7 @@ class VendorService {
                 );
             }
 
-            const updatedPackage = await packageRepository.update(packageId, updatedData);
-            console.log(updatedPackage, 'updated pkg in service');
+            const updatedPackage = await this.packageRepository.update(packageId, updatedData);
 
 
             if (!updatedPackage) {
@@ -631,12 +654,12 @@ class VendorService {
         }
     }
 
-    async getPackages(vendorId: mongoose.Types.ObjectId) {
+    getPackages = async (vendorId: mongoose.Types.ObjectId): Promise<PackageDocument[]> => {
         try {
-            const packages = await packageRepository.getPkgs(vendorId)
-            if (packages.length === 0) {
-                throw new CustomError('No packages added', 404)
-            }
+            const packages = await this.packageRepository.getPkgs(vendorId)
+            // if (packages.length === 0) {
+            //     throw new CustomError('No packages added', 404)
+            // }
             return packages
         } catch (error) {
             console.error('Error in getPackages:', error);
@@ -648,12 +671,11 @@ class VendorService {
     }
 
 
-    async getAllDetails(vendorId: string) {
+    getAllDetails = async (vendorId: string): Promise<VendorDetailsWithAll> => {
         try {
-            const vendorDetails = await vendorRepository.getAllPopulate(vendorId);
+            const vendorDetails = await this.vendorRepository.getAllPopulate(vendorId);
             let updatedVendorDetails = { ...vendorDetails };
 
-            // Handle vendor profile image
             if (vendorDetails?.imageUrl) {
                 try {
                     const profileImageUrl = await s3Service.getFile('captureCrew/vendor/photo/', vendorDetails.imageUrl);
@@ -663,14 +685,14 @@ class VendorService {
                 }
             }
 
-            // Handle posts images
             if (vendorDetails.posts && Array.isArray(vendorDetails.posts)) {
                 const updatedPosts = await Promise.all(
-                    vendorDetails.posts.map(async (post) => {
+                    vendorDetails.posts.map(async (post: PostDocument) => {
                         try {
-                            if (post.imageUrl && Array.isArray(post.imageUrl)) {
+                            const postObject = post.toObject ? post.toObject() : post;
+                            if (postObject.imageUrl && Array.isArray(postObject.imageUrl)) {
                                 const signedImageUrls = await Promise.all(
-                                    post.imageUrl.map(async (imageFileName) => {
+                                    postObject.imageUrl.map(async (imageFileName: string) => {
                                         try {
                                             const signedUrl = await s3Service.getFile(
                                                 'captureCrew/vendor/posts/',
@@ -684,17 +706,16 @@ class VendorService {
                                     })
                                 );
 
-                                // Filter out null values and create new post object
                                 const validSignedUrls = signedImageUrls.filter(url => url !== null);
                                 return {
-                                    ...post,  // Spread the post object directly
+                                    ...postObject,
                                     imageUrl: validSignedUrls
                                 };
                             }
-                            return post;  // Return the post object directly
+                            return postObject;
                         } catch (error) {
                             console.error('Error processing post:', error);
-                            return post;  // Return the post object directly
+                            return post;
                         }
                     })
                 );
@@ -702,10 +723,10 @@ class VendorService {
                 updatedVendorDetails.posts = updatedPosts;
             }
 
-            // Convert the entire vendor details to a plain object if it's a Mongoose document
-            const finalVendorDetails = vendorDetails.toObject ?
-                { ...vendorDetails.toObject(), ...updatedVendorDetails } :
-                updatedVendorDetails;
+            const finalVendorDetails = {
+                ...vendorDetails,
+                ...updatedVendorDetails,
+            };
 
             return finalVendorDetails;
 
@@ -715,7 +736,12 @@ class VendorService {
         }
     }
 
-    async addDates(dates: string[], vendorId: string) {
+    addDates = async (dates: string[], vendorId: string): Promise<{
+        success: boolean;
+        message: string;
+        addedDates: string[];
+        alreadyBookedDates: string[];
+    }> => {
         try {
             const isValidDates = dates.every(date => {
                 const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
@@ -739,13 +765,7 @@ class VendorService {
                 throw new CustomError('Cannot add dates from the past', 400);
             }
 
-            const { newDates, alreadyBooked, updatedVendor } = await vendorRepository.addDates(dates, vendorId);
-            console.log(newDates, 'newDates');
-            console.log(alreadyBooked, 'alreadyBooked');
-            console.log(updatedVendor, 'updatedVendor');
-
-
-
+            const { newDates, alreadyBooked, updatedVendor } = await this.vendorRepository.addDates(dates, vendorId);
 
             if (newDates.length === 0 && alreadyBooked.length > 0) {
                 return {
@@ -775,9 +795,9 @@ class VendorService {
         }
     }
 
-    async showDates(vendorId: string) {
+    showDates = async (vendorId: string): Promise<VendorDocument | null> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId)
+            const vendor = await this.vendorRepository.getById(vendorId)
             return vendor
         } catch (error) {
             console.error('Error in showUnavailble dates:', error);
@@ -785,7 +805,10 @@ class VendorService {
         }
     }
 
-    async removeDates(dates: string[], vendorId: string) {
+    removeDates = async (dates: string[], vendorId: string): Promise<{
+        success: boolean;
+        removedDates: string[];
+    }> => {
         try {
             const isValidDates = dates.every(date => {
                 const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
@@ -809,7 +832,7 @@ class VendorService {
                 throw new CustomError('Cannot modify dates from the past', 400);
             }
 
-            const result = await vendorRepository.removeDates(dates, vendorId);
+            const result = await this.vendorRepository.removeDates(dates, vendorId);
 
             return {
                 success: true,
@@ -821,9 +844,9 @@ class VendorService {
         }
     }
 
-    async passwordCheckUser(currentPassword: string, newPassword: string, vendorId: any) {
+    passwordCheckVendor = async (currentPassword: string, newPassword: string, vendorId: any): Promise<void> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId.toString())
+            const vendor = await this.vendorRepository.getById(vendorId.toString())
             if (!vendor) {
                 throw new CustomError('User not found', 404)
             }
@@ -845,7 +868,7 @@ class VendorService {
 
             const salt = await bcrypt.genSalt(10);
             const newHashedPassword = await bcrypt.hash(newPassword, salt);
-            const updateSuccess = await vendorRepository.UpdatePassword(vendorId, newHashedPassword)
+            const updateSuccess = await this.vendorRepository.UpdatePassword(vendorId, newHashedPassword)
             if (!updateSuccess) {
                 throw new CustomError('Failed to update password', 500);
             }
@@ -865,11 +888,11 @@ class VendorService {
         }
     }
 
-    async getSingleVendor(vendorId:string): Promise<VendorDocument> {
+    getSingleVendor = async (vendorId: string): Promise<VendorDocument> => {
         try {
-            const vendor = await vendorRepository.getById(vendorId)
-            if(!vendor){
-                throw new CustomError('Vendor not found',404)
+            const vendor = await this.vendorRepository.getById(vendorId)
+            if (!vendor) {
+                throw new CustomError('Vendor not found', 404)
             }
             let vendorWithSignedUrl = vendor.toObject();
             if (vendor?.imageUrl) {
@@ -881,7 +904,6 @@ class VendorService {
                     };
                 } catch (error) {
                     console.error('Error generating signed URL during getSingleVendor:', error);
-                    // Don't throw error, just continue with unsigned URL
                 }
             }
             return vendorWithSignedUrl
@@ -894,121 +916,111 @@ class VendorService {
         }
     }
 
-    async getRevenueDetails(dateType: string,vendorId: string) {
+    getRevenueDetails = async (dateType: string, vendorId: string, startDate?: string, endDate?: string): Promise<number[]> => {
         try {
-          let start, end, groupBy, sortField, arrayLength = 0;
-          switch (dateType) {
-            case 'week':
-              const { startOfWeek, endOfWeek } = getCurrentWeekRange();
-              start = startOfWeek;
-              end = endOfWeek;
-              groupBy = { $dayOfWeek: '$paidAt' };
-              sortField = 'day';
-              arrayLength = 7;
-              break;
-    
-            case 'month':
-              const { startOfYear, endOfYear } = getCurrentYearRange();
-              start = startOfYear;
-              end = endOfYear;
-              groupBy = { $month: '$paidAt' };
-              sortField = 'month';
-              arrayLength = 12;
-              break;
-    
-            case 'year':
-              const { startOfFiveYearsAgo, endOfCurrentYear } = getLastFiveYearsRange();
-              start = startOfFiveYearsAgo;
-              end = endOfCurrentYear;
-              groupBy = { $year: '$paidAt' };
-              sortField = 'year';
-              arrayLength = 5;
-              break;
-    
-    
-            default:
-              throw new CustomError('Invalid Date Parameter', 400)
-          }
-    
-          const revenueData = await bookingModel.aggregate([
-            {
-                $match: {
-                    vendorId: new mongoose.Types.ObjectId(vendorId), 
-                },
-            },
-            {
-              $project: {
-                validAdvanceAmount: {
-                  $cond: [
-                    { $eq: ['$advancePayment.status', 'completed'] },
-                    '$advancePayment.amount',
-                    0
-                  ]
-                },
-                validFinalAmount: {
-                  $cond: [
-                    {
-                      $and: [
-                        { $eq: ['$finalPayment.status', 'completed'] },
-                        { $ne: ['$finalPayment.paidAt', null] }
-                      ]
-                    },
-                    '$finalPayment.amount',
-                    0
-                  ]
-                },
-                paidAt: {
-                  $ifNull: ['$finalPayment.paidAt', '$advancePayment.paidAt']
-                }
-              }
-            },
-            {
-              $project: {
-                totalAmount: { $add: ['$validAdvanceAmount', '$validFinalAmount'] },
-                paidAt: 1
-              }
-            },
-            {
-              $match: {
-                paidAt: { $gte: start, $lt: end }
-              }
-            },
-            {
-              $group: {
-                _id: {
-                  [sortField]: groupBy
-                },
-                totalRevenue: { $sum: '$totalAmount' }
-              }
-            },
-            { $sort: { [`_id.${sortField}`]: 1 } }
-          ]);
-    
-          const revenueArray = Array.from({ length: arrayLength }, (_, index) => {
-            const item = revenueData.find((r) => {
-    
-              if (dateType === 'week') {
-                const dayFromData = r._id?.day;
-                return dayFromData === index + 1;
-              } else if (dateType === 'month') {
-                return r._id?.month === index + 1 || r._id?.month?.month === index + 1;
-              } else if (dateType === 'year') {
-                const expectedYear = new Date().getFullYear() - (arrayLength - 1) + index;
-                return r._id?.year === expectedYear;
-              }
-              return false;
-            });
-    
-            return item ? item.totalRevenue : 0;
-          });
-          return revenueArray
-    
-        } catch (error) {
-          console.error('Error fetching revenue stats:', error);
-          throw new Error('Unable to fetch revenue statistics');
-        }
-      }
+            let start: Date, end: Date, groupBy, sortField: string, arrayLength = 0;
+            if (dateType === 'custom' && startDate && endDate) {
+                start = new Date(startDate);
+                end = new Date(endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+                groupBy = { $dayOfMonth: '$paidAt' };
+                sortField = 'day'
+                arrayLength = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            } else {
+                switch (dateType) {
+                    case 'week':
+                        const { startOfWeek, endOfWeek } = getCurrentWeekRange();
+                        start = startOfWeek;
+                        end = endOfWeek;
+                        groupBy = { $dayOfWeek: '$paidAt' };
+                        sortField = 'day';
+                        arrayLength = 7;
+                        break;
 
+                    case 'month':
+                        const { startOfYear, endOfYear } = getCurrentYearRange();
+                        start = startOfYear;
+                        end = endOfYear;
+                        groupBy = { $month: '$paidAt' };
+                        sortField = 'month';
+                        arrayLength = 12;
+                        break;
+
+                    case 'year':
+                        const { startOfFiveYearsAgo, endOfCurrentYear } = getLastFiveYearsRange();
+                        start = startOfFiveYearsAgo;
+                        end = endOfCurrentYear;
+                        groupBy = { $year: '$paidAt' };
+                        sortField = 'year';
+                        arrayLength = 5;
+                        break;
+
+
+                    default:
+                        throw new CustomError('Invalid Date Parameter', 400)
+                }
+            }
+
+            const revenueData = await this.bookingRepo.getRevenueData(vendorId, start, end, groupBy, sortField);
+
+            if (dateType === 'custom') {
+                const dailyRevenue = new Array(arrayLength).fill(0);
+          
+                revenueData.forEach(item => {
+                  const day = item._id.day;
+                          let currentDate = new Date(start);
+                  while (currentDate <= end) {
+                    if (currentDate.getDate() === day) {
+                      const dayIndex = Math.floor(
+                        (currentDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+                      );
+                      
+                      const revenueDate = new Date(currentDate);
+                      revenueDate.setHours(0, 0, 0, 0);
+                  
+                      const revenueDateStr = revenueDate.toISOString().split('T')[0];
+                      const startStr = start.toISOString().split('T')[0];
+                      const endStr = end.toISOString().split('T')[0];
+                      
+                      if (revenueDateStr >= startStr && revenueDateStr <= endStr && 
+                          dayIndex >= 0 && dayIndex < arrayLength) {
+                        dailyRevenue[dayIndex] = item.totalRevenue;
+                      }
+                    }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                  }
+                });
+          
+                console.log(dailyRevenue, 'dailyRevenue');
+                return dailyRevenue;
+              }
+
+            const revenueArray = Array.from({ length: arrayLength }, (_, index) => {
+                const item = revenueData.find((r) => {
+
+                    if (dateType === 'week') {
+                        const dayFromData = r._id?.day;
+                        return dayFromData === index + 1;
+                    } else if (dateType === 'month') {
+                        return r._id?.month === index + 1;
+                    } else if (dateType === 'year') {
+                        const expectedYear = new Date().getFullYear() - (arrayLength - 1) + index;
+                        return r._id?.year === expectedYear;
+                    }
+                    return false;
+                });
+
+                return item ? item.totalRevenue : 0;
+            });
+            return revenueArray
+
+        } catch (error) {
+            console.error('Error fetching revenue stats:', error);
+            throw new Error('Unable to fetch revenue statistics');
+        }
+    }
 
 
 
@@ -1042,22 +1054,22 @@ function getCurrentWeekRange() {
     const startOfWeek = moment().startOf("isoWeek").toDate();
     const endOfWeek = moment().endOf("isoWeek").toDate();
     return { startOfWeek, endOfWeek };
-  }
-  
-  // Function to get current year range
-  function getCurrentYearRange() {
+}
+
+// Function to get current year range
+function getCurrentYearRange() {
     const startOfYear = new Date(new Date().getFullYear(), 0, 1);
     const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
     return { startOfYear, endOfYear };
-  }
-  
-  // Function to calculate the last five years' range
-  function getLastFiveYearsRange() {
+}
+
+// Function to calculate the last five years' range
+function getLastFiveYearsRange() {
     const currentYear = new Date().getFullYear();
     const startOfFiveYearsAgo = new Date(currentYear - 4, 0, 1);
     const endOfCurrentYear = new Date(currentYear + 1, 0, 1);
     return { startOfFiveYearsAgo, endOfCurrentYear };
-  }
-  
+}
 
-export default new VendorService();
+
+export default VendorService;

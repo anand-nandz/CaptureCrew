@@ -1,33 +1,40 @@
 import { Request, Response } from 'express';
 import { handleError } from "../utils/handleError"
-import messageservice from '../services/messageservice';
 import conversationService from '../services/conversationService';
+import { IMessageService } from '../interfaces/serviceInterfaces/message.Service.Interface';
+import { IConversationService } from '../interfaces/serviceInterfaces/conversation.service.interface';
 
 class MessageController {
-    async createMessage(req: Request, res: Response): Promise<any> {
+    private messageservice:IMessageService;
+    private conversationService: IConversationService;
+
+    constructor (messageservice:IMessageService, conversationService: IConversationService) {
+        this.messageservice = messageservice,
+        this.conversationService = conversationService
+    }
+    createMessage = async(req: Request, res: Response): Promise<any> =>{
         try {
             const { conversationId, senderId, text, imageName, imageUrl } = req.body
-            const response = await messageservice.createMessage(
+            const response = await this.messageservice.createMessage(
                 conversationId,
                 senderId,
                 text,
                 imageName,
                 imageUrl
             )
-            console.log(response, 'after message creatrion');
 
-            await conversationService.updateConversation(conversationId, text)
+            await this.conversationService.updateConversation(conversationId, text)
             res.status(200).json(response)
         } catch (error) {
             handleError(res, error, 'sendMessage')
         }
     }
 
-    async getMessages(req: Request, res: Response) {
+    getMessages = async(req: Request, res: Response): Promise<void> =>{
         try {
             const conversationId: string = req.query.conversationId as string
-            const messages = await messageservice.findMessages(conversationId)
-            console.log(messages, 'messagesssssssssss');
+            const messages = await this.messageservice.findMessages(conversationId)
+            
             res.status(200).json(messages)
         } catch (error) {
             handleError(res, error, 'getMessages')
@@ -35,16 +42,19 @@ class MessageController {
 
     }
 
-    async changeIsRead(req: Request, res: Response) {
+    changeIsRead = async(req: Request, res: Response): Promise<void> =>{
         try {
             const { chatId, senderId } = req.body
-            console.log(req.body);
-            const messages = await messageservice.changeReadStatus(chatId, senderId)
-            res.status(200).json({ messages })
+            const updateResult = await this.messageservice.changeReadStatus(chatId, senderId)
+            res.status(200).json({ 
+                updateResult,
+                matchedCount: updateResult.matchedCount,
+                modifiedCount: updateResult.modifiedCount,
+            })
         } catch (error) {
             handleError(res, error, 'changeIsRead')
         }
     }
 }
 
-export default new MessageController()
+export default MessageController;

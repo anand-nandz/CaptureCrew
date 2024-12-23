@@ -1,30 +1,5 @@
 import mongoose, { Schema, Document, model } from 'mongoose';
-
-export enum ReportType {
-  POST = 'Post',
-  VENDOR = 'Vendor'
-}
-
-export enum ReportReason {
-  INAPPROPRIATE_CONTENT = 'Inappropriate Content',
-  SPAM = 'Spam',
-  MISLEADING = 'Misleading Information',
-  HARASSMENT = 'Harassment',
-  COPYRIGHT = 'Copyright Infringement',
-  FraudulentActivity = 'Fraudulent Activity',
-  PoorCustomerService = 'Poor Customer Service',
-  UnresponsivetoCommunication = 'Unresponsive to Communication',
-  ViolationofTermsofService = 'Violation of Terms of Service',
-  UnethicalBusinessPractices = 'Unethical Business Practices',
-  OTHER = 'Other'
-}
-
-export enum ReportStatus {
-  PENDING = 'Pending',
-  REVIEWED = 'Reviewed',
-  RESOLVED = 'Resolved',
-  DISMISSED = 'Dismissed'
-}
+import { ReportReason, ReportStatus, ReportType } from '../interfaces/commonInterfaces';
 
 export interface IReport extends Document {
   reportedBy: mongoose.Types.ObjectId;

@@ -2,21 +2,23 @@ import Vendor, { VendorDocument } from "../models/vendorModel";
 import Post, { PostDocument } from "../models/postModel";
 import Package, { PackageDocument } from "../models/packageModel";
 import { BaseRepository } from "./baseRepository";
-import mongoose, {Document} from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { CustomError } from "../error/customError";
+import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Repository.interface";
+import { VendorDetailsWithAll } from "../interfaces/commonInterfaces";
 
-type VendorDocumentWithId = Document<unknown, {}, VendorDocument> & 
-    VendorDocument & 
-    Required<{ _id: mongoose.Types.ObjectId }> & 
-    { __v?: number };
+type VendorDocumentWithId = Document<unknown, {}, VendorDocument> &
+    VendorDocument &
+    Required<{ _id: mongoose.Types.ObjectId }> &
+{ __v?: number };
 
-class VendorRepository extends BaseRepository<VendorDocument> {
+class VendorRepository extends BaseRepository<VendorDocument> implements IVendorRepository {
     constructor() {
         super(Vendor);
     }
 
 
-    async findAllVendors(page: number, limit: number, search: string, status?: string) {
+    findAllVendors = async(page: number, limit: number, search: string, status?: string) =>{
         try {
             const skip = (page - 1) * limit;
 
@@ -52,7 +54,7 @@ class VendorRepository extends BaseRepository<VendorDocument> {
         }
     }
 
-    async UpdatePassword(vendorId: mongoose.Types.ObjectId, hashedPassword: string): Promise<boolean> {
+    UpdatePassword = async (vendorId: mongoose.Types.ObjectId, hashedPassword: string): Promise<boolean> => {
         try {
             const result = await Vendor.updateOne(
                 { _id: vendorId },
@@ -65,7 +67,7 @@ class VendorRepository extends BaseRepository<VendorDocument> {
         }
     }
 
-    async getAllPopulate(vendorId: string) {
+    getAllPopulate = async (vendorId: string): Promise<VendorDetailsWithAll> => {
         try {
             const vendor = await Vendor.findById(vendorId)
                 .select('-password')
@@ -85,9 +87,9 @@ class VendorRepository extends BaseRepository<VendorDocument> {
                 .sort({ createdAt: -1 })
                 .lean()
                 .exec();
-                
+
             return {
-                ...vendor,
+                vendor,
                 posts,
                 packages
             };
@@ -97,11 +99,16 @@ class VendorRepository extends BaseRepository<VendorDocument> {
         }
     }
 
-    async addDates(dates:string[],vendorId:string){
+    addDates = async (dates: string[], vendorId: string): Promise<{
+        previousDates: string[];
+        newDates: string[];
+        alreadyBooked: string[];
+        updatedVendor: VendorDocument;
+    }> => {
         try {
             const vendor = await Vendor.findById(vendorId);
-            if(!vendor){
-                throw new CustomError('Vendor not found',404)
+            if (!vendor) {
+                throw new CustomError('Vendor not found', 404)
             }
 
             const existingDatesSet = new Set(vendor.bookedDates || [])
@@ -109,17 +116,17 @@ class VendorRepository extends BaseRepository<VendorDocument> {
             const alreadyExistingDates = dates.filter(date => existingDatesSet.has(date));
 
             let updatedVendor: VendorDocumentWithId = vendor;
-            if(newDatesToAdd.length > 0){
-               const updated = await Vendor.findByIdAndUpdate(
+            if (newDatesToAdd.length > 0) {
+                const updated = await Vendor.findByIdAndUpdate(
                     vendorId,
                     {
-                        $addToSet: { bookedDates: { $each: newDatesToAdd }}
+                        $addToSet: { bookedDates: { $each: newDatesToAdd } }
                     },
                     { new: true }
                 );
 
-                if(!updated){
-                    throw new CustomError('Failed to update vendor',500)
+                if (!updated) {
+                    throw new CustomError('Failed to update vendor', 500)
                 }
                 updatedVendor = updated;
             }
@@ -132,19 +139,22 @@ class VendorRepository extends BaseRepository<VendorDocument> {
             };
 
         } catch (error) {
-            console.error('Error in adding dates',error);
-            throw new CustomError('Failed to add new Dates',500)
+            console.error('Error in adding dates', error);
+            throw new CustomError('Failed to add new Dates', 500)
         }
     }
 
 
-    async removeDates(dates: string[], vendorId: string) {
+    removeDates = async(dates: string[], vendorId: string): Promise<{
+        removedDates: string[];
+        updatedVendor: VendorDocument;
+    }> =>{
         try {
             const vendor = await Vendor.findById(vendorId);
             if (!vendor) {
                 throw new CustomError('Vendor not found', 404);
             }
-    
+
             const updatedVendor = await Vendor.findByIdAndUpdate(
                 vendorId,
                 {
@@ -152,11 +162,11 @@ class VendorRepository extends BaseRepository<VendorDocument> {
                 },
                 { new: true }
             );
-    
+
             if (!updatedVendor) {
                 throw new CustomError('Failed to update vendor', 500);
             }
-    
+
             return {
                 removedDates: dates,
                 updatedVendor
@@ -175,4 +185,4 @@ class VendorRepository extends BaseRepository<VendorDocument> {
 
 }
 
-export default new VendorRepository();
+export default VendorRepository;

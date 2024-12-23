@@ -2,7 +2,7 @@
 import { CustomError, StripeRefundError } from '../error/customError';
 import userRepository from '../repositories/userRepository';
 import bookingRepository from '../repositories/bookingRepository';
-import bookingRequestModel, { BookingAcceptanceStatus, BookingInterface } from '../models/bookingRequestModel';
+import bookingRequestModel, { BookingReqDocument } from '../models/bookingRequestModel';
 import vendorRepository from '../repositories/vendorRepository';
 import { v4 as uuidv4 } from 'uuid';
 import packageRepository from '../repositories/packageRepository';
@@ -10,31 +10,67 @@ import mongoose from 'mongoose';
 import { sendEmail } from '../utils/sendEmail';
 import { emailTemplates } from '../utils/emailTemplates';
 import paymentService from './paymentService';
-import bookingModel, { BookingDocument, BookingStatus, PaymentStatus } from '../models/bookingModel';
+import bookingModel, { BookingDocument } from '../models/bookingModel';
 import cron from 'node-cron';
 import bookingRepo from '../repositories/bookingRepo';
-import { PaymentMethod, PaymentType, TransactionType } from '../utils/extraUtils';
 import userModel from '../models/userModel';
 import vendorModel from '../models/vendorModel';
 import { BookingCancellationPolicyImpl } from '../utils/bookingPolicyService';
+import Stripe from 'stripe';
+import { BookingAcceptanceStatus, BookingStatus, PaymentMethod, PaymentStatus, PaymentType, TransactionType } from '../enums/commonEnums';
+import { IBookingService } from '../interfaces/serviceInterfaces/booking.Service.interface';
+import { IBookingReqRepository } from '../interfaces/repositoryInterfaces/bookingReq.Repository.Interface';
+import { BookingInterface, BookingReqInterface, BookingVendorResponse, CancelBookingResult, PaymentData, RefundResult } from '../interfaces/commonInterfaces';
+import { IBookingRepository } from '../interfaces/repositoryInterfaces/booking.Repository.interface';
+import { IUserRepository } from '../interfaces/repositoryInterfaces/user.repository.Interface';
+import { IPaymentService } from '../interfaces/serviceInterfaces/payment.Service.Interface';
+import { IVendorRepository } from '../interfaces/repositoryInterfaces/vendor.Repository.interface';
+import { IPackageRepository } from '../interfaces/repositoryInterfaces/package.repository.intrface';
 
-class BookingService {
-    async newBookingReq(
-        bookingData: Partial<BookingInterface>,
+class BookingService implements IBookingService {
+
+    private bookingRepository: IBookingReqRepository;
+    private bookingRepo: IBookingRepository;
+    private vendorRepository: IVendorRepository;
+    private userRepository: IUserRepository;
+    private paymentService: IPaymentService;
+    private packageRepository: IPackageRepository;
+
+    constructor(
+        bookingRepository: IBookingReqRepository,
+        bookingRepo: IBookingRepository,
+        userRepository: IUserRepository,
+        paymentService: IPaymentService,
+        vendorRepository: IVendorRepository,
+        packageRepository: IPackageRepository
+    ) {
+        this.bookingRepository = bookingRepository;
+        this.bookingRepo = bookingRepo;
+        this.userRepository = userRepository;
+        this.paymentService = paymentService;
+        this.vendorRepository = vendorRepository;
+        this.packageRepository = packageRepository
+    }
+
+    newBookingReq = async (
+        bookingData: Partial<BookingReqInterface>,
         vendorId: string,
         userId: string
-    ) {
+    ): Promise<{
+        success: boolean,
+        reqSend: boolean
+    }> => {
         try {
-            const user = await userRepository.getById(userId)
-            if (!user) {
-                throw new CustomError('No user found', 400)
-            }
-            const vendor = await vendorRepository.getById(vendorId);
-            if (!vendor) {
-                throw new CustomError('No Vendor found', 404)
-            }
+
+            const [user, vendor] = await Promise.all([
+                this.userRepository.getById(userId),
+                this.vendorRepository.getById(vendorId)
+            ])
+
+            if (!user) throw new CustomError('No user found', 400);
+            if (!vendor) throw new CustomError('No Vendor found', 404);
             if (bookingData.startingDate) {
-                const slotAvailabilty = await bookingRepository.checkIsAvailable(bookingData.startingDate, vendorId);
+                const slotAvailabilty = await this.bookingRepository.checkIsAvailable(bookingData.startingDate, vendorId);
 
                 if (slotAvailabilty === true) {
 
@@ -45,7 +81,7 @@ class BookingService {
                         ? new mongoose.Types.ObjectId(bookingData.packageId)
                         : bookingData.packageId;
 
-                    const pkgamt = await packageRepository.getById(pkgGot.toString());
+                    const pkgamt = await this.packageRepository.getById(pkgGot.toString());
 
 
                     if (!pkgamt || typeof pkgamt.price !== 'number') {
@@ -77,7 +113,7 @@ class BookingService {
                         throw new CustomError('Price mismatch in calculations', 400);
                     }
 
-                    const createBookingReq = await bookingRepository.saveBookingReq(
+                    const createBookingReq = await this.bookingRepository.saveBookingReq(
                         userId,
                         vendorId,
                         bookingData.startingDate,
@@ -88,7 +124,7 @@ class BookingService {
                         bookingData.venue || "",
                         bookingData.serviceType || "",
                         bookingData.packageId,
-                        bookingData.totalPrice || totalPrice, // This will now work with both string and ObjectId
+                        bookingData.totalPrice || totalPrice,
                         bookingData.message || "",
                         BookingAcceptanceStatus.Requested,
                         bookingData.customizations
@@ -129,15 +165,18 @@ class BookingService {
                                 })
                             );
                         }
-                    }
 
-                    if (createBookingReq !== null) {
-                        return { success: true, reqSend: true }
-                    } else {
-                        return { success: false, reqSend: false }
+                        if (createBookingReq !== null) {
+                            return { success: true, reqSend: true }
+                        } else {
+                            return { success: false, reqSend: false }
+                        }
                     }
+                    return { success: false, reqSend: false };
                 }
             }
+            return { success: false, reqSend: false };
+
         } catch (error) {
             console.error('Error in newBookingReq:', error);
             if (error instanceof CustomError) {
@@ -147,20 +186,22 @@ class BookingService {
         }
     }
 
-    async getBookingRequests(userId: string) {
+    getBookingRequests = async (userId: string): Promise<{
+        success: boolean,
+        bookingRequest?: BookingReqInterface[] | null,
+        bookingConfirmed?: BookingInterface[] | null
+    }> => {
         try {
 
             const [result, confirmed] = await Promise.all([
-                bookingRepository.findBookingRequests(userId),
-                bookingRepo.findBookingConfirmedReqs(userId)
+                this.bookingRepository.findBookingRequests(userId),
+                this.bookingRepo.findBookingConfirmedReqs(userId)
             ]);
-            // const result = await bookingRepository.findBookingRequests(userId);
-            // const confirmed = await bookingRepo.findBookingConfirmedReqs(userId)
 
             if (result !== null) {
                 return { success: true, bookingRequest: result, bookingConfirmed: confirmed }
             } else {
-                return { success: false }
+                return { success: false, bookingRequest: [], bookingConfirmed: [] }
             }
 
         } catch (error) {
@@ -172,19 +213,28 @@ class BookingService {
         }
     }
 
-    async bookingReqsVendor(vendorId: string) {
+    bookingReqsVendor = async (vendorId: string): Promise<BookingVendorResponse> => {
         try {
             const [result, confirmed] = await Promise.all([
-                bookingRepository.getBookingReqsVendor(vendorId),
-                bookingRepo.findBookingConfirmedReqsV(vendorId)
+                this.bookingRepository.getBookingReqsVendor(vendorId),
+                this.bookingRepo.findBookingConfirmedReqsV(vendorId)
             ]);
-            // const result = await bookingRepository.getBookingReqsVendor(vendorId);
-            // const confirmed = await bookingRepo.findBookingConfirmedReqsV(vendorId);
+            const bookingRequest = result && result.length > 0 ? result : [];
+            const bookingConfirmed = confirmed || [];
 
-            if (result && result.length > 0) {
-                return { success: true, bookingRequest: result, bookingConfirmed: confirmed };
+
+            if (bookingRequest.length > 0 || bookingConfirmed.length > 0) {
+                return {
+                    success: true,
+                    bookingRequest,
+                    bookingConfirmed
+                };
             } else {
-                return { success: false, bookingRequest: [] };
+                return {
+                    success: false,
+                    bookingRequest,
+                    bookingConfirmed
+                };
             }
         } catch (error) {
             console.error('Error in bookingReqsVendor:', error);
@@ -195,21 +245,12 @@ class BookingService {
         }
     }
 
-    async revokeRequest(bookingId: string, userId: string) {
+    revokeRequest = async (bookingId: string, userId: string) => {
         try {
-            const booking = await bookingRequestModel.findOne({
-                _id: bookingId,
-                user_id: userId
-            })
-            if (!booking) {
-                throw new CustomError('Booking not Found', 404)
-            }
-            if (booking.bookingStatus !== BookingAcceptanceStatus.Requested) {
-                throw new CustomError(`Cannot revoke booking. Current status: ${booking.bookingStatus}`, 400)
-            }
-            const deleteReq = await bookingRepository.deleteReq(bookingId, userId)
+            await this.bookingRepository.validateBooking(bookingId, userId, BookingAcceptanceStatus.Requested);
+            const revokeReq = await this.bookingRepository.deleteReq(bookingId, userId)
 
-            return deleteReq
+            return revokeReq
         } catch (error) {
             console.error('Error in revokeRequest:', error);
             if (error instanceof CustomError) {
@@ -219,12 +260,12 @@ class BookingService {
         }
     }
 
-    async acceptRejectReq(bookingId: string, vendorId: string, action: string, rejectionReason?: string): Promise<void> {
+    acceptRejectReq = async (bookingId: string, vendorId: string, action: string, rejectionReason?: string): Promise<void> => {
         try {
 
             const [bookingReq, vendor] = await Promise.all([
-                bookingRepository.getById(bookingId),
-                vendorRepository.getById(vendorId)
+                this.bookingRepository.getById(bookingId),
+                this.vendorRepository.getById(vendorId)
             ]);
 
             if (!bookingReq) {
@@ -319,7 +360,7 @@ class BookingService {
 
 
             bookingReq.bookingStatus = statusMap[action as keyof typeof statusMap];
-            const updatedBooking = await bookingRepository.update(bookingId, bookingReq);
+            const updatedBooking = await this.bookingRepository.update(bookingId, bookingReq);
 
             if (!updatedBooking) {
                 const requestedDates = this.calculateBookingDates(
@@ -327,7 +368,7 @@ class BookingService {
                     bookingReq.noOfDays
                 );
                 if (action === 'accept') {
-                    await bookingRepository.rollbackVendorDates(vendorId, requestedDates);
+                    await this.bookingRepository.rollbackVendorDates(vendorId, requestedDates);
                 }
                 throw new CustomError('Failed to update booking status', 500);
             }
@@ -338,6 +379,434 @@ class BookingService {
                 throw error;
             }
             throw new CustomError('Failed to acceptRejectReq', 500)
+        }
+    }
+
+
+
+    fetchAllBookings = async (search?: string): Promise<{
+        success: boolean;
+        bookingRequest: BookingInterface[];
+        totalCount: number;
+        message?: string;
+    }> => {
+        try {
+            const bookings = await this.bookingRepo.getAllBookings(search)
+            if (bookings && bookings.length > 0) {
+                return {
+                    success: true,
+                    bookingRequest: bookings,
+                    totalCount: bookings.length
+                };
+            } else {
+                return {
+                    success: false,
+                    bookingRequest: [],
+                    totalCount: 0,
+                    message: 'No bookings found'
+                };
+            }
+        } catch (error) {
+            console.error('Error in fetchAllBookings:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to fetchAllBookings.', 500);
+        }
+    }
+
+    isBookingAccepted = async (
+        userId: string,
+        vendorId: string,
+        bookingId: string
+    ): Promise<BookingReqDocument | null> => {
+        try {
+
+            const [bookingData, vendor] = await Promise.all([
+                this.bookingRepository.findBookingById(userId, vendorId, bookingId),
+                this.vendorRepository.getById(vendorId)
+            ]);
+
+            if (!bookingData || !vendor) {
+                return null;
+            }
+
+            const requestedDates = this.calculateBookingDates(
+                bookingData.startingDate,
+                bookingData.noOfDays
+            );
+
+            const conflicts = this.checkDateConflicts(requestedDates, vendor.bookedDates);
+            if (conflicts.hasConflict) {
+                throw new CustomError(
+                    `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
+                    400
+                );
+            }
+
+            bookingData.requestedDates = requestedDates;
+            await bookingData.save();
+
+            return bookingData;
+
+        } catch (error) {
+            console.error('Error in isBookingAccepted:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to check BookingAccepted.', 500);
+        }
+    }
+
+    makeBookingPayment = async (
+        companyName: string,
+        amount: string,
+        bookingData: any
+    ): Promise<Stripe.Checkout.Session> => {
+        try {
+            const result: Stripe.Checkout.Session = await this.paymentService.makeThePayment(companyName, amount, bookingData)
+            if (result) {
+                return result
+            }
+            throw new CustomError('Failed to make the payment.', 400);
+
+        } catch (error) {
+            console.error('Error in makeBookingPayment:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to make payment.', 500);
+        }
+    }
+
+    confirmPayment = async (bookingId: string, amountPaid: string, paymentId: string): Promise<BookingInterface> => {
+        try {
+            const bookingRequest = await this.bookingRepository.getById(bookingId)
+            if (!bookingRequest) {
+                throw new CustomError('Booking request not found', 404);
+            }
+
+            const vendor = await this.vendorRepository.getById(bookingRequest.vendor_id.toString());
+
+            if (!vendor) {
+                throw new CustomError('Vendor not found', 404);
+            }
+
+            const { finalAmount, finalPaymentDue } =
+                this.calculatePaymentSchedule(bookingRequest.startingDate,
+                    bookingRequest.noOfDays,
+                    bookingRequest.totalPrice
+                );
+
+            const requestedDates = this.calculateBookingDates(
+                bookingRequest.startingDate,
+                bookingRequest.noOfDays
+            );
+
+            const conflicts = this.checkDateConflicts(requestedDates, vendor.bookedDates);
+            if (conflicts.hasConflict) {
+                throw new CustomError(
+                    `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
+                    400
+                );
+            }
+
+            const bookingData: Partial<BookingInterface> = {
+                userId: bookingRequest.user_id,
+                vendorId: bookingRequest.vendor_id,
+                bookingId: bookingRequest.bookingReqId,
+                clientName: bookingRequest.name,
+                email: bookingRequest.email,
+                phone: bookingRequest.phone,
+                venue: bookingRequest.venue,
+                serviceType: bookingRequest.serviceType,
+                packageId: bookingRequest.packageId,
+                customizations: bookingRequest.customizations,
+                startingDate: bookingRequest.startingDate,
+                noOfDays: bookingRequest.noOfDays,
+                totalAmount: bookingRequest.totalPrice,
+                advancePayment: {
+                    amount: parseInt(amountPaid),
+                    status: PaymentStatus.Completed,
+                    paymentId: paymentId,
+                    paidAt: new Date(),
+                },
+                finalPayment: {
+                    amount: finalAmount,
+                    dueDate: finalPaymentDue,
+                    status: PaymentStatus.Pending,
+                },
+                bookingStatus: BookingStatus.Confirmed,
+                requestedDates,
+            };
+
+            const [savedBooking, updated] = await Promise.all([
+                this.bookingRepo.saveBooking(bookingData),
+                this.bookingRepository.acceptUpdate(vendor._id.toString(), requestedDates),
+            ]);
+
+            if (!updated) {
+                throw new CustomError('Failed to update vendor availability', 500);
+            }
+
+            await this.bookingRepository.deleteBookingRequest(bookingId);
+
+            this.scheduleReminderEmail(
+                savedBooking,
+                new Date(savedBooking.startingDate),
+                'event'
+            );
+            this.scheduleReminderEmail(
+                savedBooking,
+                new Date(savedBooking.finalPayment.dueDate),
+                'finalPayment'
+            );
+            return savedBooking;
+
+        } catch (error) {
+            console.error('Error in confirming Payment:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to confirm payment.', 500);
+        }
+    }
+
+
+    private scheduleReminderEmail(
+        booking: any,
+        reminderDate: Date,
+        type: 'finalPayment' | 'event'
+    ) {
+        const job = cron.schedule('0 0 * * *', async () => {
+            const currentDate = new Date();
+            if (currentDate.toDateString() === reminderDate.toDateString()) {
+                const reminderTypeText =
+                    type === 'event'
+                        ? `Your booking for ${booking.startingDate} is coming up!`
+                        : `Your ${type} is due on ${reminderDate.toDateString()}.`;
+
+                await sendEmail(
+                    booking.email,
+                    'New Booking Request - CaptureCrew',
+                    emailTemplates.vendorAccepted(reminderTypeText)
+                );
+                job.stop();
+            }
+        });
+    }
+
+    makeMFPayments = async(paymentData: PaymentData): Promise<Stripe.Checkout.Session> =>{
+        try {
+
+            if (!paymentData || !paymentData.sbooking || !paymentData.paymentType) {
+                throw new CustomError('Invalid payment data received.', 400);
+            }
+
+            const booking = await this.bookingRepo.getById(paymentData.sbooking._id);
+
+            if (!booking) {
+                throw new CustomError('Booking not found.', 404);
+            }
+
+            if (booking.bookingStatus !== 'confirmed') {
+                throw new CustomError('Booking is not confirmed or not active.', 400);
+            }
+
+            if (paymentData.paymentType === 'finalAmount') {
+                if (booking.advancePayment?.status === 'pending') {
+                    throw new CustomError('Advance payment must be completed before final payment.', 400);
+                }
+                if (booking.finalPayment?.status === 'completed') {
+                    throw new CustomError('Final payment has already been made.', 400);
+                }
+            } else {
+                throw new CustomError('Invalid payment type.', 400);
+            }
+
+            const amount = paymentData.sbooking.finalPayment?.amount;
+            if (!amount) {
+                throw new CustomError('Invalid payment data: missing amount.', 400);
+            }
+
+            return await this.paymentService.makeMFPayment(amount, paymentData);
+
+        } catch (error) {
+            console.error('Error in makeBooking mid/final Payment:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to make payment.', 500);
+        }
+    }
+
+    confirmMFPayment = async(
+        bookingcId: string,
+        amountPaid: number,
+        paymentcId: string,
+        paymentType: string
+    ): Promise<{ success: boolean, booking: BookingInterface }> =>{
+        try {
+            if (paymentType !== 'finalAmount') {
+                throw new Error('Invalid payment type');
+            }
+            const updatedBooking = await this.bookingRepo.updatePayment(
+                bookingcId,
+                amountPaid,
+                paymentcId,
+                paymentType
+            );
+
+
+            const [user, vendor] = await Promise.all([
+                this.userRepository.getById(updatedBooking.userId.toString()),
+                this.vendorRepository.getById(updatedBooking.vendorId.toString())
+            ])
+
+
+            if (!vendor) {
+                throw new CustomError('Vendor not found', 400)
+            }
+
+            if (!user) {
+                throw new CustomError('User not found', 400)
+            }
+            const emailPromises = [
+                sendEmail(
+                    [updatedBooking.email, user.email],
+                    'Payment Confirmation - CaptureCrew',
+                    emailTemplates.paymentConfirmation(updatedBooking, paymentType)
+                ),
+                sendEmail(
+                    vendor.email,
+                    'Payment Received - CaptureCrew',
+                    emailTemplates.vendorPaymentNotification(updatedBooking, paymentType)
+                ),
+            ];
+            await Promise.all(emailPromises);
+
+            return {
+                success: true,
+                booking: updatedBooking
+            };
+
+
+        } catch (error) {
+            console.error('Error in confirming MFPayment:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to confirmmf payment.', 500);
+        }
+    }
+
+    cancelBooking = async (bookingId: string, cancellationReason?: string): Promise<CancelBookingResult> => {
+        try {
+            const booking = await this.bookingRepo.findBooking(bookingId)
+            if (!booking) {
+                throw new Error('Booking not found');
+            }
+            const cancellationPolicy = new BookingCancellationPolicyImpl();
+            const refundEligibility = cancellationPolicy.calculateRefundEligibility(booking);
+
+            if (!refundEligibility.isEligible) {
+                throw new CustomError(
+                    refundEligibility.reason || 'Cancellation not permitted',
+                    400
+                );
+            }
+
+            const userRefundAmount =
+                booking.advancePayment.amount * (refundEligibility.userRefundPercentage / 100);
+            const vendorAmount =
+                booking.advancePayment.amount * (refundEligibility.vendorFeePercentage / 100);
+
+            try {
+                const refundResult: RefundResult = await this.paymentService.processRefund(booking);
+                if (!refundResult.success) throw new CustomError('Refund failed', 500);
+
+                const userTransaction = {
+                    amount: userRefundAmount,
+                    transactionType: TransactionType.Credit,
+                    paymentType: PaymentType.Refund,
+                    paymentMethod: PaymentMethod.STRIPE,
+                    paymentId: refundResult.refundId,
+                    description: `Refund for booking ${booking.bookingId}`,
+                    bookingId: booking.bookingId,
+                    status: PaymentStatus.Completed
+                }
+
+                await userModel.findByIdAndUpdate(
+                    booking.userId,
+                    {
+                        $inc: { walletBalance: userRefundAmount },
+                        $push: { transactions: userTransaction }
+                    }
+                );
+
+                const vendorTransaction = {
+                    amount: vendorAmount,
+                    transactionType: TransactionType.Credit,
+                    paymentType: PaymentType.Cancellation,
+                    paymentMethod: PaymentMethod.STRIPE,
+                    paymentId: refundResult.refundId,
+                    description: `Cancellation fee for booking ${booking.bookingId}`,
+                    bookingId: booking.bookingId,
+                    status: 'success'
+                };
+                await vendorModel.findByIdAndUpdate(
+                    booking.vendorId,
+                    {
+                        $inc: { walletBalance: vendorAmount },
+                        $push: { transactions: vendorTransaction }
+                    }
+                );
+
+                // Update booking status
+                await bookingModel.findByIdAndUpdate(
+                    booking._id,
+                    {
+                        bookingStatus: BookingStatus.Cancelled,
+                        'advancePayment.status': PaymentStatus.Refund,
+                        'advancePayment.refundedAt': new Date(),
+                        cancellationReason: cancellationReason,
+                        cancelledAt: new Date()
+                    }
+                );
+
+                const dateToRemove = this.calculateBookingDates(
+                    booking.startingDate,
+                    booking.noOfDays
+                );
+
+                await vendorModel.findByIdAndUpdate(
+                    booking.vendorId,
+                    { $pull: { bookedDates: dateToRemove } }
+                );
+
+                return { success: true, userRefundAmount, vendorAmount, reason: refundEligibility.reason };
+
+
+            } catch (error) {
+                console.error('Error in refunding :', error);
+                if (error instanceof StripeRefundError) {
+                    console.error('Stripe Refund Error:', error.message, error.code);
+
+                    if (error.code === 'charge_already_refunded') {
+                        throw new CustomError('Refund already processed', 400)
+                    }
+                }
+                throw new CustomError('Failed to process refund', 500);
+            }
+
+
+
+        } catch (error) {
+            console.error('Error in cancelling booking:', error);
+            if (error instanceof CustomError) {
+                throw error;
+            }
+            throw new CustomError('Failed to cancel booking.', 500);
         }
     }
 
@@ -435,473 +904,27 @@ class BookingService {
         };
     }
 
-    async fetchAllBookings() {
-        try {
-            const bookings = await bookingRepo.getAllBookings()
-            if (bookings && bookings.length > 0) {
-                return {
-                    success: true,
-                    bookingRequest: bookings,
-                    totalCount: bookings.length
-                };
-            } else {
-                return {
-                    success: false,
-                    bookingRequest: [],
-                    totalCount: 0,
-                    message: 'No bookings found'
-                };
-            }
-        } catch (error) {
-            console.error('Error in fetchAllBookings:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to fetchAllBookings.', 500);
-        }
-    }
 
-    async isBookingAccepted(
-        userId: string,
-        vendorId: string,
-        bookingId: string
-    ): Promise<BookingInterface | null> {
-        try {
-
-            const [bookingData, vendor] = await Promise.all([
-                bookingRequestModel.findOne({
-                    user_id: userId,
-                    vendor_id: vendorId,
-                    _id: bookingId
-                }),
-                vendorRepository.getById(vendorId)
-            ]);
-
-            if (!bookingData || !vendor) {
-                return null;
-            }
-
-            const requestedDates = this.calculateBookingDates(
-                bookingData.startingDate,
-                bookingData.noOfDays
-            );
-
-            const conflicts = this.checkDateConflicts(requestedDates, vendor.bookedDates);
-            if (conflicts.hasConflict) {
-                throw new CustomError(
-                    `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
-                    400
-                );
-            }
-
-            bookingData.requestedDates = requestedDates;
-            await bookingData.save();
-
-            return bookingData;
-
-        } catch (error) {
-            console.error('Error in isBookingAccepted:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to check BookingAccepted.', 500);
-        }
-    }
-
-    async makeBookingPayment(
-        companyName: string,
-        amount: string,
-        bookingData: any
-    ) {
-        try {
-
-            const result = await paymentService.makeThePayment(companyName, amount, bookingData)
-            if (result) {
-                return result
-            } else {
-                throw new CustomError('Failed to make the payment.', 400);
-            }
-        } catch (error) {
-            console.error('Error in makeBookingPayment:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to make payment.', 500);
-        }
-    }
-
-    async confirmPayment(bookingId: string, amountPaid: string, paymentId: string) {
-        // const session = await mongoose.startSession();
-        // console.log(session,'session created moongose');
-
-        // session.startTransaction();
-        try {
-            const bookingRequest = await bookingRequestModel.findById(bookingId);
-            if (!bookingRequest) {
-                throw new CustomError('Booking request not found', 404);
-            }
-
-            const vendor = await vendorRepository.getById(bookingRequest.vendor_id.toString());
-
-            if (!vendor) {
-                throw new CustomError('Vendor not found', 404);
-            }
-
-            const { finalAmount, finalPaymentDue } =
-                this.calculatePaymentSchedule(bookingRequest.startingDate,
-                    bookingRequest.noOfDays,
-                    bookingRequest.totalPrice);
-
-            const requestedDates = this.calculateBookingDates(
-                bookingRequest.startingDate,
-                bookingRequest.noOfDays
-            );
-
-            const conflicts = this.checkDateConflicts(requestedDates, vendor.bookedDates);
-            if (conflicts.hasConflict) {
-                throw new CustomError(
-                    `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
-                    400
-                );
-            }
-
-            const confirmedBooking = new bookingModel({
-                userId: bookingRequest.user_id,
-                vendorId: bookingRequest.vendor_id,
-                bookingId: bookingRequest.bookingReqId,
-                clientName: bookingRequest.name,
-                email: bookingRequest.email,
-                phone: bookingRequest.phone,
-                venue: bookingRequest.venue,
-                serviceType: bookingRequest.serviceType,
-                packageId: bookingRequest.packageId,
-                customizations: bookingRequest.customizations,
-                startingDate: bookingRequest.startingDate,
-                noOfDays: bookingRequest.noOfDays,
-                totalAmount: bookingRequest.totalPrice,
-                advancePayment: {
-                    amount: parseInt(amountPaid),
-                    status: PaymentStatus.Completed,
-                    paymentId: paymentId,
-                    paidAt: new Date()
-                },
-                finalPayment: {
-                    amount: finalAmount,
-                    dueDate: finalPaymentDue,
-                    status: PaymentStatus.Pending
-                },
-                bookingStatus: BookingStatus.Confirmed,
-                requestedDates: requestedDates
-            });
-
-            const savedBooking = await confirmedBooking.save();
-
-            const updated = await bookingRepository.acceptUpdate(vendor._id.toString(), requestedDates);
-
-            if (!updated) {
-                throw new CustomError('Failed to update vendor availability', 500);
-            }
-
-            await bookingRequestModel.findByIdAndDelete(bookingId);
-
-            this.scheduleReminderEmail(
-                savedBooking,
-                new Date(savedBooking.startingDate),
-                'event'
-            );
-            this.scheduleReminderEmail(
-                savedBooking,
-                new Date(savedBooking.finalPayment.dueDate),
-                'finalPayment'
-            );
-
-            // await session.commitTransaction();
-            return savedBooking;
-
-        } catch (error) {
-            console.error('Error in confirming Payment:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to confirm payment.', 500);
-        }
-    }
-
-
-    private scheduleReminderEmail(
-        booking: any,
-        reminderDate: Date,
-        type: 'finalPayment' | 'event'
-    ) {
-        const job = cron.schedule('0 0 * * *', async () => {
-            const currentDate = new Date();
-            if (currentDate.toDateString() === reminderDate.toDateString()) {
-                const reminderTypeText =
-                    type === 'event'
-                        ? `Your booking for ${booking.startingDate} is coming up!`
-                        : `Your ${type} is due on ${reminderDate.toDateString()}.`;
-
-                await sendEmail(
-                    booking.email,
-                    'New Booking Request - CaptureCrew',
-                    emailTemplates.vendorAccepted(reminderTypeText)
-                );
-                job.stop();
-            }
-        });
-    }
-
-    async makeMFPayments(
-        paymentData: any
-    ) {
-        try {
-            console.log(paymentData, 'payment dat in the service got');
-
-            if (!paymentData || !paymentData.sbooking || !paymentData.paymentType) {
-                throw new CustomError('Invalid payment data received.', 400);
-            }
-
-            const booking = await bookingRepo.getById(paymentData.sbooking._id);
-            console.log(booking, 'bookings got for hta id');
-
-            if (!booking) {
-                throw new CustomError('Booking not found.', 404);
-            }
-
-            if (booking.bookingStatus !== 'confirmed') {
-                throw new CustomError('Booking is not confirmed or not active.', 400);
-            }
-
-            let amount
-            if (paymentData.paymentType === 'finalAmount') {
-
-                if (booking.advancePayment?.status == 'pending') {
-                    throw new CustomError('Advance payment must be completed before Final payment.', 400);
-                }
-                if (booking.finalPayment?.status == 'completed') {
-                    throw new CustomError('Final payment has already been made.', 400);
-                }
-                amount = paymentData.sbooking?.finalPayment?.amount;
-
-            } else {
-                throw new CustomError('Invalid payment type.', 400);
-            }
-
-            if (!amount) {
-                throw new CustomError('Invalid payment type or missing payment data.', 400);
-            }
-
-            const result = await paymentService.makeMFPayment(amount, paymentData)
-
-            if (result) {
-                return result
-            } else {
-                throw new CustomError('Failed to make the payment.', 400);
-            }
-        } catch (error) {
-            console.error('Error in makeBooking mid/final Payment:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to make payment.', 500);
-        }
-    }
-
-    async confirmMFPayment(bookingcId: string, amountPaid: number, paymentcId: string, paymentType: string) {
-        try {
-            if (paymentType !== 'finalAmount') {
-                throw new Error('Invalid payment type');
-            }
-            const updatedBooking = await bookingRepo.updatePayment(
-                bookingcId,
-                amountPaid,
-                paymentcId,
-                paymentType
-            );
-
-            const vendor = await vendorRepository.getById(updatedBooking.vendorId.toString())
-            if (!vendor) {
-                throw new CustomError('Vnedor not found', 400)
-            }
-
-            const user = await userRepository.getById(updatedBooking.userId.toString())
-            if (!user) {
-                throw new CustomError('User not found', 400)
-            }
-
-            await sendEmail(
-                [updatedBooking.email, user.email],
-                'Payment Confirmation - CaptureCrew',
-                emailTemplates.paymentConfirmation(updatedBooking, paymentType)
-            );
-
-            await sendEmail(
-                vendor.email,
-                'Payment Received - CaptureCrew',
-                emailTemplates.vendorPaymentNotification(updatedBooking, paymentType)
-            );
-
-            return {
-                success: true,
-                booking: updatedBooking
-            };
-
-
-        } catch (error) {
-            console.error('Error in confirming MFPayment:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to confirmmf payment.', 500);
-        }
-    }
-
-    async cancelBooking(bookingId: string, cancellationReason?: string) {
-        try {
-            console.log(bookingId, 'iddd');
-
-            const booking = await bookingRepo.findBooking(bookingId)
-            console.log(booking, 'findeed booking to cancele in service');
-            if (!booking) {
-                throw new Error('Booking not found');
-            }
-            const cancellationPolicy = new BookingCancellationPolicyImpl();
-            const refundEligibility = cancellationPolicy.calculateRefundEligibility(booking);
-            console.log(refundEligibility, 'refundeligibility response');
-
-
-            if (!refundEligibility.isEligible) {
-                throw new CustomError(
-                    refundEligibility.reason || 'Cancellation not permitted',
-                    400
-                );
-            }
-
-            const userRefundAmount =
-                booking.advancePayment.amount * (refundEligibility.userRefundPercentage / 100);
-            const vendorAmount =
-                booking.advancePayment.amount * (refundEligibility.vendorFeePercentage / 100);
-
-            console.log(userRefundAmount, vendorAmount, 'userRefundAmount vendorAmount');
-
-
-            try {
-                const refundResult = await paymentService.processRefund(booking);
-                if (!refundResult.success) {
-                    throw new Error('Refund failed');
-                }
-                console.log(refundResult, 'refundResult ');
-
-                const userTransaction = {
-                    amount: userRefundAmount,
-                    transactionType: TransactionType.Credit,
-                    paymentType: PaymentType.Refund,
-                    paymentMethod: PaymentMethod.STRIPE,
-                    paymentId: refundResult.refundId,
-                    description: `Refund for booking ${booking.bookingId}`,
-                    bookingId: booking.bookingId,
-                    status: PaymentStatus.Completed
-                }
-                console.log(userTransaction, 'userTransaction');
-
-
-                await userModel.findByIdAndUpdate(
-                    booking.userId,
-                    {
-                        $inc: { walletBalance: userRefundAmount },
-                        $push: { transactions: userTransaction }
-                    }
-                );
-
-                const vendorTransaction = {
-                    amount: vendorAmount,
-                    transactionType: TransactionType.Credit,
-                    paymentType: PaymentType.Cancellation,
-                    paymentMethod: PaymentMethod.STRIPE,
-                    paymentId: refundResult.refundId,
-                    description: `Cancellation fee for booking ${booking.bookingId}`,
-                    bookingId: booking.bookingId,
-                    status: 'success'
-                };
-                console.log(vendorTransaction, 'vendorTransaction');
-                await vendorModel.findByIdAndUpdate(
-                    booking.vendorId,
-                    {
-                        $inc: { walletBalance: vendorAmount },
-                        $push: { transactions: vendorTransaction }
-                    }
-                );
-
-                // Update booking status
-                await bookingModel.findByIdAndUpdate(
-                    booking._id,
-                    {
-                        bookingStatus: BookingStatus.Cancelled,
-                        'advancePayment.status': PaymentStatus.Refund,
-                        'advancePayment.refundedAt': new Date(),
-                        cancellationReason: cancellationReason,
-                        cancelledAt: new Date()
-                    }
-                );
-
-                const dateToRemove = this.calculateBookingDates(
-                    booking.startingDate,
-                    booking.noOfDays
-                );
-                console.log(dateToRemove, 'dateToRemove');
-
-                await vendorModel.findByIdAndUpdate(
-                    booking.vendorId,
-                    { $pull: { bookedDates: dateToRemove } }
-                );
-
-                return { success: true, userRefundAmount, vendorAmount, reason: refundEligibility.reason };
-
-
-            } catch (error) {
-                console.error('Error in refunding :', error);
-                if (error instanceof StripeRefundError) {
-                    console.error('Stripe Refund Error:', error.message, error.code);
-                
-                    // Check for specific Stripe error codes
-                    if (error.code === 'charge_already_refunded') {
-                        throw new CustomError('Refund already processed', 400)
-                    }
-                }
-                throw new CustomError('Failed to process refund', 500);
-            }
-
-
-
-        } catch (error) {
-            console.error('Error in cancelling booking:', error);
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            throw new CustomError('Failed to cancel booking.', 500);
-        }
-    }
-
-    private calculateRefundAmounts(booking: BookingDocument) {
-        const daysSincePayment = Math.floor(
-            (new Date().getTime() - booking.advancePayment.paidAt.getTime()) / (1000 * 60 * 60 * 24)
-        )
-        const advanceAmount = booking.advancePayment.amount;
-        if (daysSincePayment <= 7) {
-            return {
-                userRefundAmount: advanceAmount * 0.95,
-                vendorAmount: advanceAmount * 0.05
-            }
-        } else {
-            return {
-                userRefundAmount: advanceAmount * 0.7,
-                vendorAmount: advanceAmount * 0.3
-            }
-        }
-    }
+    // private calculateRefundAmounts(booking: BookingDocument) {
+    //     const daysSincePayment = Math.floor(
+    //         (new Date().getTime() - booking.advancePayment.paidAt.getTime()) / (1000 * 60 * 60 * 24)
+    //     )
+    //     const advanceAmount = booking.advancePayment.amount;
+    //     if (daysSincePayment <= 7) {
+    //         return {
+    //             userRefundAmount: advanceAmount * 0.95,
+    //             vendorAmount: advanceAmount * 0.05
+    //         }
+    //     } else {
+    //         return {
+    //             userRefundAmount: advanceAmount * 0.7,
+    //             vendorAmount: advanceAmount * 0.3
+    //         }
+    //     }
+    // }
 
 
 
 }
 
-export default new BookingService()
+export default BookingService

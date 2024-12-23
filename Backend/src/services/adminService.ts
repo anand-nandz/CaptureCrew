@@ -1,23 +1,28 @@
 import jwt from 'jsonwebtoken';
 import { CustomError } from '../error/customError';
-import userRepository from '../repositories/userRepository';
-import adminRepository from '../repositories/adminRepository';
 import moment from "moment";
-import bookingModel from '../models/bookingModel';
+import { AdminLoginResponse } from '../interfaces/commonInterfaces';
+import { IAdminService } from '../interfaces/serviceInterfaces/admin.Service.Interface';
+import { IAdminRepository } from '../interfaces/repositoryInterfaces/admin.Repository.Interface';
+import { createAccessToken } from '../config/jwt.config';
+import { IBookingRepository } from '../interfaces/repositoryInterfaces/booking.Repository.interface';
+
+class AdminService implements IAdminService {
+  private adminRepository: IAdminRepository;
+  private bookingRepo: IBookingRepository;
+
+  constructor(
+    adminRepository: IAdminRepository,
+    bookingRepo: IBookingRepository,
+  ) {
+    this.adminRepository = adminRepository;
+    this.bookingRepo = bookingRepo;
+  }
 
 
-interface LoginResponse {
-  token: string;
-  refreshToken: string;
-  adminData: object;
-  message: string
-}
-
-
-class AdminService {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  login = async (email: string, password: string): Promise<AdminLoginResponse> => {
     try {
-      const existingAdmin = await adminRepository.findByEmail(email);
+      const existingAdmin = await this.adminRepository.findByEmail(email);
 
       if (!existingAdmin) {
         throw new CustomError('Admin not exist!..', 404);
@@ -26,7 +31,8 @@ class AdminService {
         throw new CustomError('Incorrect Password', 401)
       }
 
-      const token = jwt.sign(
+      const token = createAccessToken(existingAdmin._id.toString())
+      jwt.sign(
         { _id: existingAdmin._id },
         process.env.JWT_SECRET_KEY!,
         { expiresIn: '2h' }
@@ -61,36 +67,22 @@ class AdminService {
 
 
 
-  async createRefreshToken(jwtTokenAdmin: string) {
+  createRefreshToken = async (jwtTokenAdmin: string): Promise<string> => {
     try {
       const decodedToken = jwt.verify(
         jwtTokenAdmin,
         process.env.JWT_REFRESH_SECRET_KEY!
       ) as { _id: string }
 
-      const admin = await userRepository.getById(decodedToken._id);
+      const admin = await this.adminRepository.getById(decodedToken._id);
 
       if (!admin || admin.refreshToken !== jwtTokenAdmin) {
         throw new CustomError('Invalid refresh Token', 401)
       }
-      // const tokenPayload = {
-      //     _id: user._id,
-      //     role: 'user' 
-      // };
 
-
-      const accessToken = jwt.sign(
-        { _id: admin._id },
-        // tokenPayload,
-        process.env.JWT_SECRET_KEY!,
-        { expiresIn: '2h' }
-      )
-      console.log(accessToken, 'acces created in the service cretae refresh');
-
-
+      const accessToken = createAccessToken(admin._id.toString())
 
       return accessToken;
-
 
     } catch (error) {
       console.error('Error while creatin refreshToken', error);
@@ -101,9 +93,14 @@ class AdminService {
     }
   }
 
-  async getDashboardStats() {
+  getDashboardStats = async (): Promise<{
+    totalVendors: { count: number };
+    totalUsers: { count: number };
+    totalPosts: { count: number };
+    revenue: { count: string };
+  }> => {
     try {
-      const stats = await adminRepository.getDashboardStats();
+      const stats = await this.adminRepository.getDashboardStats();
 
       return {
         totalVendors: {
@@ -129,94 +126,88 @@ class AdminService {
     }
   }
 
-  async getRevenueDetails(dateType: string) {
+  getRevenueDetails = async (dateType: string, startDate?: string, endDate?: string): Promise<number[]> => {
     try {
-      let start, end, groupBy, sortField, arrayLength = 0;
-      switch (dateType) {
-        case 'week':
-          const { startOfWeek, endOfWeek } = getCurrentWeekRange();
-          start = startOfWeek;
-          end = endOfWeek;
-          groupBy = { $dayOfWeek: '$paidAt' };
-          sortField = 'day';
-          arrayLength = 7;
-          break;
+      let start: Date, end: Date, groupBy, sortField: string, arrayLength = 0;
 
-        case 'month':
-          const { startOfYear, endOfYear } = getCurrentYearRange();
-          start = startOfYear;
-          end = endOfYear;
-          groupBy = { $month: '$paidAt' };
-          sortField = 'month';
-          arrayLength = 12;
-          break;
+      if (dateType === 'custom' && startDate && endDate) {
+        start = new Date(startDate);
+        end = new Date(endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        groupBy = { $dayOfMonth: '$paidAt' };
+        sortField = 'day'
+        arrayLength = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      } else {
+        switch (dateType) {
+          case 'week':
+            const { startOfWeek, endOfWeek } = getCurrentWeekRange();
+            start = startOfWeek;
+            end = endOfWeek;
+            groupBy = { $dayOfWeek: '$paidAt' };
+            sortField = 'day';
+            arrayLength = 7;
+            break;
 
-        case 'year':
-          const { startOfFiveYearsAgo, endOfCurrentYear } = getLastFiveYearsRange();
-          start = startOfFiveYearsAgo;
-          end = endOfCurrentYear;
-          groupBy = { $year: '$paidAt' };
-          sortField = 'year';
-          arrayLength = 5;
-          break;
+          case 'month':
+            const { startOfYear, endOfYear } = getCurrentYearRange();
+            start = startOfYear;
+            end = endOfYear;
+            groupBy = { $month: '$paidAt' };
+            sortField = 'month';
+            arrayLength = 12;
+            break;
+
+          case 'year':
+            const { startOfFiveYearsAgo, endOfCurrentYear } = getLastFiveYearsRange();
+            start = startOfFiveYearsAgo;
+            end = endOfCurrentYear;
+            groupBy = { $year: '$paidAt' };
+            sortField = 'year';
+            arrayLength = 5;
+            break;
 
 
-        default:
-          throw new CustomError('Invalid Date Parameter', 400)
+          default:
+            throw new CustomError('Invalid Date Parameter', 400)
+        }
       }
 
-      const revenueData = await bookingModel.aggregate([
-        {
-          $project: {
-            validAdvanceAmount: {
-              $cond: [
-                { $eq: ['$advancePayment.status', 'completed'] },
-                '$advancePayment.amount',
-                0
-              ]
-            },
-            validFinalAmount: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$finalPayment.status', 'completed'] },
-                    { $ne: ['$finalPayment.paidAt', null] }
-                  ]
-                },
-                '$finalPayment.amount',
-                0
-              ]
-            },
-            paidAt: {
-              $ifNull: ['$finalPayment.paidAt', '$advancePayment.paidAt']
+      const revenueData = await this.bookingRepo.getAllRevenueData(start, end, groupBy, sortField);
+      console.log(revenueData, 'revenueData');
+
+   if (dateType === 'custom') {
+      const dailyRevenue = new Array(arrayLength).fill(0);
+
+      revenueData.forEach(item => {
+        const day = item._id.day;
+                let currentDate = new Date(start);
+        while (currentDate <= end) {
+          if (currentDate.getDate() === day) {
+            const dayIndex = Math.floor(
+              (currentDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            
+            const revenueDate = new Date(currentDate);
+            revenueDate.setHours(0, 0, 0, 0);
+        
+            const revenueDateStr = revenueDate.toISOString().split('T')[0];
+            const startStr = start.toISOString().split('T')[0];
+            const endStr = end.toISOString().split('T')[0];
+            
+            if (revenueDateStr >= startStr && revenueDateStr <= endStr && 
+                dayIndex >= 0 && dayIndex < arrayLength) {
+              dailyRevenue[dayIndex] = item.totalRevenue;
             }
           }
-        },
-        {
-          $project: {
-            totalAmount: { $add: ['$validAdvanceAmount', '$validFinalAmount'] },
-            paidAt: 1
-          }
-        },
-        {
-          $match: {
-            paidAt: { $gte: start, $lt: end }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              [sortField]: groupBy
-            },
-            totalRevenue: { $sum: '$totalAmount' }
-          }
-        },
-        { $sort: { [`_id.${sortField}`]: 1 } }
-      ]);
+          
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      });
 
-      console.log(JSON.stringify(revenueData));
-
-
+      console.log(dailyRevenue, 'dailyRevenue');
+      return dailyRevenue;
+    }
 
 
       const revenueArray = Array.from({ length: arrayLength }, (_, index) => {
@@ -226,7 +217,7 @@ class AdminService {
             const dayFromData = r._id?.day;
             return dayFromData === index + 1;
           } else if (dateType === 'month') {
-            return r._id?.month === index + 1 || r._id?.month?.month === index + 1;
+            return r._id?.month === index + 1;
           } else if (dateType === 'year') {
             const expectedYear = new Date().getFullYear() - (arrayLength - 1) + index;
             return r._id?.year === expectedYear;
@@ -247,7 +238,7 @@ class AdminService {
 
 }
 
-export default new AdminService();
+export default AdminService;
 
 
 

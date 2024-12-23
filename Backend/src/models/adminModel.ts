@@ -1,7 +1,8 @@
-import {Document,Schema,model} from "mongoose";
+import mongoose, {Document,Schema,model} from "mongoose";
 
 
 export interface AdminDocument extends Document{
+    _id: mongoose.Types.ObjectId;
     email:string;
     password:string;
     wallet:number;

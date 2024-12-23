@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
+import { IBaseRepository } from "../interfaces/base.repository.interface";
 
-export class BaseRepository<T extends mongoose.Document>{
+export abstract class BaseRepository<T extends mongoose.Document> implements IBaseRepository<T>{
     private model:mongoose.Model<T>;
 
     constructor(model:mongoose.Model<T>){
@@ -33,7 +34,7 @@ export class BaseRepository<T extends mongoose.Document>{
         return await this.model.findById(id)
     }
 
-    async findByCondition(condition:Record<string, unknown>): Promise<T[]> {
+    findByCondition = async(condition:Record<string, unknown>): Promise<T[]> => {
         return await this.model.find(condition)
     }
 }

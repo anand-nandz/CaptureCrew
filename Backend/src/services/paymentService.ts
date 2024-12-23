@@ -1,8 +1,10 @@
-import stripe from 'stripe';
+import stripe, { Stripe } from 'stripe';
 import axios, { AxiosInstance } from 'axios';
 import dotenv from 'dotenv'
 import { CustomError, StripeRefundError } from '../error/customError';
 import { BookingDocument } from '../models/bookingModel';
+import { IPaymentService } from '../interfaces/serviceInterfaces/payment.Service.Interface';
+import { PaymentData, RefundResult } from '../interfaces/commonInterfaces';
 dotenv.config()
 
 const Api: AxiosInstance = axios.create({
@@ -12,12 +14,12 @@ const Api: AxiosInstance = axios.create({
 
 const stripeClient = new stripe(process.env.STRIPE_PRIVATE_KEY as string);
 
-class PaymentService {
+class PaymentService implements IPaymentService{
     async makeThePayment(
         companyName: string,
         amount: string | any,
         bookingData: any
-    ) {
+    ) : Promise<Stripe.Checkout.Session>{
         try {
             
             const line_items = [
@@ -78,15 +80,10 @@ class PaymentService {
     }
 
 
-    async makeMFPayment(
-        amount: string | any,
-        paymentData: any
-    ) {
+    async makeMFPayment(amount: number, paymentData: PaymentData): Promise<Stripe.Checkout.Session> {
+
         try {
-            console.log('enetred mf paynedte instripe');
-            console.log(paymentData, 'paymemntdat i stripe');
-
-
+           
             const line_items = [
                 {
                     price_data: {
@@ -125,78 +122,7 @@ class PaymentService {
 
     }
 
-
-
-    // async processRefund(booking: BookingDocument): Promise<{
-    //     success: boolean;
-    //     refundId?: string;
-    //     message?: string
-    // }> {
-    //     const session = await stripeClient.checkout.sessions.retrieve(booking.advancePayment.paymentId);
-    //     const paymentIntentId = session.payment_intent;
-    
-    //     if (!paymentIntentId || typeof paymentIntentId !== 'string') {
-    //         throw new Error('Invalid payment intent ID');
-    //     }
-    
-    //     // Explicitly type the payment intent retrieval
-    //     const paymentIntentResponse = await stripeClient.paymentIntents.retrieve(paymentIntentId, {
-    //         expand: ['charges.data', 'charges.data.refunds']
-    //     });
-    
-    //     // Cast to a more specific type using 'stripe' namespace
-    //     const paymentIntent = paymentIntentResponse as stripe.PaymentIntent & {
-    //         charges?: {
-    //             data: Array<stripe.Charge & {
-    //                 refunds?: {
-    //                     data: stripe.Refund[]
-    //                 }
-    //             }>
-    //         }
-    //     };
-    //     console.log(paymentIntent,'intent  from stripe');
-        
-    
-    //     // Validate charges exist
-    //     if (!paymentIntent.charges?.data || paymentIntent.charges.data.length === 0) {
-    //         throw new Error('No charges found for this payment intent');
-    //     }
-    
-    //     const charge = paymentIntent.charges.data[0];
-    
-    //     // Calculate total refunded amount
-    //     const refundedAmount = charge.refunds?.data?.reduce(
-    //         (total: number, refund: stripe.Refund) => total + (refund.amount || 0), 
-    //         0
-    //     ) || 0;
-    
-    //     const originalChargeAmount = charge.amount || 0;
-    
-    //     if (refundedAmount >= originalChargeAmount) {
-    //         console.log('Full refund already processed');
-    //         return { 
-    //             success: true, 
-    //             refundId: charge.refunds?.data?.[0]?.id,
-    //             message: 'Booking already fully refunded' 
-    //         };
-    //     }
-    
-    //     // If not fully refunded, process new refund
-    //     const refund = await stripeClient.refunds.create({
-    //         payment_intent: paymentIntentId,
-    //         amount: Math.floor(booking.advancePayment.amount * 100) // Convert to cents
-    //     });
-
-    //     console.log(refund,'refund........');
-        
-    
-    //     return { 
-    //         success: true, 
-    //         refundId: refund.id 
-    //     };
-    // }
-
-    async processRefund(booking: BookingDocument){
+    async processRefund(booking: BookingDocument): Promise<RefundResult>{
         const session = await stripeClient.checkout.sessions.retrieve(booking.advancePayment.paymentId);
         const paymentIntentId = session.payment_intent;
         console.log(paymentIntentId,'paymentIntentId');
@@ -248,4 +174,4 @@ class PaymentService {
     }
 }
 
-export default new PaymentService();
+export default PaymentService;

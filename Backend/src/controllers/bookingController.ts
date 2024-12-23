@@ -4,25 +4,38 @@ import { handleError } from "../utils/handleError";
 import bookingService from "../services/bookingService";
 import { VendorRequest } from "../types/vendorTypes";
 import bookingRequestModel from "../models/bookingRequestModel";
+import { IBookingService } from "../interfaces/serviceInterfaces/booking.Service.interface";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 
-class BookingController {
+class BookingController  {
+     
+    private bookingService: IBookingService;
+    constructor (bookingService: IBookingService){
+        this.bookingService = bookingService
+    }
 
-    async FetchBookingRequests(req: AuthenticatedRequest, res: Response): Promise<void> {
+    fetchBookingRequests = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const userId = req.user?._id
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const fetchData = await bookingService.getBookingRequests(userId.toString());
+            const fetchData = await this.bookingService.getBookingRequests(userId.toString());
 
-            if (fetchData.success) {
-                res.status(200).json({
+            if (fetchData.success === true) {
+                res.status(HTTP_statusCode.OK).json({
                     success: true,
                     bookingReqs: fetchData.bookingRequest,
                     bookingConfirmed: fetchData.bookingConfirmed
+                })
+            } else {
+                res.status(HTTP_statusCode.OK).json({
+                    success: false,
+                    bookingReqs: [],
+                    bookingConfirmed: []
                 })
             }
         } catch (error) {
@@ -30,19 +43,17 @@ class BookingController {
         }
     }
 
-    async BookingRequest(req: AuthenticatedRequest, res: Response): Promise<void> {
+    BookingRequest = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { vendorId, ...bookingData } = req.body;
             const userId = req.user?._id;
 
-
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const newBooking = await bookingService.newBookingReq(bookingData, vendorId.toString(), userId.toString())
-            console.log(newBooking, 'newBooking in controller.............');
+            const newBooking = await this.bookingService.newBookingReq(bookingData, vendorId.toString(), userId.toString())
 
             res.status(201).json({ success: true, booking: newBooking });
 
@@ -52,24 +63,28 @@ class BookingController {
         }
     }
 
-    async SingleVendorBookingReq(req: VendorRequest, res: Response): Promise<void> {
+    SingleVendorBookingReq = async(req: VendorRequest, res: Response): Promise<void> =>{
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const fetchData = await bookingService.bookingReqsVendor(vendorId.toString());
-            if (fetchData.success) {
-                res.status(200).json({ success: true, bookingReqs: fetchData.bookingRequest, bookingConfirmed: fetchData.bookingConfirmed })
+            const fetchData = await this.bookingService.bookingReqsVendor(vendorId.toString());
+            
+            if (fetchData.success === true) {
+                res.status(HTTP_statusCode.OK).json({ success: true, bookingReqs: fetchData.bookingRequest, bookingConfirmed: fetchData.bookingConfirmed })
+            } else {
+                res.status(HTTP_statusCode.OK).json({ success: false, bookingReqs: [], bookingConfirmed: [] })
+
             }
         } catch (error) {
             handleError(res, error, 'SingleVendorBookingReq')
         }
     }
 
-    async cancelBooking(req: AuthenticatedRequest, res: Response): Promise<void> {
+    cancelBooking = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { bookingId } = req.params;
             const userId = req.user?._id;
@@ -78,19 +93,19 @@ class BookingController {
                 res.status(401).json({ message: 'User ID is missing' });
                 return;
             }
-            const result = await bookingService.revokeRequest(bookingId, userId.toString());
-
+            const result = await this.bookingService.revokeRequest(bookingId, userId.toString());
+            
             if (result) {
-                res.status(200).json({ message: 'Booking cancelled successfully' });
+                res.status(HTTP_statusCode.OK).json({ message: 'Booking cancelled successfully' });
             } else {
-                res.status(400).json({ message: 'Unable to cancel booking' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Unable to cancel booking' });
             }
         } catch (error) {
             handleError(res, error, 'cancelBooking')
         }
     }
 
-    async acceptBooking(req: VendorRequest, res: Response): Promise<void> {
+    acceptBooking = async(req: VendorRequest, res: Response): Promise<void> =>{
         try {
             const bookingId: string | undefined = req.query.bookingId as string
             const action: string | undefined = req.query.action as string;
@@ -98,19 +113,19 @@ class BookingController {
             const vendorId = req.vendor?._id;
 
             if (!bookingId) {
-                res.status(400).json({ message: 'bookingId is missing or invalid' })
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'bookingId is missing or invalid' })
                 return
             }
             if (!vendorId) {
-                res.status(400).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
                 return;
             }
             if (!action || !['accept', 'reject'].includes(action)) {
-                res.status(400).json({ message: 'Invalid action' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Invalid action' });
                 return;
             }
-            await bookingService.acceptRejectReq(bookingId, vendorId.toString(), action, rejectionReason);
-            res.status(200).json({
+            await this.bookingService.acceptRejectReq(bookingId, vendorId.toString(), action, rejectionReason);
+            res.status(HTTP_statusCode.OK).json({
                 success: true,
                 message: `Booking ${action}ed successfully`
             });
@@ -119,18 +134,18 @@ class BookingController {
         }
     }
 
-    async checkIsBookingAccepted(req: AuthenticatedRequest, res: Response): Promise<void> {
+    checkIsBookingAccepted = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const userId = req.user?._id;
             const { vendorId, bookingId } = req.body;
             if (!userId) {
-                res.status(400).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
                 return;
             }
 
-            const result = await bookingService.isBookingAccepted(userId.toString(), vendorId, bookingId);
+            const result = await this.bookingService.isBookingAccepted(userId.toString(), vendorId, bookingId);
             if (result !== null) {
-                res.status(200).json({ success: true, result: result })
+                res.status(HTTP_statusCode.OK).json({ success: true, result: result })
             } else {
                 res.json({ success: false })
             }
@@ -139,20 +154,20 @@ class BookingController {
         }
     }
 
-    async makePayment(req: Request, res: Response): Promise<void> {
+    makePayment = async(req: Request, res: Response): Promise<void> =>{
         try {
 
             const { companyName, bookingData, paymentMethod } = req.body;
             let advanceAmount = bookingData.advancePayment.amount;
 
             if (paymentMethod === 'stripe') {
-                const result = await bookingService.makeBookingPayment(companyName, advanceAmount, bookingData)
+                const result = await this.bookingService.makeBookingPayment(companyName, advanceAmount, bookingData)
 
                 if (result) {
                     res.cookie('bookingId', bookingData?._id, { httpOnly: true, secure: process.env.NODE_ENV === 'production', })
                     res.cookie('amount', bookingData?.advancePayment?.amount, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
                     res.cookie('paymentId', result.id, { httpOnly: true, secure: process.env.NODE_ENV === 'production', });
-                    res.status(200).json({ success: true, result, bookingData })
+                    res.status(HTTP_statusCode.OK).json({ success: true, result, bookingData })
                 } else {
                     res.redirect(`${process.env.FRONTEND_URL}/paymentFailed`)
                 }
@@ -162,7 +177,7 @@ class BookingController {
         }
     }
 
-    async verifyPayment(req: Request, res: Response): Promise<void> {
+    verifyPayment = async(req: Request, res: Response): Promise<void> =>{
         try {
 
             const bookingId = req.cookies.bookingId;
@@ -170,14 +185,13 @@ class BookingController {
             const paymentId = req.cookies.paymentId;
 
             if (!bookingId || !amountPaid || !paymentId) {
-                res.status(400).json({
+                res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
                     message: 'Missing required payment information'
                 });
                 return;
             }
-            const confirmedBooking = await bookingService.confirmPayment(bookingId, amountPaid, paymentId);
-            console.log(confirmedBooking, 'confirmed booking details after adding to booking model');
+            const confirmedBooking = await this.bookingService.confirmPayment(bookingId, amountPaid, paymentId);
 
             if (confirmedBooking) {
                 res.clearCookie('bookingId');
@@ -186,7 +200,7 @@ class BookingController {
                 res.redirect(`${process.env.FRONTEND_URL}/paymentSuccess`)
             } else {
                 res.redirect(`${process.env.FRONTEND_URL}/paymentFailed`)
-                res.status(400).json({
+                res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
                     message: 'Failed to confirm payment'
                 });
@@ -196,19 +210,24 @@ class BookingController {
         }
     }
 
-    async makeMFPayment(req: Request, res: Response): Promise<void> {
+    makeMFPayment = async(req: Request, res: Response): Promise<void> =>{
         try {
 
             const paymentData = req.body;
             
             if (paymentData.paymentMethod === 'stripe') {
-                const result = await bookingService.makeMFPayments(paymentData)
+                const result = await this.bookingService.makeMFPayments(paymentData)                
 
                 if (result) {
-                    res.cookie('bookingcId', paymentData?.bookingId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', })
-                    res.cookie('finalAmount', paymentData.sbooking.finalPayment.amount, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
-                    res.cookie('paymentcId', result.id, { httpOnly: true, secure: process.env.NODE_ENV === 'production', });
-                    res.status(200).json({ success: true, result, paymentData })
+                    setCookies(res, {
+                        bookingcId: paymentData?.bookingId,
+                        finalAmount: paymentData.sbooking.finalPayment.amount,
+                        paymentcId: result.id,
+                    });
+                    // res.cookie('bookingcId', paymentData?.bookingId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', })
+                    // res.cookie('finalAmount', paymentData.sbooking.finalPayment.amount, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
+                    // res.cookie('paymentcId', result.id, { httpOnly: true, secure: process.env.NODE_ENV === 'production', });
+                    res.status(HTTP_statusCode.OK).json({ success: true, result, paymentData })
                 }
             }
         } catch (error) {
@@ -216,33 +235,32 @@ class BookingController {
         }
     }
 
-    async verifyMFPayment(req: Request, res: Response): Promise<void> {
+    verifyMFPayment = async(req: Request, res: Response): Promise<void> =>{
         try {
             const { finalAmount, bookingcId, paymentcId } = req.cookies;
-            let paymentType = '';
-            let amountPaid = 0;
-            if (finalAmount) {
-                paymentType = 'finalAmount';
-                amountPaid = finalAmount;
-            }
-
-            if (!bookingcId || !amountPaid || !paymentcId) {
-                res.status(400).json({
+            
+            if (!bookingcId || !finalAmount  || !paymentcId) {
+                res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
                     message: 'Missing required payment information'
                 });
                 return;
             }
-            const confirmedBooking = await bookingService.confirmMFPayment(bookingcId, amountPaid, paymentcId, paymentType);
-
+            const confirmedBooking = await this.bookingService.confirmMFPayment(
+                bookingcId,
+                parseFloat(finalAmount),
+                paymentcId,
+                'finalAmount'
+            );
+            
             if (confirmedBooking.success) {
                 res.clearCookie('bookingcId');
-                res.clearCookie(`${paymentType}`);
+                res.clearCookie('finalAmount');
                 res.clearCookie('paymentcId');
                 res.redirect(`${process.env.FRONTEND_URL}/paymentSuccess`)
             } else {
                 res.redirect(`${process.env.FRONTEND_URL}/paymentFailed`)
-                res.status(400).json({
+                res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
                     message: 'Failed to confirm payment'
                 });
@@ -252,7 +270,7 @@ class BookingController {
         }
     }
 
-    async bookingCancel(req: AuthenticatedRequest, res: Response) {
+    bookingCancel = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { bookingId } = req.params;
             const userId = req.user?._id;
@@ -266,7 +284,7 @@ class BookingController {
                 user_id: userId
             })
 
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 success: true,
                 result
             });
@@ -276,16 +294,16 @@ class BookingController {
         }
     }
 
-    async refundCancelAmt(req: AuthenticatedRequest, res:Response){
+    refundCancelAmt = async(req: AuthenticatedRequest, res:Response):Promise<void>=>{
         try {    
             const {bookingId, cancellationReason } =req.body;
-            console.log(cancellationReason);
             
             if (!bookingId) {
                 throw new Error('Booking ID is required.');
             }
-            const result = await bookingService.cancelBooking(bookingId,cancellationReason)
-            res.status(200).json({ 
+            const result = await this.bookingService.cancelBooking(bookingId,cancellationReason);
+            
+            res.status(HTTP_statusCode.OK).json({ 
                 success: true,
                 message: 'Booking cancelled successfully'
             });
@@ -298,4 +316,10 @@ class BookingController {
 
 }
 
-export default new BookingController()
+export default BookingController
+
+function setCookies(res: Response, cookies: Record<string, string | number>): void {
+    Object.entries(cookies).forEach(([key, value]) => {
+        res.cookie(key, value, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+    });
+}

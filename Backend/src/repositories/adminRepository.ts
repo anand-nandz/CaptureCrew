@@ -1,41 +1,42 @@
-import Admin , { AdminDocument } from "../models/adminModel";
-import  User from "../models/userModel";
-import  Post from "../models/postModel";
-import  Vendor from "../models/vendorModel";
-import  Booking from "../models/bookingModel";
+import Admin, { AdminDocument } from "../models/adminModel";
+import User from "../models/userModel";
+import Post from "../models/postModel";
+import Vendor from "../models/vendorModel";
+import Booking from "../models/bookingModel";
 import { BaseRepository } from "./baseRepository";
+import { IAdminRepository } from "../interfaces/repositoryInterfaces/admin.Repository.Interface";
 
-class AdminRepository extends BaseRepository<AdminDocument>{
-  constructor(){
+class AdminRepository extends BaseRepository<AdminDocument> implements IAdminRepository {
+  constructor() {
     super(Admin)
   }
-  async findByEmail(email:string): Promise<AdminDocument | null> {
+  async findByEmail(email: string): Promise<AdminDocument | null> {
     return await Admin.findOne({ email });
   }
 
-  async getTotalVendors() {
-    return await Vendor.countDocuments({ 
-      isActive: true, 
-      isVerified: true, 
-      isAccepted: 'accepted' 
+  async getTotalVendors(): Promise<number> {
+    return await Vendor.countDocuments({
+      isActive: true,
+      isVerified: true,
+      isAccepted: 'accepted'
     });
   }
 
-  async getTotalUsers() {
+  async getTotalUsers(): Promise<number> {
     return await User.countDocuments();
   }
 
-  async getTotalPosts() {
-    return await Post.countDocuments({ 
-      status: 'Published' 
+  async getTotalPosts(): Promise<number> {
+    return await Post.countDocuments({
+      status: 'Published'
     });
   }
 
-  async getTotalBookings() {
+  async getTotalBookings(): Promise<number> {
     return await Booking.countDocuments();
   }
 
-  async getTotalRevenue() {
+  async getTotalRevenue(): Promise<number> {
     const result = await Booking.aggregate([
       {
         $group: {
@@ -48,7 +49,7 @@ class AdminRepository extends BaseRepository<AdminDocument>{
     return result[0]?.totalRevenue || 0;
   }
 
-  async calculateTotalRevenue() {
+  async calculateTotalRevenue(): Promise<number> {
     try {
       const revenueData = await Booking.aggregate([
         {
@@ -86,21 +87,20 @@ class AdminRepository extends BaseRepository<AdminDocument>{
           }
         }
       ]);
-  
+
       return revenueData[0]?.totalRevenue || 0; // Return total revenue or 0 if no data
     } catch (error) {
       console.error('Error calculating total revenue:', error);
       throw new Error('Unable to calculate total revenue');
     }
   }
-  
 
-  async getMonthOverMonthComparison() {
+
+  async getMonthOverMonthComparison(): Promise<{ vendors: number; users: number; posts: number }> {
     const currentDate = new Date();
     const lastMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
     const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    // Vendors comparison
     const vendorsLastMonth = await Vendor.countDocuments({
       isActive: true,
       isVerified: true,
@@ -115,7 +115,6 @@ class AdminRepository extends BaseRepository<AdminDocument>{
       createdAt: { $gte: currentMonthStart, $lt: currentDate }
     });
 
-    // Users comparison
     const usersLastMonth = await User.countDocuments({
       isActive: true,
       createdAt: { $gte: lastMonthStart, $lt: currentMonthStart }
@@ -126,7 +125,6 @@ class AdminRepository extends BaseRepository<AdminDocument>{
       createdAt: { $gte: currentMonthStart, $lt: currentDate }
     });
 
-    // Posts comparison
     const postsLastMonth = await Post.countDocuments({
       status: 'Published',
       createdAt: { $gte: lastMonthStart, $lt: currentMonthStart }
@@ -149,11 +147,17 @@ class AdminRepository extends BaseRepository<AdminDocument>{
     return Math.round(((currentMonth - lastMonth) / lastMonth) * 100);
   }
 
-  async getDashboardStats() {
+  async getDashboardStats(): Promise<{
+    totalVendors: number;
+    totalUsers: number;
+    totalPosts: number;
+    totalRevenue: number;
+    trends: { vendors: number; users: number; posts: number };
+  }> {
     const [
-      totalVendors, 
-      totalUsers, 
-      totalPosts, 
+      totalVendors,
+      totalUsers,
+      totalPosts,
       totalRevenue,
       monthOverMonthComparison
     ] = await Promise.all([
@@ -178,7 +182,7 @@ class AdminRepository extends BaseRepository<AdminDocument>{
 
 }
 
-export default new AdminRepository()
+export default AdminRepository
 
 
 

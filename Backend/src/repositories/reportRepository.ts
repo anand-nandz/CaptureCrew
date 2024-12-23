@@ -1,13 +1,18 @@
 import { BaseRepository } from "./baseRepository";
 import Report, { IReport } from "../models/reportModel";
 import { string } from "yup";
+import { IReportRepository } from "../interfaces/repositoryInterfaces/report.Repository.Interfaces";
 
-class ReportRepository extends BaseRepository<IReport> {
+class ReportRepository extends BaseRepository<IReport> implements IReportRepository{
   constructor() {
     super(Report);
   }
 
-  async findAllReports(page: number, limit: number, search: string, status?: string) {
+  findAllReports = async(page: number, limit: number, search: string, status?: string): Promise<{
+    reports: IReport[];
+    total: number;
+    totalPages: number;
+  }> =>{
     try {
       const skip = (page - 1) * limit;
 
@@ -29,12 +34,12 @@ class ReportRepository extends BaseRepository<IReport> {
       const reports = await Report.find(query)
         .populate({
           path: 'reportedBy', 
-          select: '_id name email'
+          select: '_id name email',
         })
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-
+      
       return {
         reports,
         total,
@@ -48,4 +53,4 @@ class ReportRepository extends BaseRepository<IReport> {
 
 }
 
-export default new ReportRepository();
+export default ReportRepository;

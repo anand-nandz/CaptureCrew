@@ -1,27 +1,53 @@
 import mongoose from "mongoose";
 import { CustomError } from "../error/customError";
-import { ReportReason, ReportStatus, ReportType } from "../models/reportModel";
-import postRepository from "../repositories/postRepository";
-import reportRepository from "../repositories/reportRepository";
-import vendorRepository from "../repositories/vendorRepository";
 import generateUniqueId from "../utils/extraUtils";
+import { ReportReason, ReportStatus, ReportType } from "../interfaces/commonInterfaces";
+import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Repository.interface";
+import { IPostRepository } from "../interfaces/repositoryInterfaces/post.repository.interface";
+import { IReportRepository } from "../interfaces/repositoryInterfaces/report.Repository.Interfaces";
+import { IReport } from "../models/reportModel";
+import { IReportService } from "../interfaces/serviceInterfaces/report.Service.Interface";
 
-class Reportservice {
-    async reportItems(
+class Reportservice implements IReportService {
+
+    private reportRepository: IReportRepository;
+    private vendorRepository: IVendorRepository;
+    private postRepository: IPostRepository;
+
+    constructor(
+        reportRepository: IReportRepository,
+        vendorRepository: IVendorRepository,
+        postRepository: IPostRepository
+    ) {
+        this.reportRepository = reportRepository;
+        this.vendorRepository = vendorRepository;
+        this.postRepository = postRepository;
+    }
+
+   reportItems = async(
         reportedBy: string,
         itemId: string,
         type: ReportType,
         reason: ReportReason,
         additionalDetails?: string,
-    ) {
+    ): Promise<{ success: boolean; reportId: string }>  =>{
         try {
+            const existingReport = await this.reportRepository.findOne({
+                reportedBy: new mongoose.Types.ObjectId(reportedBy),
+                'reportedItem.itemId': new mongoose.Types.ObjectId(itemId),
+                'reportedItem.type': type,
+                status: { $ne: ReportStatus.RESOLVED } // To avoid rejecting resolved reports
+            });
     
-            
+            if (existingReport) {
+                throw new CustomError('You have already reported this item.', 400);
+            }
+    
             let reportedItem;
             if (type === ReportType.POST) {
-                reportedItem = await postRepository.getById(itemId)
+                reportedItem = await this.postRepository.getById(itemId)
             } else if (type === ReportType.VENDOR) {
-                reportedItem = await vendorRepository.getById(itemId)
+                reportedItem = await this.vendorRepository.getById(itemId)
             }
 
             if (!reportedItem) {
@@ -29,7 +55,7 @@ class Reportservice {
             }
             let reportId = generateUniqueId('ID');
 
-            const report = await reportRepository.create({
+            const report = await this.reportRepository.create({
                 reportedBy: new mongoose.Types.ObjectId(reportedBy),
                 reportId: reportId,
                 reportedItem: {
@@ -42,35 +68,33 @@ class Reportservice {
             });
 
             if (type === ReportType.POST) {
-                await postRepository.update(
+                await this.postRepository.update(
                     itemId,
                     { $inc: { reportCount: 1 } as any},
                 );
             } else if(type === ReportType.VENDOR ) {
-                await vendorRepository.update(itemId,{
+                await this.vendorRepository.update(itemId,{
                     $inc: {reportCount: 1} as any,
                 })
             }
             
-
-
             await report.save()
-            return true
-
+            return { success: true, reportId };
 
 
         } catch (error) {
-            console.error('Error in reporting :', error)
-            throw new CustomError('Failed to report it', 500)
+            if (error instanceof CustomError) {
+                throw new CustomError(error.message, error.statusCode);
+            }
+    
+            throw new CustomError('Failed to report item', 500);
         }
 
     }
 
-    async getClientReports(page: number, limit: number, search: string, status?: string){
+    getClientReports = async(page: number, limit: number, search: string, status?: string): Promise<{ reports: IReport[]; total: number; totalPages: number }> =>{
         try {
-            const result = await reportRepository.findAllReports(page, limit, search, status);
-            console.log(result);
-            
+            const result = await this.reportRepository.findAllReports(page, limit, search, status);
             return result
         } catch (error) {
             console.error('Error in getting reports :', error)
@@ -79,4 +103,4 @@ class Reportservice {
     }
 }
 
-export default new Reportservice();
+export default Reportservice;

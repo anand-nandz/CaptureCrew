@@ -5,73 +5,81 @@ import { error } from 'console';
 import { AuthenticatedRequest } from '../types/userTypes';
 import { CustomError } from '../error/customError';
 import { VendorRequest } from '../types/vendorTypes';
+import { IReviewService } from '../interfaces/serviceInterfaces/review.Service.Interface';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 class ReviewController {
-    async addReview(req: Request, res: Response): Promise<void> {
+    private reviewService: IReviewService;
+    constructor(reviewService: IReviewService){
+        this.reviewService = reviewService
+    }
+
+    addReview = async(req: Request, res: Response): Promise<void> =>{
         try {
             const { vendorId, userId, bookingId, rating, content } = req.body;
-            console.log(req.body, 'reviews');
-
-            const result = await reviewService.addNewReview(
+            
+            const result = await this.reviewService.addNewReview(
                 vendorId,
                 userId,
                 bookingId,
                 rating,
                 content
             )
-            console.log(result);
+            console.log(result,'reviewadded');
+            
             if (!result) {
-                res.status(400).json({ error: "Couldn't add reviews" })
+                res.status(HTTP_statusCode.BadRequest).json({ error: "Couldn't add reviews" })
             }
-            res.status(200).json({ message: 'Review Added for this booking.' })
+            res.status(HTTP_statusCode.OK).json({ message: 'Review Added for this booking.',review: result  })
 
         } catch (error) {
             handleError(res, error, 'getAllPostsAdmin')
         }
     }
 
-    async getReviews(req: Request, res: Response): Promise<void> {
+    getReviews = async(req: Request, res: Response): Promise<void> =>{
         try {
             const { vendorId } = req.params;
             const page: number = parseInt(req.query.page as string) || 1;
             const pageSize: number = parseInt(req.query.pageSize as string) || 6;
-            const { reviews, count } = await reviewService.getreviewsForvendor(vendorId, page, pageSize);
+            const { reviews, count } = await this.reviewService.getreviewsForvendor(vendorId, page, pageSize);
             const totalPages = Math.ceil(count / pageSize)
-            res.status(200).json({ reviews, totalPages })
+            res.status(HTTP_statusCode.OK).json({ reviews, totalPages })
         } catch (error) {
             handleError(res, error, 'getReviews')
         }
     }
 
-    async updateReviews(req: Request, res: Response): Promise<void> {
+    updateReviews = async(req: Request, res: Response): Promise<void> =>{
         try {
             const { reviewId } = req.params;
             const { rating, content } = req.body;
-            const updated = await reviewService.updateReviews(reviewId, rating, content);
-            res.status(200).json({ message: 'Review updated successfully', review: updated })
+            const updated = await this.reviewService.updateReviews(reviewId, rating, content);
+            res.status(HTTP_statusCode.OK).json({ message: 'Review updated successfully', review: updated })
         } catch (error) {
             handleError(res, error, 'updateReviews')
         }
     }
-    async checkReviews(req: AuthenticatedRequest, res: Response): Promise<void> {
+
+    checkReviews = async(req: AuthenticatedRequest, res: Response): Promise<void> =>{
         try {
             const { bookingId } = req.params
             const userId = req.user?._id
             if (!userId) {
                 throw new CustomError('User not found', 404)
             }
-            const review = await reviewService.checkReviews(bookingId, userId?.toString());
+            const review = await this.reviewService.checkReviews(bookingId, userId?.toString());
             if (review) {
-                res.status(200).json({ review })
+                res.status(HTTP_statusCode.OK).json({ review })
                 return
             }
-            res.status(200).json({ review: null });
+            res.status(HTTP_statusCode.OK).json({ review: null });
         } catch (error) {
             handleError(res, error, 'checkReviews')
         }
     }
 
-    async getVendorReviews(req:VendorRequest, res:Response): Promise<void> {
+    getVendorReviews = async(req:VendorRequest, res:Response): Promise<void> =>{
         try {
             const vendorId = req.vendor?._id
             const page: number = parseInt(req.query.page as string) || 1;
@@ -79,15 +87,14 @@ class ReviewController {
             if (!vendorId) {
                 throw new CustomError('Vendor not found', 404)
             }
-            console.log(vendorId);
             
-            const { reviews, count } =  await reviewService.singleVendorReviews(vendorId.toString(),page,pageSize)
+            const { reviews, count } =  await this.reviewService.singleVendorReviews(vendorId.toString(),page,pageSize)
             const totalPages = Math.ceil(count / pageSize)
-            res.status(200).json({ reviews, totalPages })
+            res.status(HTTP_statusCode.OK).json({ reviews, totalPages })
         } catch (error) {
             handleError(res, error, 'getVendorReviews')
         }
     }
 }
 
-export default new ReviewController()
+export default ReviewController

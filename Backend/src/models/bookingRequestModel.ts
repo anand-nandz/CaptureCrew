@@ -1,41 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { ServiceProvided } from "./postModel";
+import { BookingAcceptanceStatus, ServiceProvided } from "../enums/commonEnums";
+import { BookingReqInterface } from "../interfaces/commonInterfaces";
 
-export enum BookingAcceptanceStatus {
-    Requested = 'requested',
-    Accepted = 'accepted',
-    Rejected = 'rejected',
-    Revoked = 'revoked',
-    PaymentOverdue = 'overdue'
-}
-
-export interface BookingInterface {
-    vendor_id: string | mongoose.Types.ObjectId,
-    user_id: string | mongoose.Types.ObjectId,
-    name: string,
-    email: string,
-    phone: string,
-    venue: string,
-    bookingReqId?: string,
-    serviceType: ServiceProvided,
-    packageId: string | mongoose.Types.ObjectId,
-    message: string,
-    totalPrice: number;
-    startingDate: string;
-    customizations: string[];
-    noOfDays: number;
-    bookingStatus: BookingAcceptanceStatus;
-    rejectionReason?: string;
-    requestedDates?: string[];
-    advancePaymentDueDate: Date;
-    advancePayment: {
-        amount: number;
-        status: 'pending' | 'completed' | 'overdue';
-        paidAt?: Date;
-    };
-}
-
-export interface BookingReqDocument extends BookingInterface, Document {
+export interface BookingReqDocument extends BookingReqInterface, Document {
     _id: mongoose.Types.ObjectId
 }
 

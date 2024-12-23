@@ -1,5 +1,6 @@
 import mongoose, {Schema, Document} from "mongoose";
-import { ServiceProvided } from "./postModel";
+import { ServiceProvided } from "../enums/commonEnums";
+import { Package } from "../interfaces/commonInterfaces";
 
 
 const customizationOptionSchema = new Schema({
@@ -8,21 +9,6 @@ const customizationOptionSchema = new Schema({
     price: { type: Number, required: true, min: 0 },
     unit: { type: String }
 });
-
-export interface Package {
-    vendor_id: string | mongoose.Types.ObjectId;
-    serviceType: ServiceProvided;
-    price: number;
-    description: string;
-    duration: number;  // in hours
-    photographerCount: number;
-    videographerCount: number;
-    features: string[];
-    customizationOptions: CustomizationOption[],
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-}
 
 export interface PackageDocument extends Package, Document {
     _id: mongoose.Types.ObjectId;
@@ -80,12 +66,6 @@ PackageSchema.index({
     unique: true 
 });
 
-export interface CustomizationOption {
-    _id: string;
-    type: string;
-    description: string;
-    price: number;
-    unit?: string;
-}
+
 
 export default mongoose.model<PackageDocument>('Package',PackageSchema)

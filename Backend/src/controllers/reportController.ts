@@ -2,11 +2,17 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../types/userTypes';
 import { handleError } from '../utils/handleError';
 import { CustomError } from '../error/customError';
-import reportService from '../services/reportService';
+import { IReportService } from '../interfaces/serviceInterfaces/report.Service.Interface';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 
 class ReportController {
-    async reoportItem(req: AuthenticatedRequest, res: Response):Promise<void> {
+
+  private reportService : IReportService;
+  constructor(reportService : IReportService) {
+    this.reportService = reportService
+  }
+    reoportItem = async (req: AuthenticatedRequest, res: Response):Promise<void>=>{
         try {
             const { 
                 itemId, 
@@ -19,10 +25,10 @@ class ReportController {
                 throw new CustomError('User not found', 404)
               }              
 
-              const report = await reportService.reportItems(reportedBy.toString(),itemId, type, reason, additionalDetails )
+              const { success, reportId }  = await this.reportService.reportItems(reportedBy.toString(),itemId, type, reason, additionalDetails )
               
-              if(report){
-                res.status(200).json({message: 'Report Submitted succesfully',report})
+              if(success){
+                res.status(HTTP_statusCode.OK).json({message: 'Report Submitted succesfully', reportId})
               }
         } catch (error) {
             handleError(res, error, 'reoportItem')
@@ -30,4 +36,4 @@ class ReportController {
     }
 }
 
-export default new ReportController()
+export default ReportController

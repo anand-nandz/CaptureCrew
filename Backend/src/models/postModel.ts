@@ -1,33 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-
-export enum ServiceProvided {
-    Engagement = 'Engagement',
-    Wedding = 'Wedding',
-    Birthday = 'Birthday Party',
-    OutdoorShoot = "Outdoor Shoot"
-}
-
-
-export enum PostStatus {
-    Draft = 'Draft',
-    Published = 'Published',
-    Archived = 'Archived',
-    Blocked = 'Blocked'
-}
-
-export interface Post {
-    caption: string;
-    imageUrl?: string[];
-    serviceType: ServiceProvided;
-    status?: PostStatus;
-    likesCount?: number;
-    location?: string;
-    createdAt: Date;
-    updatedAt: Date;
-    vendor_id: mongoose.Types.ObjectId;
-    reportCount: number;
-    blockReason?: string
-}
+import { Post} from "../interfaces/commonInterfaces";
+import { PostStatus, ServiceProvided } from "../enums/commonEnums";
 
 export interface PostDocument extends Post, Document {
     _id: mongoose.Types.ObjectId;

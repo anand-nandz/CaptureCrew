@@ -1,53 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
-
-// Define the payment and booking statuses
-export enum PaymentStatus {
-    Pending = 'pending',
-    Completed = 'completed',
-    Failed = 'failed',
-    Refund = 'refunded'
-    
-}
-
-export enum BookingStatus {
-    Confirmed = 'confirmed',
-    Cancelled = 'cancelled',
-    Completed = 'completed',
-}
-
-export interface BookingInterface {
-    userId: string | mongoose.Types.ObjectId;
-    vendorId: string | mongoose.Types.ObjectId;
-    bookingId: string;
-    clientName: string;
-    email: string;                    
-    phone: string;                    
-    venue: string;                    
-    serviceType: string;              
-    packageId: string | mongoose.Types.ObjectId;  
-    customizations: (string | mongoose.Types.ObjectId)[];
-    startingDate: string;
-    noOfDays: number;
-    totalAmount: number;
-    advancePayment: {
-        amount: number;
-        status: PaymentStatus;
-        paymentId: string;
-        paidAt: Date;
-        refundedAt?: Date
-    };
-    finalPayment: {
-        amount: number;
-        dueDate: Date;
-        status: PaymentStatus;
-        paymentId?: string;
-        paidAt?: Date;
-    };
-    bookingStatus: BookingStatus;
-    requestedDates: string[]; 
-    cancellationReason?: string;
-    cancelledAt?: Date; 
-}
+import { BookingStatus, PaymentStatus } from "../enums/commonEnums";
+import { BookingInterface } from "../interfaces/commonInterfaces";
 
 export interface BookingDocument extends BookingInterface, Document {
     _id: mongoose.Types.ObjectId;

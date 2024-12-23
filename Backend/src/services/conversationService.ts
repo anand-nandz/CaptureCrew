@@ -1,25 +1,34 @@
 import { CustomError } from "../error/customError";
+import { IConversationRepository } from "../interfaces/repositoryInterfaces/conversation.repository.interface";
+import { IConversationService } from "../interfaces/serviceInterfaces/conversation.service.interface";
+import { ConversationDocument } from "../models/coversationModel";
 import conversationRepository from "../repositories/conversationRepository";
 
-class conversationService {
+class conversationService implements IConversationService {
 
-    async findChat(userId: string) {
+    private conversationRepository: IConversationRepository;
+
+    constructor(conversationRepository: IConversationRepository){
+        this.conversationRepository = conversationRepository
+    }
+
+    findChat = async(userId: string): Promise<ConversationDocument[]> =>{
         try {
-            return await conversationRepository.findConversations(userId)
+            return await this.conversationRepository.findConversations(userId)
         } catch (error) {
             console.error("Error in findChat:", error);
             throw new CustomError("Error finding chats.", 500);
         }
     }
 
-    async initializeChat(senderId: string, receiverId: string) {
+    initializeChat = async(senderId: string, receiverId: string):Promise<ConversationDocument | null> =>{
         try {
-            let chat = await conversationRepository.findOne({
+            let chat = await this.conversationRepository.findOne({
                 members: [senderId, receiverId]
             });
 
             if(!chat){
-                const newChat = await conversationRepository.create({
+                const newChat = await this.conversationRepository.create({
                     members: [senderId, receiverId],
                 })
                 
@@ -32,9 +41,9 @@ class conversationService {
         }
     }
 
-    async updateConversation(id: string, text: string){
+    updateConversation = async(id: string, text: string): Promise<ConversationDocument | null>=>{
         try {
-            return await conversationRepository.findByIdAndUpdate(id,text)
+            return await this.conversationRepository.findByIdAndUpdate(id,text)
         } catch (error) {
             console.error("Error in updateConversation:", error);
             throw new CustomError("Error updateing Conversation.", 500);
@@ -42,4 +51,4 @@ class conversationService {
     }
 }
 
-export default new conversationService()
+export default conversationService

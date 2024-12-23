@@ -1,36 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
-import { Transaction, TransactionSchema } from "../utils/extraUtils";
-
-export enum AcceptanceStatus {
-    Requested = 'requested',
-    Accepted = 'accepted',
-    Rejected = 'rejected'
-}
-
-export interface Vendor {
-    email: string;
-    password?: string;
-    name: string;
-    companyName: string;
-    city: string;
-    about: string;
-    contactinfo: string;
-    isActive: boolean;
-    isVerified: boolean;
-    isAccepted: AcceptanceStatus;
-    logo: string;
-    imageUrl: string;
-    totalBooking: number;
-    bookedDates: string[];
-    postCount: number;
-    refreshToken: string;
-    totalRating: number;
-    walletBalance: number;
-    transactions?: Transaction[];
-    posts?: Types.ObjectId[];
-    resetPasswordToken?: string;
-    resetPasswordExpires?: Date;
-}
+import { TransactionSchema } from "../utils/extraUtils";
+import { AcceptanceStatus } from "../enums/commonEnums";
+import { Transaction, Vendor } from "../interfaces/commonInterfaces";
 
 export interface VendorDocument extends Vendor, Document {
     _id: mongoose.Types.ObjectId;

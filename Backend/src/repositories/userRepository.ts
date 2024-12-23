@@ -1,14 +1,15 @@
 import { CustomError } from "../error/customError";
+import { IUserRepository } from "../interfaces/repositoryInterfaces/user.repository.Interface";
 import  User,{ UserDocument } from "../models/userModel";
 import { BaseRepository } from "./baseRepository";
 import mongoose from "mongoose";
 
-class UserRepository extends BaseRepository<UserDocument>{
+class UserRepository extends BaseRepository<UserDocument> implements IUserRepository{
     constructor(){
         super(User);
     }
     
-    async findAllUsers(page: number, limit: number, search: string,status?:string)  {
+    findAllUsers = async(page: number, limit: number, search: string,status?:string): Promise<{users: UserDocument[], total: number, totalPages: number}> => {
         try {
             const skip = (page -1) * limit ;
 
@@ -42,8 +43,7 @@ class UserRepository extends BaseRepository<UserDocument>{
         }
     }
 
-
-    async UpdatePassword(userId:mongoose.Types.ObjectId, hashedPassword:string) : Promise<boolean> {
+    UpdatePassword = async(userId:mongoose.Types.ObjectId, hashedPassword:string) : Promise<boolean> =>{
         try {
             const result = await User.updateOne(
                 {_id : userId},
@@ -60,8 +60,7 @@ class UserRepository extends BaseRepository<UserDocument>{
         }
     }
 
-
-    async UpdatePasswordAndClearToken(userId:mongoose.Types.ObjectId, hashedPassword:string) : Promise<boolean> {
+    UpdatePasswordAndClearToken = async(userId:mongoose.Types.ObjectId, hashedPassword:string) : Promise<boolean> =>{
         try {
             const result = await User.updateOne(
                 {_id : userId},
@@ -82,7 +81,7 @@ class UserRepository extends BaseRepository<UserDocument>{
         }
     }
 
-    async clearResetToken(userId:mongoose.Types.ObjectId) : Promise<void> {
+    clearResetToken = async(userId:mongoose.Types.ObjectId) : Promise<void> =>{
         try {
             await User.updateOne(
                 {_id : userId},
@@ -99,6 +98,10 @@ class UserRepository extends BaseRepository<UserDocument>{
         }
     }
 
+    updateUserWallet = async(userId: string, walletUpdate: object): Promise<void> =>{
+        await User.findByIdAndUpdate(userId, walletUpdate);
+    }
+
 }
 
-export default new UserRepository();
+export default UserRepository;

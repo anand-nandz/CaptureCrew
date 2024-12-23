@@ -1,26 +1,12 @@
 import { Request, Response } from "express";
-import generateOTP from "../utils/generateOtp";
 import { handleError } from "../utils/handleError";
 import { CustomError } from "../error/customError";
-import vendorService from "../services/vendorService";
-import vendorRepository from "../repositories/vendorRepository";
 import { VendorRequest } from "../types/vendorTypes";
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest } from "../types/userTypes";
-
-interface VendorSession {
-    otpSetTimestamp: number | undefined;
-    email: string;
-    password: string;
-    name: string;
-    city: string;
-    contactinfo: string;
-    companyName: string;
-    about: string;
-    otpCode: string | undefined
-    otpExpiry: number;
-    resendTimer: number;
-}
+import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
+import { VendorSession } from "../interfaces/commonInterfaces";
+import HTTP_statusCode from "../enums/httpStatusCode";
+import { DateRangeQuery } from "../utils/extraUtils";
 
 interface OTP {
     otp: string | undefined;
@@ -35,73 +21,64 @@ declare module 'express-session' {
     }
 }
 
-const OTP_EXPIRY_TIME = 2 * 60 * 1000;
-const RESEND_COOLDOWN = 2 * 60 * 1000;
+
 class VendorController {
 
-    async VendorSignUp(req: Request, res: Response): Promise<void> {
+    private vendorService: IVendorService;
+
+    constructor(vendorService: IVendorService) {
+        this.vendorService = vendorService;
+    }
+
+    VendorSignUp = async (req: Request, res: Response): Promise<void> => {
         try {
             const { email, name, password, city, contactinfo, companyName, about } = req.body;
 
-            const existingVendor = await vendorRepository.findByEmail(email);
-            if (existingVendor) throw new CustomError('Email already registered', 409);
+            const vendorData = await this.vendorService.registerVendor({
+                email,
+                name,
+                password,
+                city,
+                contactinfo,
+                companyName,
+                about,
+            });
 
-            const otpCode = await generateOTP(email)
-
-            if (otpCode !== undefined) {
-                const otpSetTimestamp = Date.now();
-                const vendorData: VendorSession = {
-                    email: email,
-                    password: password,
-                    name: name,
-                    contactinfo: contactinfo,
-                    city: city,
-                    companyName: companyName,
-                    about: about,
-                    otpCode: otpCode,
-                    otpSetTimestamp,
-                    otpExpiry: otpSetTimestamp + OTP_EXPIRY_TIME,
-                    resendTimer: otpSetTimestamp + RESEND_COOLDOWN
+            req.session.vendor = vendorData
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    throw new CustomError('Error saving session', HTTP_statusCode.InternalServerError);
                 }
-                req.session.vendor = vendorData
-                req.session.save((err) => {
-                    if (err) {
-                        console.error('Session save error:', err);
-                        throw new CustomError('Error saving session', 500);
-                    }
-                    res.status(200).json({
-                        message: `OTP send to Email for Verification`,
-                        email: email,
-                        otpExpiry: vendorData.otpExpiry,
-                        resendAvailableAt: vendorData.resendTimer
-                    });
-                })
+                res.status(HTTP_statusCode.OK).json({
+                    message: `OTP send to Email for Verification`,
+                    email: email,
+                    otpExpiry: vendorData.otpExpiry,
+                    resendAvailableAt: vendorData.resendTimer
+                });
+            })
 
-            } else {
-                res.status(500).json({
-                    message: `Server Error,Couldn't generate Otp`
-                })
-            }
+
         } catch (error) {
             handleError(res, error, 'VendorSignUp')
         }
     }
 
-    async VerifyOTP(req: Request, res: Response): Promise<void> {
+    verifyOTP = async(req: Request, res: Response): Promise<void> =>{
         try {
             const otp = req.body.otp
-            const { name, email, city, password, contactinfo, otpCode, companyName, about, otpExpiry, otpSetTimestamp } = req.session.vendor
+            const { name, email, city, password, contactinfo, otpCode, companyName, about, otpExpiry } = req.session.vendor
 
             if (otp !== otpCode) {
-                throw new CustomError('OTP expired , Try resend OTP!!', 400)
+                throw new CustomError('Invalid OTP', HTTP_statusCode.BadRequest)
             }
             const currentTime = Date.now();
             if (currentTime > otpExpiry) {
-                throw new CustomError('OTP has expired. Please request a new one.', 400);
+                throw new CustomError('OTP has expired. Please request a new one.', HTTP_statusCode.BadRequest);
             }
 
             if (otp === otpCode) {
-                const { vendor, token } = await vendorService.signup(
+                const { vendor } = await this.vendorService.signup(
                     email,
                     password,
                     name,
@@ -118,10 +95,11 @@ class VendorController {
     }
 
 
-    async VendorLogin(req: Request, res: Response): Promise<void> {
+    VendorLogin = async (req: Request, res: Response): Promise<void> => {
         try {
             const { email, password } = req.body;
-            const { token, refreshToken, vendor, message } = await vendorService.login(email, password);
+
+            const { token, refreshToken, vendor, message } = await this.vendorService.login(email, password);
 
             res.cookie('jwtToken', refreshToken, {
                 httpOnly: true,
@@ -129,26 +107,26 @@ class VendorController {
                 sameSite: 'strict',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             })
-            res.status(200).json({ token, vendor, message })
+            res.status(HTTP_statusCode.OK).json({ token, vendor, message })
         } catch (error) {
             handleError(res, error, 'VendorLogin')
         }
     }
 
-    async VendorLogout(req: Request, res: Response): Promise<void> {
+    VendorLogout = async (req: Request, res: Response): Promise<void> => {
         try {
             res.clearCookie('jwtToken', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict'
             })
-            res.status(200).json({ message: 'Vendor Logged out Succesfully' })
+            res.status(HTTP_statusCode.OK).json({ message: 'Vendor Logged out Succesfully' })
         } catch (error) {
             handleError(res, error, 'VendorLogout')
         }
     }
 
-    async CreateRefreshToken(req: Request, res: Response): Promise<void> {
+    CreateRefreshToken = async (req: Request, res: Response): Promise<void> => {
         try {
             const refreshToken = req.cookies.jwtToken;
 
@@ -157,9 +135,9 @@ class VendorController {
             }
             try {
 
-                const newAccessToken = await vendorService.createRefreshToken(refreshToken);
+                const newAccessToken = await this.vendorService.create_RefreshToken(refreshToken);
 
-                res.status(200).json({ token: newAccessToken });
+                res.status(HTTP_statusCode.OK).json({ token: newAccessToken });
             } catch (error) {
                 if (error instanceof jwt.TokenExpiredError) {
                     res.clearCookie('refreshToken');
@@ -173,14 +151,13 @@ class VendorController {
         }
     }
 
-
-    async checkBlockStatus(req: VendorRequest, res: Response): Promise<void> {
+    checkBlockStatus = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id
             if (!vendorId) {
                 throw new CustomError('Vendor not found', 404)
             }
-            const vendor = await vendorRepository.getById(vendorId.toString())
+            const vendor = await this.vendorService.checkBlock(vendorId.toString())
             if (!vendor) {
                 throw new CustomError('Vendor not found', 404)
             }
@@ -192,7 +169,7 @@ class VendorController {
                 })
                 return
             }
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 isBlocked: false
             });
         } catch (error) {
@@ -200,85 +177,84 @@ class VendorController {
         }
     }
 
-    async forgotPassword(req: Request, res: Response): Promise<void> {
+    forgotPassword = async (req: Request, res: Response): Promise<void> => {
         try {
             const { email } = req.body
             if (!email) {
-                throw new CustomError('Email is required', 400);
+                throw new CustomError('Email is required', HTTP_statusCode.BadRequest);
             }
 
-            await vendorService.handleForgotPassword(email)
-            res.status(200).json({ message: 'Password reset link sent to your email' });
+            await this.vendorService.handleForgotPassword(email)
+            res.status(HTTP_statusCode.OK).json({ message: 'Password reset link sent to your email' });
 
         } catch (error) {
             handleError(res, error, 'forgotPassword')
         }
     }
 
-    async changeForgotPassword(req: Request, res: Response): Promise<void> {
+    changeForgotPassword = async (req: Request, res: Response): Promise<void> => {
         const { token } = req.params;
         const { password } = req.body;
         try {
             if (!token) {
-                throw new CustomError('Session Expired', 400)
+                throw new CustomError('Session Expired', HTTP_statusCode.BadRequest)
             } else if (!password) {
-                throw new CustomError("Password required", 400)
+                throw new CustomError("Password required", HTTP_statusCode.BadRequest)
             }
 
-            let updated = await vendorService.newPasswordChange(token, password)
+            await this.vendorService.newPasswordChange(token, password)
 
-            res.status(200).json({ message: 'Password Reset Successfull' })
+            res.status(HTTP_statusCode.OK).json({ message: 'Password Reset Successfull' })
 
         } catch (error) {
             handleError(res, error, 'changePassword')
         }
     }
 
-    async validateResetToken(req: Request, res: Response): Promise<void> {
+    validateResetToken = async (req: Request, res: Response): Promise<void> => {
         const { token } = req.params;
 
         try {
             if (!token) {
-                throw new CustomError('Token is required', 400);
+                throw new CustomError('Token is required', HTTP_statusCode.BadRequest);
             }
-            const isValid = await vendorService.validateToken(token);
-            res.status(200).json({ isValid });
+            const isValid = await this.vendorService.validateToken(token);
+            res.status(HTTP_statusCode.OK).json({ isValid });
         } catch (error) {
-            res.status(400).json({ message: (error as Error).message });
+            res.status(HTTP_statusCode.BadRequest).json({ message: (error as Error).message });
         }
     }
 
-
-    async getVendorProfile(req: VendorRequest, res: Response): Promise<void> {
+    getVendorProfile = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(400).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
                 return;
             }
 
-            const result = await vendorService.getVendorProfileService(vendorId.toString())
-            res.status(200).json(result);
+            const result = await this.vendorService.getVendorProfileService(vendorId.toString())
+            res.status(HTTP_statusCode.OK).json(result);
         } catch (error) {
             handleError(res, error, 'getVendor');
         }
     }
 
-    async updateProfile(req: VendorRequest, res: Response): Promise<void> {
+    updateProfile = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const { name, contactinfo, companyName, city, about } = req.body
             const vendorId = req.vendor?._id;
 
             if (!vendorId) {
-                res.status(400).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
                 return;
             }
             if ((!name && !contactinfo && !companyName && !city && !about && !req.file) || (name === '' && contactinfo === '' && companyName === '' && city === '' && about === '' && !req.file)) {
-                res.status(400).json({ message: 'At least one field (name or contact info) is required' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'At least one field (name or contact info) is required' });
                 return;
             }
 
-            const vendor = await vendorService.updateProfileService(name, contactinfo, companyName, city, about, req.file || null, vendorId)
+            const vendor = await this.vendorService.updateProfileService(name, contactinfo, companyName, city, about, req.file || null, vendorId)
             res.status(201).json(vendor);
         } catch (error) {
             handleError(res, error, 'updateProfile')
@@ -286,7 +262,7 @@ class VendorController {
     }
 
 
-    async getPackages(req: VendorRequest, res: Response): Promise<void> {
+    getPackages = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
 
             if (!req.vendor?._id) {
@@ -294,9 +270,9 @@ class VendorController {
             }
 
             const vendorId = req.vendor?._id;
-            const result = await vendorService.getPackages(vendorId)
+            const result = await this.vendorService.getPackages(vendorId)
 
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 status: 'success',
                 data: {
                     packages: result
@@ -308,7 +284,7 @@ class VendorController {
         }
     }
 
-    async createPackage(req: VendorRequest, res: Response): Promise<void> {
+    createPackage = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const {
                 serviceType,
@@ -322,14 +298,13 @@ class VendorController {
             } = req.body
 
             const vendorId = req.vendor?._id;
-            console.log(req.body);
             if (!vendorId) {
-                res.status(400).json({ message: 'VendorId is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'VendorId is missing' });
                 return
             }
 
 
-            const createPackage = await vendorService.addNewPkg(
+            const createPackage = await this.vendorService.addNewPkg(
                 serviceType,
                 price,
                 description,
@@ -340,7 +315,6 @@ class VendorController {
                 customizationOptions,
                 vendorId
             )
-            console.log(createPackage, 'neewwwwwwwww package created');
 
             res.status(201).json(createPackage)
 
@@ -350,7 +324,7 @@ class VendorController {
     }
 
 
-    async updatePackge(req: VendorRequest, res: Response): Promise<void> {
+    updatePackge = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const packageId = req.params.id;
             const vendorId = req.vendor?._id;
@@ -367,17 +341,16 @@ class VendorController {
             } = req.body
 
             if (!vendorId) {
-                res.status(400).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
                 return;
             }
 
             if (!packageId) {
-                res.status(400).json({ message: 'Package ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Package ID is missing' });
                 return;
             }
 
-
-            const updatePackage = await vendorService.updatePkg(
+            const updatePackage = await this.vendorService.updatePkg(
                 vendorId,
                 packageId,
                 serviceType,
@@ -390,9 +363,7 @@ class VendorController {
                 customizationOptions
             )
 
-            console.log(updatePackage, 'updatd packageeeeeeeeeeeeeeeeeeeee');
-
-            res.status(200).json({ package: updatePackage })
+            res.status(HTTP_statusCode.OK).json({ package: updatePackage })
 
         } catch (error) {
             handleError(res, error, 'updatePackge')
@@ -400,24 +371,24 @@ class VendorController {
     }
 
 
-    async getVendorWithAll(req: VendorRequest, res: Response): Promise<void> {
+    getVendorWithAll = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id
             if (!vendorId) {
-                res.status(400).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
                 return;
             }
 
-            const result = await vendorService.getAllDetails(vendorId.toString())
+            const result = await this.vendorService.getAllDetails(vendorId.toString())
 
-            res.status(200).json({ vendor: result })
+            res.status(HTTP_statusCode.OK).json({ vendor: result })
 
         } catch (error) {
             handleError(res, error, 'getVendorWithAll')
         }
     }
 
-    async showUnavailableDates(req: VendorRequest, res: Response): Promise<void> {
+    showUnavailableDates = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
@@ -425,10 +396,9 @@ class VendorController {
                 return
             }
 
-            const result = await vendorService.showDates(vendorId.toString())
-            console.log(result, 'res show');
+            const result = await this.vendorService.showDates(vendorId.toString())
 
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 success: true,
                 message: 'Data fetched succesfully',
                 result
@@ -438,23 +408,20 @@ class VendorController {
         }
     }
 
-    async addUnavailableDates(req: VendorRequest, res: Response): Promise<void> {
+    addUnavailableDates = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id;
             const { dates } = req.body;
-            console.log(dates, 'dates');
-            console.log(vendorId, 'vendorId');
 
             if (!vendorId) {
                 res.status(401).json({ success: false, message: 'VendorId is missing' })
                 return
             }
 
-            const result = await vendorService.addDates(dates, vendorId.toString())
-            console.log(result, 'result in controler');
+            const result = await this.vendorService.addDates(dates, vendorId.toString())
 
             if (result.success) {
-                res.status(200).json({
+                res.status(HTTP_statusCode.OK).json({
                     success: true,
                     message: result.message,
                     addedDates: result.addedDates,
@@ -463,7 +430,7 @@ class VendorController {
             }
 
             if (result.success === false) {
-                res.status(200).json({
+                res.status(HTTP_statusCode.OK).json({
                     success: false,
                     message: result.message,
                     addedDates: [],
@@ -476,7 +443,7 @@ class VendorController {
     }
 
 
-    async removeUnavailableDates(req: VendorRequest, res: Response): Promise<void> {
+    removeUnavailableDates = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const vendorId = req.vendor?._id;
             const { dates } = req.body;
@@ -486,9 +453,9 @@ class VendorController {
                 return;
             }
 
-            const result = await vendorService.removeDates(dates, vendorId.toString());
+            const result = await this.vendorService.removeDates(dates, vendorId.toString());
 
-            res.status(200).json({
+            res.status(HTTP_statusCode.OK).json({
                 success: true,
                 message: 'Dates updated successfully',
                 updatedDates: result.removedDates
@@ -498,7 +465,7 @@ class VendorController {
         }
     }
 
-    async changePassword(req: VendorRequest, res: Response): Promise<void> {
+    changePassword = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
             const { currentPassword, newPassword } = req.body
 
@@ -507,46 +474,47 @@ class VendorController {
                 res.status(401).json({ success: false, message: 'VendorId is missing' });
                 return;
             }
-            const passwordCheck = await vendorService.passwordCheckUser(currentPassword, newPassword, vendorId)
+            await this.vendorService.passwordCheckVendor(currentPassword, newPassword, vendorId)
 
-            res.status(200).json({ message: "Password reset successfully." });
+            res.status(HTTP_statusCode.OK).json({ message: "Password reset successfully." });
         } catch (error) {
             handleError(res, error, 'changePassword')
         }
     }
 
-    async getVendor(req: AuthenticatedRequest, res: Response): Promise<void> {
+    getVendor = async (req: Request, res: Response): Promise<void> => {
         try {
             const vendorId: string = req.query.vendorId as string
-            if(!vendorId){
-                res.status(400).json({message:'VendorId is missing'})
+            if (!vendorId) {
+                res.status(HTTP_statusCode.BadRequest).json({ message: 'VendorId is missing' })
                 return
             }
 
-            const data = await vendorService.getSingleVendor(vendorId)
-            if(!data){
-                res.status(400).json({message: "Vendor not Found."})
+            const data = await this.vendorService.getSingleVendor(vendorId)
+            if (!data) {
+                res.status(HTTP_statusCode.BadRequest).json({ message: "Vendor not Found." })
             } else {
-                res.status(200).json({data: data})
+                res.status(HTTP_statusCode.OK).json({ data: data })
             }
         } catch (error) {
-            handleError(res,error,'getVendor')
+            handleError(res, error, 'getVendor')
         }
     }
 
-    async getRevenue(req: VendorRequest, res: Response){
+
+    getRevenue = async (req: VendorRequest, res: Response): Promise<void> => {
         try {
-            const dateType =  req.query.date as string
+            const { date, startDate, endDate } = req.query as unknown as DateRangeQuery;
             const vendorId = req.vendor?._id;
             if (!vendorId) {
                 res.status(401).json({ success: false, message: 'VendorId is missing' });
                 return;
-            }            
-            const response = await vendorService.getRevenueDetails(dateType,vendorId.toString())
-            console.log(response,'in revenue fetching');
-            
-            if(response){
-                res.status(200).json({revenue: response})
+            }
+            const response = await this.vendorService.getRevenueDetails(date,  vendorId.toString(), startDate, endDate)
+            console.log(response, 'ressssssssssssssssss');
+
+            if (response) {
+                res.status(HTTP_statusCode.OK).json({ revenue: response })
             }
         } catch (error) {
             handleError(res, error, 'getRevenue')
@@ -560,4 +528,4 @@ class VendorController {
 
 }
 
-export default new VendorController()
+export default VendorController

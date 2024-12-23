@@ -2,27 +2,28 @@ import Post, { PostDocument } from "../models/postModel";
 import { BaseRepository } from "./baseRepository";
 import Vendor, { VendorDocument } from "../models/vendorModel";
 import mongoose from "mongoose";
+import { IPostRepository } from "../interfaces/repositoryInterfaces/post.repository.interface";
 
-class PostRepository extends BaseRepository<PostDocument> {
+class PostRepository extends BaseRepository<PostDocument> implements IPostRepository {
     constructor() {
         super(Post)
     }
 
-    async create(postData: Partial<PostDocument>): Promise<PostDocument> {
-        const post = await Post.create(postData);
-        await Vendor.updateOne(
-            { _id: postData.vendor_id },
-            { $inc: { postCount: 1 } }
-        );
+    // async create(postData: Partial<PostDocument>): Promise<PostDocument> {
+    //     const post = await Post.create(postData);
+    //     await Vendor.updateOne(
+    //         { _id: postData.vendor_id },
+    //         { $inc: { postCount: 1 } }
+    //     );
 
-        return post;
-    }
+    //     return post;
+    // }
 
-    async getVendorPosts(
+    getVendorPosts = async(
         vendorId: mongoose.Types.ObjectId,
         page: number,
         limit: number
-    ) {
+    ) =>{
         try {
             const skip = (page - 1) * limit;
 
@@ -51,8 +52,8 @@ class PostRepository extends BaseRepository<PostDocument> {
 
             return {
                 posts,
-                total:posts.length,
-                totalPages:1,
+                total: posts.length,
+                totalPages: 1,
                 currentPage: 1
             };
         } catch (error) {
@@ -62,10 +63,15 @@ class PostRepository extends BaseRepository<PostDocument> {
     }
 
 
-    async getAllPosts(
+    getAllPosts= async(
         page: number,
         limit: number
-    ) {
+    ): Promise<{
+        posts: PostDocument[];
+        total: number;
+        totalPages: number;
+        currentPage: number;
+    }> => {
         try {
             const skip = (page - 1) * limit;
 
@@ -90,11 +96,11 @@ class PostRepository extends BaseRepository<PostDocument> {
                 // .skip(validSkip)
                 // .limit(limit)
                 .populate('vendor_id', 'name companyName city about contactinfo imageUrl') // Populate vendor details
-                .lean();
+                .lean<PostDocument[]>();
 
-            
-            const allPosts = await Post.find().lean();
-          
+
+            // const allPosts = await Post.find().lean();
+
             return {
                 posts,
                 total: posts.length,
@@ -108,15 +114,20 @@ class PostRepository extends BaseRepository<PostDocument> {
     }
 
 
-    async getSingleVendorPost(
-        vendorId : string,
-        page : number,
-        limit : number
-    ) {
+    getSingleVendorPost = async(
+        vendorId: string,
+        page: number,
+        limit: number
+    ) :Promise<{
+        vendorPosts: PostDocument[],
+        total: number;
+        totalPages: number;
+        currentPage: number
+    }> =>{
         try {
             const skip = (page - 1) * limit;
-            const total = await Post.countDocuments({ vendor_id: vendorId });            
-            if(total === 0 ){
+            const total = await Post.countDocuments({ vendor_id: vendorId });
+            if (total === 0) {
                 return {
                     vendorPosts: [],
                     total: 0,
@@ -125,12 +136,12 @@ class PostRepository extends BaseRepository<PostDocument> {
                 };
             }
 
-            const vendorPosts = await Post.find({vendor_id: vendorId})
-            .sort({ createdAt: -1})
-            // .skip(skip)
-            // .limit(limit)
-            .populate('vendor_id', 'name companyName city about contactinfo imageUrl') 
-            .lean()            
+            const vendorPosts = await Post.find({ vendor_id: vendorId })
+                .sort({ createdAt: -1 })
+                // .skip(skip)
+                // .limit(limit)
+                .populate('vendor_id', 'name companyName city about contactinfo imageUrl')
+                .lean()
 
             const totalPages = Math.ceil(total / limit);
 
@@ -141,21 +152,25 @@ class PostRepository extends BaseRepository<PostDocument> {
                 currentPage: page
             };
         } catch (error) {
-            console.error('Error in getSingleVendorPosts repository',error);
+            console.error('Error in getSingleVendorPosts repository', error);
             throw error
         }
     }
 
 
-    async getAllPostsAd(
+    getAllPostsAd = async(
         limit: number,
         page: number,
         search?: string
-    ) {
+    ): Promise<{
+        posts: Array<PostDocument | Record<string, any>>;
+        total: number;
+        totalPages: number;
+        currentPage: number;
+    }> =>{
         try {
             const query: any = {};
-            
-            // Add search functionality
+
             if (search && search.trim()) {
                 const searchRegex = new RegExp(search.trim(), 'i');
                 query['$or'] = [
@@ -165,19 +180,19 @@ class PostRepository extends BaseRepository<PostDocument> {
                 ];
             }
             const skip = (page - 1) * limit;
-           
+
             const posts = await Post.find(query)
-                .sort({ createdAt: -1 })              
+                .sort({ createdAt: -1 })
                 .populate('vendor_id', 'name companyName city about contactinfo imageUrl')
                 .lean();
 
-                const mappedPosts = posts.map(post => ({
-                    ...post,
-                    vendor: post.vendor_id,  // Add this line to map vendor_id to vendor
-                }));
-    
+            const mappedPosts = posts.map(post => ({
+                ...post,
+                vendor: post.vendor_id, 
+            }));
+
             return {
-                posts:mappedPosts,
+                posts: mappedPosts,
                 total: posts.length,
                 totalPages: 1,
                 currentPage: 1
@@ -188,11 +203,11 @@ class PostRepository extends BaseRepository<PostDocument> {
         }
     }
 
-    async findByIdAndUpdate(
+    findByIdAndUpdate = async(
         id: string,
         updateData: Partial<PostDocument>,
         options: { new: boolean }
-    ): Promise<PostDocument | null> {
+    ): Promise<PostDocument | null> =>{
         try {
             return await Post.findByIdAndUpdate(id, updateData, options).exec();
         } catch (error) {
@@ -202,9 +217,9 @@ class PostRepository extends BaseRepository<PostDocument> {
     }
 
 
-    findPostsByVendorId(vendor_id: string) {
-        return Post.find({ vendor_id });
-    }
+    // findPostsByVendorId(vendor_id: string) {
+    //     return Post.find({ vendor_id });
+    // }
 }
 
-export default new PostRepository();
+export default PostRepository;
