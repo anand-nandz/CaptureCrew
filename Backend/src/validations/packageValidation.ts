@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { ServiceProvided } from '../models/postModel';
+import { ServiceProvided } from '../enums/commonEnums';
 
 const customizationOptionValidationSchema = yup.object().shape({
     type: yup

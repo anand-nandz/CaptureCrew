@@ -29,6 +29,7 @@ export enum TransactionType {
     STRIPE = 'stripe',
     RAZORPAY = 'razorpay'
   }
+
   export enum PaymentStatus {
     Pending = 'pending',
     Completed = 'completed',
@@ -36,6 +37,7 @@ export enum TransactionType {
     Refund = 'refunded'
 
   }
+  
 
   export interface Chats {
     _id: string;
@@ -77,9 +79,8 @@ export interface VendorReview {
 
 
 
-
 export const formatMessageTime =(updatedAt?: number | string | Date): string  => {
-  if (!updatedAt) return ''; // Handle undefined
+  if (!updatedAt) return ''; 
 
   const createdAtDate = updatedAt instanceof Date ? updatedAt : new Date(updatedAt);
   const now = new Date();
@@ -97,3 +98,6 @@ export const formatMessageTime =(updatedAt?: number | string | Date): string  =>
       return new Date(createdAtDate).toLocaleDateString();
   }
 };
+
+export type TabValue = 'bookingHistory' | 'bookingRequests' | 'bookingConfirmed';
+

@@ -8,7 +8,7 @@ import Message from '@/components/chat/SenderMessage';
 import { ActiveUser, Chats, Messages } from '@/types/extraTypes';
 import { useSelector } from 'react-redux';
 import { io, Socket } from "socket.io-client";
-import { axiosInstance, axiosInstanceChat, axiosInstanceMessage } from '@/config/api/axiosInstance';
+import { axiosInstanceChat, axiosInstanceMessage, axiosInstanceVendor } from '@/config/api/axiosInstance';
 import { Textarea } from '@material-tailwind/react';
 import VendorRootState from '@/redux/rootstate/VendorState';
 import { UserData } from '@/types/userTypes';
@@ -37,8 +37,8 @@ const Chat = () => {
   const handleConversationSelect = async (selectedConversation: Chats) => {
     try {
       setCurrentChat(selectedConversation);
-      const friendId = selectedConversation.members.find((m) => m !== user?._id);
-      const response = await axiosInstance.get(`/getUser?userId=${friendId}`)
+      const friendId = selectedConversation.members.find((m) => m !== vendor?._id);
+      const response = await axiosInstanceVendor.get(`/getUser?userId=${friendId}`)
       console.log(response.data.data, 'user details');
 
       setUser(response.data.data)

@@ -5,35 +5,19 @@ import BookingConfirmedDetailsModal from "../common/BookingDetails";
 import { axiosInstance } from "@/config/api/axiosInstance";
 import { showToastMessage } from "@/validations/common/toast";
 import { AxiosError } from "axios";
-import PaymentMethodModal, { PaymentBookingData } from "@/pages/user/bookings/PaymentMethodModal";
+import PaymentMethodModal from "@/pages/user/bookings/PaymentMethodModal";
 import CancelModal from "@/pages/user/bookings/CancelModal";
 import { BookingCancellationPolicyImpl } from "@/utils/bookingPolicyService";
 import Swal from "sweetalert2";
+import { getPaymentStatusColor, getStatusColor } from "@/utils/utils";
+import { BookingConfirmedTableProps, ExistingReviewsMap, PaymentBookingData, Review } from "@/utils/interfaces";
 import { ReviewFormModal } from "../common/ReviewModalForm";
-
-type BookingConfirmedTableProps = {
-    title: string;
-    bookingConfirmed: BookingConfirmed[];
-    isVendor?: boolean;
-    onPayNow?: (bookingId: string, sbooking: PaymentBookingData, paymentType: 'finalAmount') => void;
-
-};
-
-interface Review {
-    _id: string;
-    bookingId: string;
-    rating: number;
-    content: string;
-    userId?: string;
-    vendorId?: string;
-  }
-  
-  // Define the type for the existing reviews map
-  type ExistingReviewsMap = Record<string, Review | null>;
 
 export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
     bookingConfirmed,
     isVendor = false,
+    onBookingCancelled,
+    onBookingUpdate
 }) => {
     const [selectedBooking, setSelectedBooking] = useState<BookingConfirmed | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -43,84 +27,48 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
     const [isCancelling, setIsCancelling] = useState(false);
     const [reviewModal, setReviewModal] = useState(false);
     const [existingReviews, setExistingReviews] = useState<ExistingReviewsMap>({});
-
-
-    useEffect(() => {
-        const fetchExistingReviews = async () => {
-            // Check for existing reviews for completed bookings
-            const completedBookings = bookingConfirmed.filter(
-                booking => !isVendor && booking.bookingStatus === 'completed'
-            );
-
-            const reviewPromises = completedBookings.map(async (booking) => {
-                try {
-                    const response = await axiosInstance.get(`/checkReview/${booking._id}`, {
-                        withCredentials: true
-                    });
-                    return {
-                        bookingId: booking._id,
-                        review: response.data.review || null
-                    };
-                } catch (error) {
-                    console.error(`Error checking review for booking ${booking._id}:`, error);
-                    return {
-                        bookingId: booking._id,
-                        review: null
-                    };
-                }
-            });
-
-            try {
-                const reviewResults = await Promise.all(reviewPromises);
-
-                const reviewMap = reviewResults.reduce<ExistingReviewsMap>((acc, result) => {
-                    acc[result.bookingId] = result.review;
-                    return acc;
-                }, {});
-
-                setExistingReviews(reviewMap);
-            } catch (error) {
-                console.error('Error fetching reviews:', error);
-            }
-        };
-
-        if (reviewModal || bookingConfirmed.length > 0) {
-            fetchExistingReviews();
-        }
-    }, [bookingConfirmed,reviewModal,isVendor]);
-
-
     const itemsPerPage = 4;
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'confirmed':
-                return 'bg-blue-100 text-blue-800';
-            case 'ongoing':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+    useEffect(() => {
+        if (bookingConfirmed.length > 0) {
+            const reviewMap = bookingConfirmed.reduce<ExistingReviewsMap>((acc, booking) => {
+                const review = booking.reviews || null; 
+                acc[booking._id] = review;
+                return acc;
+            }, {});
+            setExistingReviews(reviewMap);
         }
-    };
+    }, [bookingConfirmed]);
+    
+    // const updateReviewInState = (bookingId: string, newReview: Review) => {
+    //     setExistingReviews(prev => ({
+    //         ...prev,
+    //         [bookingId]: newReview
+    //     }));
+        
+    // };
 
-    const getPaymentStatusColor = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'failed':
-                return 'bg-red-100 text-red-800';
-            case 'refunded':
-                return 'bg-orange-100 text-orange-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
+    
+  const updateReviewInState = (bookingId: string, newReview: Review) => {
+    // Update local reviews state
+    setExistingReviews(prev => ({
+      ...prev,
+      [bookingId]: newReview
+    }));
+
+    // Find and update the specific booking
+    const bookingToUpdate = bookingConfirmed.find(booking => booking._id === bookingId);
+    if (bookingToUpdate && onBookingUpdate) {
+      const updatedBooking = {
+        ...bookingToUpdate,
+        reviews: newReview
+      };
+      onBookingUpdate(updatedBooking);
+    }
+  };
+
+    
+
 
     const handlePayNowClick = (booking: BookingConfirmed) => {
         setSelectedBooking(booking);
@@ -143,10 +91,12 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
                 paymentType: 'finalAmount',
                 paymentMethod
             };
-
+            console.log(paymentData, 'payment Dtaa');
 
             const paymentEndpoint = paymentMethod === 'stripe' ? '/stripe-payments' : '/razorpay-payment';
             const paymentResponse = await axiosInstance.post(paymentEndpoint, paymentData);
+            console.log(paymentResponse, 'payment Response');
+
 
             if (paymentResponse.data.success) {
                 const checkoutUrl = paymentResponse?.data.result.url;
@@ -307,42 +257,11 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
                 setIsCancelModalOpen(false);
                 setSelectedBooking(null);
 
+                if (onBookingCancelled) {
+                    onBookingCancelled(booking.bookingId);
+                }
 
-                // try {
-                //     const cancelResponse = await axiosInstance.post('/cancel-booking', { 
-                //         bookingId: booking.bookingId, 
-                //         cancellationReason: cancellationReason 
-                //     });
 
-                //     console.log(cancelResponse, 'cancelResponse.............');
-                //     if (cancelResponse.data.success) {
-                //         showToastMessage("Booking successfully cancelled", 'success');
-                //     } else {
-                //         showToastMessage(
-                //             cancelResponse.data.message || 
-                //             cancelResponse.data.code || 
-                //             "Booking cancellation failed", 
-                //             'error'
-                //         );
-                //     }
-                // } catch (error) {
-                //     console.error('Error in refunding:', error);
-                //     if (error instanceof AxiosError) {
-                //         const errorResponse = error.response?.data;
-
-                //         // More specific error handling
-                //         if (errorResponse?.message) {
-                //             showToastMessage(errorResponse.message, 'error');
-                //         } else if (error.response?.status === 500) {
-                //             showToastMessage('Server error. Please try again later.', 'error');
-                //         } else {
-                //             showToastMessage('An unexpected error occurred', 'error');
-                //         }
-                //     } else {
-                //         // Handle non-Axios errors
-                //         showToastMessage('An unexpected error occurred', 'error');
-                //     }
-                // }
 
             } else {
                 showToastMessage("Cancellation cancelled", 'error');
@@ -377,6 +296,7 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
         const finalAmountDueDate = new Date(booking.finalPayment.dueDate);
 
         return (
+            booking.bookingStatus !== 'cancelled' &&
             booking.advancePayment.status === 'completed' &&
             booking.finalPayment.status !== 'completed' &&
             today <= finalAmountDueDate
@@ -419,7 +339,7 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentBookings = bookingConfirmed.slice(startIndex, endIndex);
-
+    
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
@@ -610,6 +530,7 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
             {selectedBooking && <ReviewFormModal
                 isOpen={reviewModal}
                 onOpenChange={setReviewModal}
+                onReviewUpdate={updateReviewInState} 
                 bookingDetails={{
                     vendorId: selectedBooking.vendorId?._id,
                     bookingId: selectedBooking?._id,

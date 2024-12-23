@@ -23,10 +23,8 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
       };
     }
 
-    // Safely parse payment date
     const paymentDate = this.parseDate(booking.advancePayment.paidAt);
 
-    // Safely parse event date
     const eventDate = this.parseDate(this.convertToISODate(booking.startingDate));
 
     // Validate dates
@@ -40,9 +38,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
     }
 
     const today = new Date();
-
-    console.log(paymentDate, eventDate, today, 'details');
-
 
     // Calculate total days between payment and event
     const totalDaysBetweenPaymentAndEvent = differenceInDays(eventDate, paymentDate);
@@ -61,7 +56,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
 
     // Determine refund eligibility and percentages
     if (daysRemainingBeforeEvent < 0) {
-      // Event has already passed
       return {
         isEligible: false,
         userRefundPercentage: 0,
@@ -72,7 +66,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
     }
 
     if (timeElapsedPercentage <= 10) {
-      // Within first 10% of time - full refund to user
       return {
         isEligible: true,
         userRefundPercentage: 95,
@@ -83,7 +76,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
     }
 
     if (timeElapsedPercentage <= 60) {
-      // Between 10% and 60% of time - partial refund
       return {
         isEligible: true,
         userRefundPercentage: 70,
@@ -103,7 +95,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
     };
   }
 
-  // Helper method to convert DD/MM/YYYY to ISO date format
   private convertToISODate(dateString: string): string {
     const [day, month, year] = dateString.split('/');
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;

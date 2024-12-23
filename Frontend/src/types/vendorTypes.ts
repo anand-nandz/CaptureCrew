@@ -1,11 +1,13 @@
 import { Transaction } from "./extraTypes";
+import { PackageData } from "./packageTypes";
+import { PostData } from "./postTypes";
 
 export interface VendorData{
     _id:string;
     email : string;
     password : string;
     name : string;
-    companyName:string;
+    companyName?:string;
     city : string ;
     about?:string ;
     contactinfo?: string;
@@ -49,4 +51,10 @@ export interface VendorResponse {
     imageUrl?: string;
   }>;
   totalPages: number;
+}
+
+export interface IVendorDetails {
+  vendor: VendorData,
+  posts: PostData[],
+  packages: PackageData[]
 }

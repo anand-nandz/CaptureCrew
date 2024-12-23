@@ -13,35 +13,12 @@ import {
   MessageCircle,
   Phone
 } from 'lucide-react';
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { showToastMessage } from '@/validations/common/toast';
-import { VendorData } from '@/types/vendorTypes';
 import SidebarVendor from '@/layout/vendor/SidebarProfileVendor';
-import { ServiceProvided } from '@/types/postTypes';
 import { BookingModal } from '../user/BookingFormModal';
-import { Package } from '@/types/packageTypes';
-
-interface UnifiedCalendarProps {
-  isVendor?: boolean;
-  vendorDetails?: VendorData | null;
-  packages?: Package[];
-  axiosInstance: AxiosInstance;
-}
-type Mode = 'block' | 'unblock';
-
-interface BookingFormData {
-  name: string;
-  phone: string;
-  email: string;
-  venue: string;
-  serviceType: ServiceProvided | '';
-  noOfDays: number;
-  packageId: string;
-  totalPrice: number;
-  message: string;
-  selectedDate: string;
-  customizations: string[];
-}
+import { BookingFormData, UnifiedCalendarProps } from '@/utils/interfaces';
+import { Mode } from '@/utils/utils';
 
 
 export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({

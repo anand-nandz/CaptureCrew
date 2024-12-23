@@ -70,7 +70,6 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpe
       default: return "default";
     }
   };
-  console.log(booking,'aandd bookinnggggggggggg');
   
   const InfoItem: React.FC<{ icon: React.ElementType; label: string; value: string }> = ({ icon: Icon, label, value }) => (
     <div className="flex items-center gap-3">

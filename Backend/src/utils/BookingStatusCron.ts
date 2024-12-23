@@ -1,17 +1,27 @@
 import cron from 'node-cron';
-import bookingRequestModel, { BookingAcceptanceStatus } from '../models/bookingRequestModel';
+import bookingRequestModel from '../models/bookingRequestModel';
 import { sendEmail } from './sendEmail';
 import { emailTemplates } from './emailTemplates';
 import bookingRepository from '../repositories/bookingRepository';
+import { BookingAcceptanceStatus } from '../enums/commonEnums';
+import { IBookingReqRepository } from '../interfaces/repositoryInterfaces/bookingReq.Repository.Interface';
 
 
-export class BookingStatusCron{
+class BookingStatusCron  {
+
+    private bookingRepository: IBookingReqRepository;
+    constructor(
+        bookingRepository: IBookingReqRepository,
+    ) {
+        this.bookingRepository = bookingRepository
+    }
     private static CRON_SCHEDULE = '30 10 * * *';
 
-    static async initializeCronJobs(){
+    static async initializeCronJobs(bookingRepository: IBookingReqRepository){
         cron.schedule(this.CRON_SCHEDULE, async() => {
+            const cronInstance = new BookingStatusCron(bookingRepository);
             try {
-                await this.checkOverduePayments();
+                await cronInstance.checkOverduePayments();
             } catch (error) {
                 console.error('Error in payment status cron job:', error);
             }
@@ -19,9 +29,9 @@ export class BookingStatusCron{
         console.log('Booking status cron jobs initialized');
     }
 
-    private static async checkOverduePayments(){
+    private async checkOverduePayments(){
         try {
-            const overdueBookings = await bookingRepository.overdueBookings()
+            const overdueBookings = await this.bookingRepository.overdueBookings()
 
             console.log(overdueBookings,'overduebooingsssssss');
             
@@ -34,7 +44,7 @@ export class BookingStatusCron{
         }
     }
 
-    private static async processOverdueBooking(booking: any){
+    private async processOverdueBooking(booking: any){
         try {
             booking.bookingStatus = BookingAcceptanceStatus.PaymentOverdue;
             booking.advancePayment.status = 'overdue'
@@ -81,3 +91,5 @@ export class BookingStatusCron{
     }
 
 }
+
+export default BookingStatusCron

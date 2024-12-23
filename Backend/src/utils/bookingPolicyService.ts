@@ -16,17 +16,13 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
     const paymentDate = booking.advancePayment.paidAt;
     const eventDate = parseISO(this.convertToISODate(booking.startingDate));
     const today = new Date();
-    console.log(paymentDate,eventDate,today,'details');
 
     const totalDaysBetweenPaymentAndEvent = differenceInDays(eventDate, paymentDate);
-    console.log(totalDaysBetweenPaymentAndEvent,'totalDaysBetweenPaymentAndEvent');
     
     const daysRemainingBeforeEvent = differenceInDays(eventDate, today);
-    console.log(daysRemainingBeforeEvent,'daysRemainingBeforeEvent');
 
     const timeElapsedPercentage = 
       ((totalDaysBetweenPaymentAndEvent - daysRemainingBeforeEvent) / totalDaysBetweenPaymentAndEvent) * 100;
-      console.log(timeElapsedPercentage, 'timeElapsedPercentage');
       
 
     if (daysRemainingBeforeEvent < 0) {

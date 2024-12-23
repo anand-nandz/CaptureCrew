@@ -13,17 +13,19 @@ import { VendorData } from '../../types/vendorTypes';
 import { AxiosError } from 'axios';
 import { showToastMessage } from '@/validations/common/toast';
 import VendorReviews from '@/components/common/ReviewCard';
+import { VendorReview } from '@/types/extraTypes';
 
 
 const VendorPorfolio = () => {
     const [posts, setPosts] = useState<PostData[]>([]);
+    const [reviews, setReviews] = useState<VendorReview[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
     const [selectedService, setSelectedService] = useState<ServiceProvided>(ServiceProvided.Engagement)
     const [packages, setPackages] = useState([]);
-    const [vendor,setVendor]= useState<VendorData | null>(null)
+    const [vendor, setVendor] = useState<VendorData | null>(null)
     const POSTS_PER_PAGE = 3
     const { vendorId } = useParams()
 
@@ -35,12 +37,13 @@ const VendorPorfolio = () => {
     const fetchPosts = async () => {
         setIsLoading(true)
         try {
-            const response = await axiosInstance.get(`/portfolio/${vendorId}`)            
+            const response = await axiosInstance.get(`/portfolio/${vendorId}`)
+            console.log(response.data.data);
+            
             const publishedPosts = response.data.data.post.filter(
                 (post: PostData) => post.status === PostStatus.Published
             )
 
-            // Add data validation before setting state
             if (Array.isArray(publishedPosts)) {
                 setPosts(publishedPosts)
             } else {
@@ -50,26 +53,24 @@ const VendorPorfolio = () => {
             if (Array.isArray(response.data.data.package)) {
                 setPackages(response.data.data.package);
             }
+            if (Array.isArray(response.data.data.review)) {
+                setReviews(response.data.data.review);
+            }
             if (response.data.data.vendor) {
                 setVendor(response.data.data.vendor);
-            }
-
-            console.log(response.data.data,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
-            
-
+            }            
 
         } catch (error) {
             console.error('Error fetching posts:', error)
-            if(error instanceof AxiosError){
-                showToastMessage(error.response?.data.message,'error')
+            if (error instanceof AxiosError) {
+                showToastMessage(error.response?.data.message, 'error')
             } else {
-                showToastMessage('failed to load post','error')
+                showToastMessage('failed to load post', 'error')
             }
         } finally {
             setIsLoading(false)
         }
     }
-
 
     const filteredPosts = posts.filter(post => post.serviceType === selectedService);
     const totalFilteredPosts = filteredPosts.length;
@@ -93,12 +94,12 @@ const VendorPorfolio = () => {
     return (
         <>
             <UserNavbar />
-              {vendor && <VendorDetails isVendor={false} vendorDetails={vendor} />}
-              
+            {vendor && <VendorDetails isVendor={false} vendorDetails={vendor} />}
+
             <Servicepackage packages={packages} />
             <div className="max-w-7xl mx-auto px-4 py-10">
                 <h1 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] text-center mb-12 uppercase">
-                   My Collections
+                    My Collections
                 </h1>
 
                 <div className="flex space-x-12 mb-8 justify-center overflow-x-auto pb-2">
@@ -150,7 +151,7 @@ const VendorPorfolio = () => {
                     </div>
                 )}
             </div>
-            <VendorReviews vendorId={`${vendorId}`}/>
+            <VendorReviews vendorId={`${vendorId}`} reviews={reviews}/>
             <PostModal
                 post={selectedPost}
                 isOpen={modalOpen}

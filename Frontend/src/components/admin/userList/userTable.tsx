@@ -24,22 +24,10 @@ import { useNavigate } from 'react-router-dom';
 import { ADMIN } from '../../../config/constants/constants';
 import Swal from 'sweetalert2';
 import { AxiosError } from 'axios';
-const TABS = [
-  {
-    label: "All",
-    value: "all",
-  },
-  {
-    label: "Active",
-    value: "active",
-  },
-  {
-    label: "Inactive",
-    value: "inactive",
-  },
-];
+import { TABS, USER_TABLE_HEAD } from '@/utils/enums';
+import { debounce } from 'lodash';
+import { formatDate } from '@/utils/userUtils';
 
-const TABLE_HEAD = ["UserName", "Mobile",  "Joined-At",'Google', "Status", "Actions"];
 
 export function SortableTable() {
   const [users, setUsers] = useState<UserData[]>([]);
@@ -52,22 +40,18 @@ export function SortableTable() {
   const navigate = useNavigate()
 
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page?: number, search?: string) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await axiosInstanceAdmin.get('/users', {
         params: {
-          page: currentPage,
+          page: page,
           limit: 5,
-          search: searchTerm,
+          search: search,
           status: activeTab !== 'all' ? activeTab : undefined
-        },
-        headers: {
-          Authorization: `Bearer ${token}`
         }
       });
-      
+
       setUsers(response.data.users);
       setTotalPages(response.data.totalPages);
     } catch (error) {
@@ -77,15 +61,27 @@ export function SortableTable() {
       } else {
         showToastMessage('An unknown error occurred', 'error');
       }
-      
+
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchTerm, activeTab]);
+  }, []);
+
+  const debouncedFetchData = useCallback(
+    debounce((page?: number, search?: string) => {
+      fetchData(page, search);
+    }, 500),
+    [fetchData]
+  );
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (searchTerm.trim().length >= 3 || searchTerm.trim() === '') {
+      debouncedFetchData(currentPage, searchTerm);
+    }
+    return () => {
+      debouncedFetchData.cancel();
+    };
+  }, [currentPage, searchTerm, activeTab, debouncedFetchData]);
 
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,11 +116,17 @@ export function SortableTable() {
           'success'
         );
 
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === userId
+              ? { ...user, isActive: !currentStatus }
+              : user
+          )
+        )
+
         if (response.data.processHandle === 'block') {
           dispatch(logout());
           navigate(`${ADMIN.LOGIN}`);
-        } else {
-          fetchData();
         }
       } catch (error) {
         Swal.fire(
@@ -211,7 +213,7 @@ export function SortableTable() {
           <table className="w-full min-w-max table-auto text-left">
             <thead>
               <tr>
-                {TABLE_HEAD.map((head) => (
+                {USER_TABLE_HEAD.map((head) => (
                   <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
                     <Typography
                       variant="small"
@@ -265,19 +267,19 @@ export function SortableTable() {
                       <Typography variant="small" color="blue-gray" className="font-normal" placeholder={undefined}
                         onPointerEnterCapture={undefined}
                         onPointerLeaveCapture={undefined}>
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {formatDate(user?.createdAt) || 'n/a'}
                       </Typography>
                     </td>
-                    
+
                     <td className="p-4">
                       <div className="w-max flex justify-center items-center ">
-                      {user.isGoogleUser ? (
-                        <CheckCircleIcon className="h-5 w-5 flex items-center text-green-500" />
-                      ) : (
-                        <CancelIcon className="h-5 w-5   text-red-500" />
-                      )}
+                        {user.isGoogleUser ? (
+                          <CheckCircleIcon className="h-5 w-5 flex items-center text-green-500" />
+                        ) : (
+                          <CancelIcon className="h-5 w-5   text-red-500" />
+                        )}
                       </div>
-                      
+
                     </td>
                     <td className="p-4">
                       <div className={`w-max rounded-full ${user.isActive ? 'bg-green-100' : 'bg-red-100'} px-2 py-1`}>
@@ -288,29 +290,28 @@ export function SortableTable() {
                         </Typography>
                       </div>
                     </td>
-                    
+
                     <td className="p-4">
                       <div className="w-max flex justify-center items-center">
                         <Switch
-                        id={`custom-switch-component-${user._id}`}
-                        ripple={false}
+                          id={`custom-switch-component-${user._id}`}
+                          ripple={false}
                           color={user.isActive ? "green" : "red"}
                           checked={user.isActive}
                           onChange={() => handleBlockUnblock(user._id, user.isActive)}
-                         
+
                           crossOrigin={undefined}
                           placeholder={undefined}
-                        onPointerEnterCapture={undefined}
-                        onPointerLeaveCapture={undefined}
-                        className={`h-6 w-12 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}
-                        containerProps={{
-                          className: "relative inline-block w-12 h-6",
-                        }}
-                        circleProps={{
-                          className: `absolute left-0.5  w-5 h-5 bg-white rounded-full transition-transform duration-300 ease-in-out ${
-                            user.isActive ? 'translate-x-6' : ''
-                          }`,
-                        }}
+                          onPointerEnterCapture={undefined}
+                          onPointerLeaveCapture={undefined}
+                          className={`h-6 w-12 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+                          containerProps={{
+                            className: "relative inline-block w-12 h-6",
+                          }}
+                          circleProps={{
+                            className: `absolute left-0.5  w-5 h-5 bg-white rounded-full transition-transform duration-300 ease-in-out ${user.isActive ? 'translate-x-6' : ''
+                              }`,
+                          }}
                         />
                       </div>
                     </td>

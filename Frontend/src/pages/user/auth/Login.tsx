@@ -26,13 +26,12 @@ import { useEffect } from "react";
 
 const client_id = import.meta.env.VITE_CLIENT_ID || ''
 
-type CustomInputProps = Omit<InputProps, 'onPointerEnterCapture' | 'onPointerLeaveCapture' | 'crossOrigin'>;
+export type CustomInputProps = Omit<InputProps, 'onPointerEnterCapture' | 'onPointerLeaveCapture' | 'crossOrigin'>;
 
 const Input: React.FC<CustomInputProps> = (props) => {
     return (
         <MaterialInput
             {...props}
-            // Explicitly set these as undefined to satisfy both TypeScript and runtime
             crossOrigin={undefined}
             onPointerEnterCapture={undefined}
             onPointerLeaveCapture={undefined}
@@ -312,12 +311,6 @@ const UserLogin: React.FC = () => {
                     Find, Connect, and Collaborate with Top Event Planners
                 </p>
             </div>
-
-
-
-
-
-
 
         </div>
     )

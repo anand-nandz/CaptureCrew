@@ -17,11 +17,7 @@ import "slick-carousel/slick/slick-theme.css";
 import { axiosInstance } from '@/config/api/axiosInstance';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import { VendorReview } from '@/types/extraTypes';
-
-
-interface VendorReviewsProps {
-  vendorId: string;
-}
+import { VendorReviewsProps } from '@/utils/interfaces';
 
 // Animations
 const fadeIn = keyframes`
@@ -63,34 +59,44 @@ const QuoteIcon = styled(FormatQuoteIcon)(({ theme }) => ({
   zIndex: 0,
 }));
 
-export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId }) => {
-  const [reviews, setReviews] = useState<VendorReview[]>([]);
-  const [loading, setLoading] = useState(true);
+export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews: initialReviews }) => {
+  const [reviews, setReviews] = useState<VendorReview[]>(initialReviews || []);
+  const [loading, setLoading] = useState(!initialReviews || initialReviews.length === 0);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  console.log(initialReviews, 'initi');
 
   useEffect(() => {
+
+    if (initialReviews && initialReviews.length > 0) {
+      setReviews(initialReviews);
+      setLoading(false);
+      return; 
+    }
+
     const fetchVendorReviews = async () => {
       try {
-        setLoading(true);
         const response = await axiosInstance.get(`/getReviews/${vendorId}`, {
           withCredentials: true
         });
         setReviews(response.data.reviews);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching vendor reviews:', err);
         setError('Failed to load reviews');
+      } finally {
         setLoading(false);
       }
     };
 
-    if (vendorId) {
+    if (!initialReviews || initialReviews.length === 0) {
       fetchVendorReviews();
     }
-  }, [vendorId]);
+  }, [vendorId, initialReviews]);
+
+  if (loading) return <div>Loading reviews...</div>;
+  if (error) return <div>{error}</div>;
 
   const settings = {
     dots: true,
@@ -152,6 +158,9 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId }) => {
         bgcolor: 'background.default',
       }}>
         <Container maxWidth="sm" sx={{ textAlign: 'center' }}>
+        <Typography variant="h4" component="h2" gutterBottom className='py-4'>
+            What our Clients say!
+          </Typography>
           <Typography variant="h5" gutterBottom>No reviews yet</Typography>
           <Typography variant="body1" color="text.secondary">
             This vendor has no reviews at the moment.

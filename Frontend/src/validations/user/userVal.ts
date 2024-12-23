@@ -126,7 +126,6 @@ interface ValidationErrors {
     };
     console.log(values.name,'rest password in  vlaidate email');
     const mobileRegex = /^(91)?0?[6-9]\d{9}$/;
-    // Regular Expression for email validation
     if (!values.name.trim()) {
       errors.name = 'Name is required';
     } else if (!/^[A-Za-z\s]+$/i.test(values.name)) {

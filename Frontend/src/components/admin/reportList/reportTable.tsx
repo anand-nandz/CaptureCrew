@@ -17,6 +17,7 @@ import Swal from 'sweetalert2';
 import Loader from '../../common/Loader';
 import { VendorData } from '@/types/vendorTypes';
 import { PostData } from '@/types/postTypes';
+import { debounce } from 'lodash';
 
 interface Report {
     _id: string;
@@ -55,17 +56,19 @@ export function ReportManagement() {
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (page?: number, search?: string) => {
         setIsLoading(true);
         try {
             const response = await axiosInstanceAdmin.get('/client-reports', {
                 params: {
-                    page: currentPage,
-                    limit: 10,
-                    search: searchTerm,
+                    page: page,
+                    limit: 5,
+                    search: search,
                     status: activeTab !== 'all' ? activeTab : undefined
                 }
+                
             });
+            console.log(response.data);
 
             setReports(response.data.reports);
             setTotalPages(response.data.totalPages);
@@ -75,12 +78,22 @@ export function ReportManagement() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, searchTerm, activeTab]);
+    }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
+    const debouncedFetchData = useCallback(
+        debounce(fetchData, 500),
+        [fetchData]
+      );
+      useEffect(() => {
+        if (searchTerm.trim().length >= 3) {
+          debouncedFetchData(currentPage, searchTerm);
+        } else if (searchTerm.trim() === '') {
+          debouncedFetchData(currentPage, '');
+        }
+        return () => {
+          debouncedFetchData.cancel();
+        };
+      }, [currentPage, searchTerm, debouncedFetchData]);
     const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value);
         setCurrentPage(1);

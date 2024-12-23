@@ -1,4 +1,4 @@
-import { axiosInstanceVendor } from "@/config/api/axiosInstance";
+import { axiosInstance } from "@/config/api/axiosInstance";
 import { Chats, formatMessageTime } from "@/types/extraTypes";
 import { UserData } from "@/types/userTypes";
 import { VendorData } from "@/types/vendorTypes";
@@ -25,7 +25,7 @@ const ChatList: React.FC<ConversationsProps> = ({
     useEffect(() => {
         const getUser = async () => {
             try {
-                const response = await axiosInstanceVendor.get(`/getVendor?vendorId=${friendId}`)
+                const response = await axiosInstance.get(`/getVendor?vendorId=${friendId}`)
                 setVendor(response.data.data)
             } catch (error) {
                 console.log(error);

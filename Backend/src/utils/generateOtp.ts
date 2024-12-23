@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export default  async function generateOTP(email:string){
+export default async function generateOTP(email:string): Promise<string>{
     try {
         const otpCode : string = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -37,6 +37,7 @@ export default  async function generateOTP(email:string){
         return otpCode
         
     } catch (error) {
-        console.error('Error sending email',error)
+        console.error('Error sending email',error);
+        throw new Error('Failed to generate and send OTP'); 
     }
 }

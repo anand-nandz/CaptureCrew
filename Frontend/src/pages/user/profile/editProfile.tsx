@@ -11,35 +11,14 @@ import {
     Avatar,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { UserData } from '../../../types/userTypes';
 import { validateProfile } from '../../../validations/user/userVal';
 import { showToastMessage } from '../../../validations/common/toast';
+import { IProfileFormData, IUserDetails, IValidationErrors } from '@/utils/interfaces';
 
-interface UserDetails {
-    isOpen: boolean;
-    onClose: () => void;
-    user: UserData | null;
-    onSave: (data: FormData) => Promise<void>
 
-}
-interface ProfileFormData {
-    name: string;
-    email: string;
-    contactinfo: string;
-    image?: File | string;
-    isGoogleUser?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-interface ValidationErrors {
-    name: string;
-    contactinfo: string;
-}
-
-const EditProfileModal: React.FC<UserDetails> = ({ user, isOpen, onClose, onSave }) => {
+const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSave }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(user?.imageUrl || null);
-    const [formData, setFormData] = useState<ProfileFormData>({
+    const [formData, setFormData] = useState<IProfileFormData>({
         name: user?.name || '',
         email: user?.email || '',
         contactinfo: user?.contactinfo || '',
@@ -49,7 +28,7 @@ const EditProfileModal: React.FC<UserDetails> = ({ user, isOpen, onClose, onSave
         updatedAt: user?.updatedAt || '',
     });
 
-    const [errors, setErrors] = useState<ValidationErrors>({
+    const [errors, setErrors] = useState<IValidationErrors>({
         name: '',
         contactinfo: ''
     })

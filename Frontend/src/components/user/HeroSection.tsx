@@ -7,54 +7,16 @@ import { USER } from "../../config/constants/constants";
 import { useCallback, useEffect, useState } from 'react';
 import { VendorData, VendorResponse } from '../../types/vendorTypes';
 import { axiosInstance } from '../../config/api/axiosInstance';
+import { CATEGORIES, services } from "@/utils/utils";
+import { CarouselArrowProps, CarouselNavigationProps } from "@/utils/interfaces";
 
-
-const CATEGORIES = [
-  {
-    title: 'Photographers',
-    image: '/images/cate1.jpg',
-    description: 'Capture your special moments with our talented photographers. From weddings to corporate events, we have the perfect professionals.',
-  },
-  {
-    title: 'Event Planners',
-    image: '/images/cate2.jpg',
-    description: 'Let our experienced event planners take care of every detail. From concept to execution, we will make your event unforgettable.',
-  },
-];
 
 const CAROUSEL_IMAGES = [
   '/images/caro1.jpg',
   '/images/caro2.jpg',
   '/images/caro3.jpg',
 ];
-const services = [
-  {
-    title: 'WEDDING',
-    image: '/images/event1.jpg',
-    description: 'Love seems the swiftest but it is the slowest of all growths. No man or woman really knows what perfect love is until they have been married a quarter of a century.',
-  },
-  {
-    title: 'ENGAGEMENT',
-    image: '/images/event2.jpg',
-    description: 'When you realize you want to spend the rest of your life with somebody, you want the rest of your life to start as soon as possible.',
-  },
-  {
-    title: 'OUTDOOR',
-    image: '/images/event3.jpg',
-    description: "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma – which is living with the results of other people's thinking."
-  },
-]
 
-interface CarouselNavigationProps {
-  setActiveIndex: (index: number) => void;
-  activeIndex: number;
-  length: number;
-}
-
-interface CarouselArrowProps {
-  handlePrev?: () => void;
-  handleNext?: () => void;
-}
 
 const HeroSection = () => {
   const [vendors, setVendors] = useState<VendorData[]>([])
@@ -68,10 +30,12 @@ const HeroSection = () => {
         }
       })
 
-      const transformedVendors: VendorData[] = response.data.vendors.map((vendor) => ({
-        ...vendor._doc,
-        imageUrl: vendor.imageUrl
-      }));
+      const transformedVendors: VendorData[] = response.data.vendors
+        .map((vendor) => ({
+          ...vendor._doc,
+          imageUrl: vendor.imageUrl
+        }))
+        .sort((a, b) => b.totalRating! - a.totalRating!);
 
       setVendors(transformedVendors);
 
@@ -156,7 +120,7 @@ const HeroSection = () => {
 
   }
 
-  const viewPorfolio = (vendorId: string)=>{
+  const viewPorfolio = (vendorId: string) => {
     navigate(`${USER.PORTFOLIO}/${vendorId}`)
   }
 
@@ -179,7 +143,7 @@ const HeroSection = () => {
                 transition: { duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }
               }}
               whileTap={{ scale: 0.95 }}
-              onClick={()=>viewPorfolio(vendor._id)}
+              onClick={() => viewPorfolio(vendor._id)}
             >
               <img
                 src={vendor.imageUrl || '/images/p5.jpg'}

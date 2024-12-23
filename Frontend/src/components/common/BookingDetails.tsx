@@ -12,19 +12,12 @@ import {
   Divider,
   ScrollShadow,
 } from "@nextui-org/react";
-import { Calendar, MapPin, Package, Phone, Mail, User, Clock, Building, CreditCard } from 'lucide-react';
-import { BookingConfirmed, PaymentDetails } from "@/types/bookingTypes";
+import { Calendar, MapPin, Package, Phone, Mail, User, Clock, Building, CreditCard, DownloadIcon } from 'lucide-react';
 import { Transaction } from "@/types/extraTypes";
+import { BookingConfirmedDetailsModalProps, ExtendedPaymentDetails } from "@/utils/interfaces";
+import { generateBookingPDF } from "@/utils/generateBookingPDF";
+import { getStatusColor } from "@/utils/utils";
 
-interface BookingConfirmedDetailsModalProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  booking: BookingConfirmed;
-}
-
-type ExtendedPaymentDetails = PaymentDetails & {
-  dueDate?: string;
-};
 
 const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> = ({
   isOpen,
@@ -36,6 +29,11 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
       style: 'currency',
       currency: 'INR'
     }).format(price);
+  };
+
+  const handleDownload = () => {
+    alert('hi')
+    generateBookingPDF(booking);
   };
 
   const InfoItem: React.FC<{ icon: React.ElementType; label: string; value: string }> = ({ icon: Icon, label, value }) => (
@@ -67,7 +65,7 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">{title}</h3>
             <Chip
-              color={payment.status === 'completed' ? 'success' : payment.status === 'refunded' ? 'warning' : payment.status === 'failed' ? 'danger' :'default'}
+              color={payment.status === 'completed' ? 'success' : payment.status === 'refunded' ? 'warning' : payment.status === 'failed' ? 'danger' : 'default'}
               variant="flat"
             >
               {payment.status.toUpperCase()}
@@ -139,18 +137,34 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
-              <h2 className="text-2xl font-bold">Confirmed Booking Details</h2>
-              <p className="text-sm text-gray-500">Booking ID: {booking.bookingId}</p>
+            <ModalHeader className="flex flex-col gap-4">
+              <div className="flex items-start justify-between p-2">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">Confirmed Booking Details</h2>
+                  <p className="text-sm text-gray-500">Booking ID: {booking.bookingId}</p>
+                </div>
+                <Button
+                  onClick={handleDownload}
+                  type="button"
+                  className="flex items-center gap-2"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
             </ModalHeader>
             <ModalBody>
-              <ScrollShadow className="h-[calc(80vh-200px)]">
+              <ScrollShadow className="h-[calc(80vh-100px)]">
                 <div className="space-y-6 p-1">
                   {/* Status and Creation Date */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <Chip color="success" variant="flat" size="lg">
+                    <div
+                      className={`px-4 py-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                        booking.bookingStatus
+                      )}`}
+                    >
                       {`BOOKING ${booking.bookingStatus.toUpperCase()}`}
-                    </Chip>
+                    </div>
                     <p className="text-sm text-gray-500">
                       Created on: {new Date(booking.createdAt).toLocaleDateString()}
                     </p>
@@ -252,7 +266,7 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
                           <li key={index} className="text-gray-600">{feature}</li>
                         ))}
                       </ul>
-                      {booking.customizations.length > 0 && (
+                      {/* {booking.customizations.length > 0 && (
                         <>
                           <Divider className="my-2" />
                           <h4 className="text-md font-semibold mb-2">Selected Customizations:</h4>
@@ -262,7 +276,7 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
                             ))}
                           </ul>
                         </>
-                      )}
+                      )} */}
                     </CardBody>
                   </Card>
                 </div>

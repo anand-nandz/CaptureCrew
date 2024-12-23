@@ -17,27 +17,13 @@ import { axiosInstanceAdmin } from "../../../config/api/axiosInstance";
 import { useDispatch } from 'react-redux';
 import { logout } from '../../../redux/slices/VendorSlice';
 import { showToastMessage } from '../../../validations/common/toast';
-// import { useNavigate } from 'react-router-dom';
-// import { ADMIN } from '../../../config/constants/constants';
+import { debounce } from 'lodash';
 import Swal from 'sweetalert2';
-import { AcceptanceStatus, VendorData } from '../../../types/vendorTypes';
+import { AcceptanceStatus, VendorData, VendorResponse } from '../../../types/vendorTypes';
 import VendorDetailsModal from './viewdetails';
 import Loader from '../../common/Loader';
+import { TABS } from '@/utils/enums';
 
-const TABS = [
-    {
-        label: "All",
-        value: "all",
-    },
-    {
-        label: "Active",
-        value: "active",
-    },
-    {
-        label: "Inactive",
-        value: "inactive",
-    },
-];
 
 const TABLE_HEAD = ["VendorName", 'Company Name', "Mobile", "Joined-At", "Status", 'Reported', "Actions", 'View Details', 'Verify'];
 
@@ -51,7 +37,6 @@ export function SortableTableVendor() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null);
     const dispatch = useDispatch()
-    // const navigate = useNavigate()
 
     const handleViewDetails = (vendor: VendorData) => {
         setSelectedVendor(vendor);
@@ -61,23 +46,22 @@ export function SortableTableVendor() {
         setIsModalOpen(false);
         setSelectedVendor(null);
     };
-    const fetchData = useCallback(async () => {
+
+    const fetchData = useCallback(async (page?: number, search?: string) => {
         setIsLoading(true);
         try {
-            const response = await axiosInstanceAdmin.get('/vendors', {
+            const response = await axiosInstanceAdmin.get<VendorResponse>('/vendors', {
                 params: {
-                    page: currentPage,
-                    limit: 3,
-                    search: searchTerm,
+                    page: page,
+                    limit: 5,
+                    search: search,
                     status: activeTab !== 'all' ? activeTab : undefined
                 }
             });
-            console.log(response.data.vendors, 'reepsonse sdfdjdi');
 
-
-            const transformedVendors = response.data.vendors.map((vendor: any) => ({
+            const transformedVendors: VendorData[]  = response.data.vendors.map((vendor) => ({
                 ...vendor._doc,
-                imageUrl: vendor.imageUrl // Keep the top-level imageUrl
+                imageUrl: vendor.imageUrl 
             }));
 
             setVendors(transformedVendors);
@@ -87,11 +71,24 @@ export function SortableTableVendor() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, searchTerm, activeTab]);
+    }, [activeTab]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+   
+  const debouncedFetchData = useCallback(
+    debounce(fetchData, 500),
+    [fetchData]
+  );
+
+  useEffect(() => {
+    if (searchTerm.trim().length >= 3) {
+      debouncedFetchData(currentPage, searchTerm);
+    } else if (searchTerm.trim() === '') {
+      debouncedFetchData(currentPage, '');
+    }
+    return () => {
+      debouncedFetchData.cancel();
+    };
+  }, [currentPage, searchTerm, debouncedFetchData]);
 
 
     const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +100,7 @@ export function SortableTableVendor() {
         setActiveTab(value);
         setCurrentPage(1);
     };
+    
 
     const handleBlockUnblock = async (vendorId: string, currentStatus: boolean) => {
         const action = currentStatus ? 'block' : 'unblock';
@@ -127,13 +125,16 @@ export function SortableTableVendor() {
                     response.data.message,
                     'success'
                 );
-
+                setVendors((prevVendors) =>
+                    prevVendors.map((vendor) =>
+                        vendor._id === vendorId
+                            ? { ...vendor, isActive: !currentStatus }
+                            : vendor
+                    )
+                );
+    
                 if (response.data.processHandle === 'block') {
-                    // fetchData()
                     dispatch(logout());
-                    // navigate(`${ADMIN.LOGIN}`);
-                } else {
-                    fetchData();
                 }
             } catch (error) {
                 Swal.fire(

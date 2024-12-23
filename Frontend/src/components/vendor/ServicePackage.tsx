@@ -1,11 +1,8 @@
 
 import { motion } from 'framer-motion'
 import { Card, CardBody, CardFooter } from '@nextui-org/react'
-import { PackageData } from '../../types/packageTypes';
+import { ServicePackageProps } from '@/utils/interfaces';
 
-interface ServicePackageProps {
-  packages: PackageData[];
-}
 
 export default function Servicepackage({ packages }: ServicePackageProps) {
 

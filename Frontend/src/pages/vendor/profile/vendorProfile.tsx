@@ -194,7 +194,7 @@ function VendorProfile() {
                                     <div className="flex items-center gap-2">
                                         <Badge className="h-5 w-5 text-black" />
                                         <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                                            ID: {vendor._id}
+                                            ID: {vendor._id.slice(-6)}
                                         </Typography>
                                     </div>
                                     <div className="flex items-center gap-2">

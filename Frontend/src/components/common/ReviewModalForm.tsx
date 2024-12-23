@@ -7,7 +7,6 @@ import {
   ModalBody,
   ModalFooter,
   Button,
-  // useDisclosure
 } from '@nextui-org/react'
 import { Star } from 'lucide-react'
 import { useSelector } from 'react-redux';
@@ -15,47 +14,47 @@ import UserRootState from '@/redux/rootstate/UserState';
 import { showToastMessage } from '@/validations/common/toast';
 import { axiosInstance } from '@/config/api/axiosInstance';
 import { AxiosError } from 'axios';
+import { Review, ReviewModelProps } from '@/utils/interfaces';
 
-interface RevieModelProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  bookingDetails: {
-    vendorId: string;
-    bookingId: string;
-    bookingNumber?: string;
-    existingReview?: { _id: string; rating: number; content: string } | null;
-  }
-}
-export const ReviewFormModal: FC<RevieModelProps> = ({
+
+export const ReviewFormModal: FC<ReviewModelProps> = ({
   isOpen,
   onOpenChange,
+  onReviewUpdate,
   bookingDetails
 }) => {
-  // const { onClose } = useDisclosure()
   const [rating, setRating] = useState<number>(0)
   const [review, setReview] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const user = useSelector((state: UserRootState) => state.user.userData)
   useEffect(() => {
-    setRating(bookingDetails.existingReview?.rating || 0);
-    setReview(bookingDetails.existingReview?.content || '');
-  }, [bookingDetails.existingReview, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setRating(bookingDetails.existingReview?.rating || 0);
+      setReview(bookingDetails.existingReview?.content || '');
+    } else {
       setRating(0);
       setReview('');
     }
-  }, [isOpen]);
-  
+  }, [bookingDetails.existingReview, isOpen]);
+  // useEffect(() => {
+  //   if (!isOpen) {
+  //     setRating(0);
+  //     setReview('');
+  //   }
+  // }, [isOpen]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (isSubmitting) return;
 
     if (!user) {
       showToastMessage('Error Occured', 'error')
     }
-    if (!review || !review.trim()) {
-      showToastMessage('Please enter Review', 'error')
-    }
+    // if (!review || !review.trim()) {
+    //   showToastMessage('Please enter Review', 'error')
+    // }
     if (rating === 0) {
       showToastMessage('Add rating', 'error')
     }
@@ -66,7 +65,8 @@ export const ReviewFormModal: FC<RevieModelProps> = ({
       return;
     }
     try {
-     
+      setIsSubmitting(true);
+
       const endpoint = bookingDetails.existingReview
         ? `/updateReview/${bookingDetails.existingReview._id}`
         : '/addReview';
@@ -81,21 +81,40 @@ export const ReviewFormModal: FC<RevieModelProps> = ({
           content: trimmedReview
         };
 
-      const response = await axiosInstance.post(endpoint, payload, {
+        console.log(payload,'payload');
+        
+
+      const response = await axiosInstance.post<{ message: string; review: Review }>(endpoint, payload, {
         withCredentials: true
       });
-      console.log(response,'responseeeeeeeeeeee');
+      console.log(response.data,'newwwwwwwwww');
       
+      const updatedReview: Review = {
+        _id: bookingDetails.existingReview?._id || response.data.review._id,
+        rating,
+        content: trimmedReview,
+        userId: user?._id || '',
+        vendorId: bookingDetails.vendorId,
+        bookingId: bookingDetails.bookingId,
+        createdAt: response.data.review.createdAt,
+        updatedAt: response.data.review.updatedAt
+      };
+      console.log(updatedReview,'new?updated');
+      
+
+      onReviewUpdate(bookingDetails.bookingId, updatedReview);
 
       showToastMessage(response.data.message, 'success')
       onOpenChange(false)
-      setRating(0)
-      setReview('')
+      // setRating(0)
+      // setReview('')
     } catch (error) {
       console.error('Error in adding Review:', error)
       if (error instanceof AxiosError) {
         showToastMessage(error.message, 'error')
       }
+    }  finally {
+      setIsSubmitting(false);
     }
 
 
@@ -191,7 +210,7 @@ export const ReviewFormModal: FC<RevieModelProps> = ({
                   Cancel
                 </Button>
                 <Button color="default" type="submit">
-                {bookingDetails.existingReview ? 'Update Review' : 'Submit Review'}
+                  {bookingDetails.existingReview ? 'Update Review' : 'Submit Review'}
                 </Button>
               </ModalFooter>
             </form>

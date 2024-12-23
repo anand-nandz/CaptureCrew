@@ -31,14 +31,11 @@ import { useDisclosure } from '@nextui-org/react';
 import { validateEmail } from '../../../validations/user/userVal';
 import axios, { AxiosError } from 'axios';
 import Swal from 'sweetalert2';
+import { IFormValues } from '@/utils/interfaces';
 
 
-interface FormValues {
-    email: string;
-    password: string;
-}
 
-const initialValues: FormValues = {
+const initialValues: IFormValues = {
     email: '',
     password: ''
 }

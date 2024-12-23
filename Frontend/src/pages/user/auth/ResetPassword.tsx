@@ -13,10 +13,7 @@ import { validatePassword } from '../../../validations/user/userVal';
 import { USER, VENDOR } from '../../../config/constants/constants';
 import Swal from 'sweetalert2'
 import Loader from '../../../components/common/Loader';
-interface ResetFormValues {
-    password: string;
-    confirmPassword: string;
-}
+import { ResetFormValues } from '@/utils/interfaces';
 
 const initialValues: ResetFormValues = {
     password: "",

@@ -2,9 +2,9 @@ import { NextFunction, Response } from "express";
 import { CustomError } from "../error/customError";
 import jwt from 'jsonwebtoken';
 import { VendorRequest } from "../types/vendorTypes";
-import vendorRepository from "../repositories/vendorRepository";
+import VendorRepository from "../repositories/vendorRepository";
 
-
+const vendorRepository = new VendorRepository()
 
 export const vendorMiddleware = async (req: VendorRequest, res: Response, next: NextFunction) => {
     try {

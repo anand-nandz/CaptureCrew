@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { axiosInstance } from '@/config/api/axiosInstance';
 import { showToastMessage } from '@/validations/common/toast';
 import { ReportModal } from '../common/ReportModal';
+import { AxiosError } from 'axios';
 
 export const PostCard = ({ post, onShowDetails }: PostCardProps) => {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -25,8 +26,11 @@ export const PostCard = ({ post, onShowDetails }: PostCardProps) => {
 
             showToastMessage('Post reported successfully', 'success');
         } catch (error) {
-            showToastMessage('Failed to submit report', 'error');
-            throw error;
+            if (error instanceof AxiosError) {
+                showToastMessage(error.response?.data.message || 'Error fetching booking data', 'error');
+              } else {
+                showToastMessage('An unknown error occurred', 'error');
+              }            throw error;
         }
     };
 

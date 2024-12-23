@@ -12,40 +12,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { showToastMessage } from '../../../validations/common/toast';
-import { VendorData } from '../../../types/vendorTypes';
 import { validateProfile } from '../../../validations/vendor/vendorRegVal';
-
-interface VendorDetails {
-    isOpen: boolean;
-    onClose: () => void;
-    vendor: VendorData | null;
-    onSave: (data: FormData) => Promise<void>
-
-}
-interface ProfileFormData {
-    name: string;
-    email: string;
-    contactinfo: string;
-    companyName: string;
-    city: string;
-    about: string;
-    isVerified: boolean;
-    logo: string;
-    imageUrl?: File | string;
-    bookedDates: Array<string>;
-    totalRating: number;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-
-interface ValidationErrors {
-    name: string;
-    contactinfo: string;
-    companyName: string;
-    city: string,
-    about: string,
-}
+import { ProfileFormData, ValidationErrors, VendorDetails } from '@/utils/interfaces';
 
 const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClose, onSave }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(vendor?.imageUrl || null);

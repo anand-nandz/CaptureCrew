@@ -6,6 +6,7 @@ export interface PostData {
     imageUrl?: string | string[];
     serviceType: ServiceProvided;
     likesCount?: number;
+    reportCount?: number;
     location?: string;
     status?: PostStatus;
     vendor_id: string 

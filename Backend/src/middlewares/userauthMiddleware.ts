@@ -2,11 +2,11 @@ import { NextFunction,Response } from "express";
 import { AuthenticatedRequest } from "../types/userTypes";
 import { CustomError } from "../error/customError";
 import jwt from 'jsonwebtoken';
-import userRepository from "../repositories/userRepository";
+import UserRepository from "../repositories/userRepository";
 
+const userRepository = new UserRepository(); 
 
-
-export const authMiddleware = async (req:AuthenticatedRequest, res:Response ,next :NextFunction)=>{
+export const  authMiddleware = async (req:AuthenticatedRequest, res:Response ,next :NextFunction)=>{
     try {
         const token = req.headers.authorization?.split(' ')[1]
         

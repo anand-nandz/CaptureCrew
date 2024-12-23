@@ -1,16 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
 import { useCallback, useEffect, useState } from "react"
 import { Badge } from "@material-tailwind/react"
 import { Button, Modal, ModalBody, ModalContent, ModalHeader, Pagination } from "@nextui-org/react"

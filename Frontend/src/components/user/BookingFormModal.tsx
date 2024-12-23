@@ -15,24 +15,9 @@ import {
 import { ServiceProvided } from '@/types/postTypes';
 import { CalendarIcon, CheckIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BookingFormData, useBookingValidation } from '@/validations/user/bookingValidation';
-import { Package } from '@/types/packageTypes';
 import { ChevronDown, ChevronUp, Package as PackageIcon } from 'lucide-react';
+import { BookingModalProps, ValidationError } from '@/utils/interfaces';
 
-interface ValidationError {
-    inner?: Array<{ path: string; message: string }>;
-}
-
-interface BookingModalProps {
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
-    bookingForm: BookingFormData;
-    setBookingForm: React.Dispatch<React.SetStateAction<BookingFormData>>;
-    onSubmit: (e: React.FormEvent, formData?: BookingFormData) => Promise<void>;
-    selectedDate: string;
-    packages: Package[];
-    unavailableDates: string[];
-    onDateSelect: (date: Date) => void;
-}
 
 export const BookingModal: FC<BookingModalProps> = ({
     isOpen,
@@ -189,42 +174,6 @@ export const BookingModal: FC<BookingModalProps> = ({
         return basePrice;
     };
 
-    // const handleSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
-
-    //     try {
-
-    //         const selectedPackage = packages.find(pkg => pkg._id === bookingForm.packageId);
-
-
-    //         const totalPrice = calculateTotalPrice(bookingForm.packageId, selectedCustomizations);
-
-    //         const updatedBookingForm = {
-    //             ...bookingForm,
-    //             totalPrice,
-    //             customizations: selectedCustomizations
-    //         };
-    //         console.log(updatedBookingForm, 'updatedbooking form');
-
-    //         const { isValid, errors } = await validateForm(updatedBookingForm);
-
-    //         if (!isValid) {
-    //             setValidationErrors(errors);
-    //             return;
-    //         }
-
-    //         if (!selectedPackage) {
-    //             setValidationErrors({ package: 'Invalid package selected' });
-    //             return;
-    //         }
-
-    //         setValidationErrors({});
-    //         await originalOnSubmit(e, updatedBookingForm);
-    //     } catch (error) {
-    //         console.error('Form submission error:', error);
-    //     }
-    // };
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -265,7 +214,7 @@ export const BookingModal: FC<BookingModalProps> = ({
             await new Promise(resolve => setTimeout(resolve, 1500));
             await originalOnSubmit(e, updatedBookingForm);
             setIsSubmitSuccess(true);
-        setIsSubmitting(false);
+            setIsSubmitting(false);
         } catch (error) {
             console.error('Form submission error:', error);
             if (error && typeof error === 'object' && 'inner' in error) {
@@ -605,7 +554,7 @@ export const BookingModal: FC<BookingModalProps> = ({
                                 Cancel
                             </Button>
                             <Button color="danger" onClick={handleSubmit} isLoading={isSubmitting} endContent={isSubmitSuccess ? <CheckIcon className="w-5 h-5" /> : null}
-    isDisabled={isSubmitting}>
+                                isDisabled={isSubmitting}>
                                 {isSubmitSuccess ? 'Submitted' : 'Submit Request'}
                             </Button>
                         </ModalFooter>

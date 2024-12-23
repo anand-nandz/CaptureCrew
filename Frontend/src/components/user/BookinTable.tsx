@@ -6,38 +6,9 @@ import Swal from "sweetalert2";
 import { axiosInstance } from "@/config/api/axiosInstance";
 import { showToastMessage } from "@/validations/common/toast";
 import { AxiosError } from "axios";
-import PaymentMethodModal, { PaymentBookingData } from "@/pages/user/bookings/PaymentMethodModal";
-
-type BookingTableProps = {
-  title: string;
-  bookings: Booking[];
-  isVendor?: boolean;
-  onCancel?: (id: string) => Promise<void>;
-  onAccept?: (id: string, errorMessage?: string) => Promise<void>;
-  onReject?: (id: string, reason: string) => Promise<void>;
-};
-interface BookingError extends Error {
-  code?: string;
-  details?: string;
-}
-const convertToPaymentBookingData = (booking: Booking): PaymentBookingData => {
-  return {
-    _id: booking._id,
-    bookingReqId: booking.bookingReqId,
-    vendor_id: booking.vendor_id ? {
-      companyName: booking.vendor_id.companyName,
-      _id: booking.vendor_id._id
-    } : undefined,
-    vendorId: booking.vendor_id ? {
-      companyName: booking.vendor_id.companyName,
-      _id: booking.vendor_id._id
-    } : undefined,
-    advancePayment: {
-      amount: booking.advancePayment?.amount || 0,
-      status: booking.advancePayment?.status || 'pending'
-    },
-  }
-};
+import PaymentMethodModal from "@/pages/user/bookings/PaymentMethodModal";
+import { BookingError, BookingTableProps, PaymentBookingData } from "@/utils/interfaces";
+import { convertToPaymentBookingData, getBookingStatusColor } from "@/utils/utils";
 
 
 export const BookingTable: React.FC<BookingTableProps> = ({
@@ -55,24 +26,6 @@ export const BookingTable: React.FC<BookingTableProps> = ({
   const itemsPerPage = 5;
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
-
-
-
-
-  const getStatusColor = (status: BookingAcceptanceStatus) => {
-    switch (status) {
-      case 'requested':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'overdue':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const totalPages = Math.ceil(bookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -269,98 +222,6 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     }
   };
 
-  // const processPayment = async (booking: PaymentBookingData, paymentMethod: string) => {
-  //   try {
-  //     const response = await axiosInstance.post('/isBookingAccepted', {
-  //       vendorId: booking.vendor_id._id,
-  //       bookingId: booking._id
-  //     });
-
-  //     const bookingData = response.data.result;
-
-  //     if (!response.data.success) {
-  //       showToastMessage("Unable to process payment at this time", 'error');
-  //       return;
-  //     }
-
-  //     if (bookingData.bookingStatus !== BookingAcceptanceStatus.Accepted) {
-  //       showToastMessage("Your request is not accepted yet", 'error');
-  //       return;
-  //     }
-
-  //     const paymentData = {
-  //       companyName: booking.vendor_id.bookedDates,
-  //       bookingData,
-  //       paymentMethod 
-  //     };
-
-  //     const paymentEndpoint = paymentMethod === 'stripe' ? '/stripe-payment' : '/razorpay-payment';
-
-  //     const paymentResponse = await axiosInstance.post(paymentEndpoint, paymentData);
-
-  //     if (paymentResponse.data.success) {
-  //       const checkoutUrl = paymentResponse?.data.result.url;
-  //       if (checkoutUrl) {
-  //         window.location.href = checkoutUrl;
-  //       } else {
-  //         showToastMessage("Payment URL generation failed", 'error');
-  //       }
-  //     } else {
-  //       showToastMessage(paymentResponse.data.message || "Payment initialization failed", 'error');
-  //     }
-
-  //   } catch (error) {
-  //     console.error('Error processing payment:', error);
-  //     if (error instanceof AxiosError) {
-  //       showToastMessage(error.response?.data.message || 'Error processing payment', 'error');
-  //     } else {
-  //       showToastMessage('An unknown error occurred', 'error');
-  //     }
-  //   }
-  // };
-
-
-  // const handlePayNow = async (booking: Booking) => {
-  //   try {
-  //     const response = await axiosInstance.post('/isBookingAccepted', {
-  //       vendorId: booking.vendor_id._id,
-  //       bookingId: booking._id
-  //     });
-  //     const bookingData = response.data.result
-  //     console.log(bookingData, 'check booing acceapted and slot also in payment');
-
-  //     if (response.data.success && bookingData.bookingStatus === BookingAcceptanceStatus.Accepted) {
-  //       const companyName = booking.vendor_id.bookedDates
-  //       const paymentResponse = await axiosInstance.post('/stripe-payment', {
-  //         companyName,
-  //         bookingData
-  //       })
-  //       console.log(paymentResponse, 'reasponse after payment');
-
-  //       const checkoutUrl = paymentResponse?.data.result.url;
-  //       if (checkoutUrl) {
-  //         window.location.href = checkoutUrl;
-  //       } else {
-  //         showToastMessage("Payment URL generation failed", 'error');
-  //       }
-
-
-  //     } else if (response.data.success && bookingData.bookingStatus === BookingAcceptanceStatus.Requested) {
-  //       showToastMessage("Your request is not accepted yet", 'error')
-  //     }
-
-
-  //   } catch (error) {
-  //     console.error('Error fetching posts:', error)
-  //     if (error instanceof AxiosError) {
-  //       showToastMessage(error.response?.data.message, 'error')
-  //     } else {
-  //       showToastMessage('failed to load post', 'error')
-  //     }
-  //   }
-  // };
-
-
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200 hidden md:table">
@@ -477,7 +338,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                         {formatDate(booking.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.bookingStatus)}`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(booking.bookingStatus)}`}>
                           {booking.bookingStatus.toUpperCase()}
                         </span>
                       </td>
@@ -541,7 +402,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                         {formatDate(booking.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.bookingStatus)}`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(booking.bookingStatus)}`}>
                           {booking.bookingStatus.toUpperCase()}
                         </span>
                       </td>
@@ -658,7 +519,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                   <div className="flex items-center mb-2">
                     <span className="font-bold w-32">Request Status:</span>
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(
                         booking.bookingStatus
                       )}`}
                     >
@@ -717,7 +578,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                   <div className="flex items-center mb-2">
                     <span className="font-bold w-32">Request Status:</span>
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBookingStatusColor(
                         booking.bookingStatus
                       )}`}
                     >

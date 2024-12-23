@@ -6,7 +6,7 @@ import {
   Typography,
   Chip,
 } from "@material-tailwind/react";
-import { CalendarDays, Mail, Phone, Badge,  Clock } from "lucide-react";
+import { CalendarDays, Mail, Phone, Badge, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { axiosInstance } from "../../../config/api/axiosInstance";
 import { showToastMessage } from "../../../validations/common/toast";
@@ -26,7 +26,7 @@ const UserProfile = () => {
   const userD = useSelector((state: UserRootState) => state.user.userData);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [count, setCount] = useState(0);  
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
     const fetchBookingCount = async () => {
@@ -175,21 +175,21 @@ const UserProfile = () => {
                   <div className="flex items-center gap-2">
                     <Badge className="h-5 w-5 text-black" />
                     <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                      ID: {userD?._id}
+                      ID: {userD?._id?.slice(-6)}
                     </Typography>
                   </div>
-                   <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-black" />
-                      <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                        Member since: {formatDate(userD?.createdAt)}
-                      </Typography>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-5 w-5 text-black" />
-                      <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
-                        Last updated: {formatDate(userD?.updatedAt)}
-                      </Typography>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-black" />
+                    <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
+                      Member since: {formatDate(userD?.createdAt)}
+                    </Typography>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-black" />
+                    <Typography className="text-sm" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
+                      Last updated: {formatDate(userD?.updatedAt)}
+                    </Typography>
+                  </div>
 
                 </div>
               </Card>

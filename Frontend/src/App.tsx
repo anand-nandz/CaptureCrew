@@ -4,8 +4,6 @@ import { NextUIProvider } from '@nextui-org/react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import './index.css'
 import ScrollToTopButton from './components/home/ScrollToTopButton'
-// import ErrorBoundary from './components/common/ErrorBoundary'
-
 import UserRoutes from './routes/userRoutes'
 import AdminRoutes from './routes/adminRoutes'
 import { VendorRoutes } from './routes/vendorRoutes'

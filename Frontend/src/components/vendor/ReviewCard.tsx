@@ -1,54 +1,13 @@
+import { StyledCard, StyledLinearProgress, theme } from '@/utils/utils';
+import { ReviewStatsCardProps } from '@/utils/interfaces';
 import { 
-  Card, 
   CardContent, 
   Typography, 
   Box, 
   Rating, 
   Chip, 
-  LinearProgress,
   ThemeProvider,
-  createTheme
 } from '@mui/material';
-import { styled } from '@mui/system';
-
-interface ReviewStatsCardProps {
-  totalReviews: number;
-  averageRating: number;
-  ratingsBreakdown: { [key: number]: number }; 
-}
-
-const StyledCard = styled(Card)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-  },
-}));
-
-const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
-  height: 8,
-  borderRadius: 5,
-  [`&.MuiLinearProgress-colorPrimary`]: {
-    backgroundColor: theme.palette.grey[theme.palette.mode === 'light' ? 200 : 700],
-  },
-  [`& .MuiLinearProgress-bar`]: {
-    borderRadius: 5,
-  },
-}));
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: 'Roboto, Arial, sans-serif',
-  },
-});
 
 export default function ReviewStatsCard({ totalReviews, averageRating, ratingsBreakdown }: ReviewStatsCardProps) {
   const totalRatings = Object.values(ratingsBreakdown).reduce((a, b) => a + b, 0);

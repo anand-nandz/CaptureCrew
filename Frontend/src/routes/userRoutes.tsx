@@ -43,11 +43,12 @@ const UserRoutes: React.FC = () => {
         <Route path={`${USER.BOOKING}/*`} element={<ErrorBoundary><BookingUser/></ErrorBoundary>}/>
         <Route path={`${USER.CHAT}`} element={<Chat/>}/>
         <Route path={`${USER.WALLET}/*`} element={<ErrorBoundary><WalletDashboard/></ErrorBoundary>}/>
+        <Route path={`${USER.PAYMENT_SUCCESS}`} element={<ErrorBoundary><PaymentSuccess/></ErrorBoundary>}/>
+        <Route path={`${USER.PAYMENT_FAILURE}`} element={<ErrorBoundary><PaymentFailed/></ErrorBoundary>}/>
+        <Route path={`${USER.ABOUT_US}`} element={<About/>}/>
+
       </Route>
       <Route path="*" element={<TVScreen  />} />
-      <Route path={`${USER.PAYMENT_SUCCESS}`} element={<ErrorBoundary><PaymentSuccess/></ErrorBoundary>}/>
-      <Route path={`${USER.PAYMENT_FAILURE}`} element={<ErrorBoundary><PaymentFailed/></ErrorBoundary>}/>
-      <Route path={`${USER.ABOUT_US}`} element={<About/>}/>
 
 
     </Routes>

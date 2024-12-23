@@ -1,4 +1,4 @@
-import { axiosInstance } from "@/config/api/axiosInstance";
+import { axiosInstanceVendor } from "@/config/api/axiosInstance";
 import { Chats, formatMessageTime } from "@/types/extraTypes";
 import { UserData } from "@/types/userTypes";
 import { Avatar } from "@nextui-org/react";
@@ -25,7 +25,7 @@ const ChatListVendor: React.FC<ConversationsProps> = ({
 
         const getUser = async () => {
             try {
-                const response = await axiosInstance.get(`/getUser?userId=${friendId}`)
+                const response = await axiosInstanceVendor.get(`/getUser?userId=${friendId}`)
                 setUser(response.data.data)
             } catch (error) {
                 console.log(error);

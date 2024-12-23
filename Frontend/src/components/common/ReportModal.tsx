@@ -12,36 +12,11 @@ import {
 } from '@nextui-org/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFlag } from '@fortawesome/free-solid-svg-icons';
+import { ReportReasons, VendorReportReasons } from '@/utils/utils';
+import { ReportModalProps } from '@/utils/interfaces';
+import { AxiosError } from 'axios';
 
-// Enum for report reasons
-const ReportReasons = [
-  { key: 'Inappropriate Content', label: 'Inappropriate Content' },
-  { key: 'Spam', label: 'Spam' },
-  { key: 'Misleading Information', label: 'Misleading Information' },
-  { key: 'Harassment', label: 'Harassment' },
-  { key: 'Copyright Infringement', label: 'Copyright Infringement' },
-  { key: 'Other', label: 'Other' }
-];
 
-const VendorReportReasons = [
-    { key: 'Fraudulent Activity', label: 'Fraudulent Activity' },
-    { key: 'Poor Customer Service', label: 'Poor Customer Service' },
-    { key: 'Unresponsive to Communication', label: 'Unresponsive to Communication' },
-    { key: 'Violation of Terms of Service', label: 'Violation of Terms of Service' },
-    { key: 'Unethical Business Practices', label: 'Unethical Business Practices' },
-    { key: 'Other', label: 'Other' }
-  ];
-  
-
-interface ReportModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onReportSubmit: (reportData: {
-    reason: string;
-    additionalDetails?: string;
-  }) => Promise<void>;
-  type: string
-}
 
 export const ReportModal: React.FC<ReportModalProps> = ({
   isOpen,
@@ -81,7 +56,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       setAdditionalDetails('');
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit report');
+      setError(err instanceof AxiosError ? err?.response?.data?.message : 'Failed to submit report');
     } finally {
       setIsSubmitting(false);
     }

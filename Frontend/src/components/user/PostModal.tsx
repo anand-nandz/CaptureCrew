@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faHeart, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { Button } from '@nextui-org/react';
+// import { Button } from '@nextui-org/react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { PostModalProps } from '../../types/postTypes';
 
@@ -106,7 +106,7 @@ export const PostModal = ({ post, isOpen, onClose }: PostModalProps) => {
 
                             <p className="text-gray-600">{post.caption}</p>
 
-                            <div className="flex items-center justify-between pt-4 border-t">
+                            {/* <div className="flex items-center justify-between pt-4 border-t">
                                 <Button
                                     color="danger"
                                     variant="light"
@@ -114,7 +114,7 @@ export const PostModal = ({ post, isOpen, onClose }: PostModalProps) => {
                                 >
                                     {post.likesCount || 0} likes
                                 </Button>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </div>

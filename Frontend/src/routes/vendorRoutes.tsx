@@ -18,7 +18,8 @@ import TVScreen from "@/components/common/404";
 import WalletDashboard from "@/pages/common/wallet-dash";
 import Chat from "@/pages/vendor/chat/ChatVendor";
 import VendorReviewList from "@/pages/vendor/bookings/ClientReviews";
-import RevenueChartVendor from "@/components/vendor/RevenueCardVendor";
+import RevenueChart from "@/components/admin/dashboard/RevenueChart";
+import { Role } from "@/utils/enums";
 export const VendorRoutes = () => {
  
   return (
@@ -44,7 +45,7 @@ export const VendorRoutes = () => {
           <Route path={`/chat`} element={<Chat/>}/>
           <Route path={`/review`} element={<VendorReviewList/>}/>
           <Route path={`/wallet`} element={<WalletDashboard isVendor={true}/>} />
-          <Route path={`/stats`} element={<RevenueChartVendor/> } />
+          <Route path={`/stats`} element={<RevenueChart role={Role.Vendor}/> } />
           
         </Route>
         <Route path="*" element={<TVScreen />} />

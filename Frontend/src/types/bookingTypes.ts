@@ -18,10 +18,9 @@ export type PaymentDetails = {
     amount: number;
     status: PaymentStatus;
     paymentId?: string;
-    paidAt?: string; 
+    paidAt?: string;
     refundedAt?: string
 };
-
 
 
 export type BookingConfirmed = {
@@ -65,11 +64,23 @@ export type BookingConfirmed = {
     advancePayment: PaymentDetails;
     finalPayment: {
         amount: number;
-        dueDate: string; 
+        dueDate: string;
+        paymentId?: string;
+        paidAt?: string;
         status: PaymentStatus;
     };
     bookingStatus: BookingStatus;
     requestedDates: string[];
     createdAt: string;
     updatedAt: string;
-}
+    reviews: {
+        _id: string;
+        bookingId: string;
+        rating: number;
+        content: string;
+        userId?: string;
+        vendorId?: string;
+        createdAt?: string;
+        updatedAt?: string;
+    };
+};

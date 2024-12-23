@@ -1,6 +1,5 @@
-// src/components/ScrollToTopButton.tsx
 import React, { useState, useEffect } from 'react';
-import { FaArrowUp } from 'react-icons/fa'; // Using a font awesome arrow icon for simplicity
+import { FaArrowUp } from 'react-icons/fa'; 
 
 const ScrollToTopButton: React.FC = () => {
   const [visible, setVisible] = useState(false);

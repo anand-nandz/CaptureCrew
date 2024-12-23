@@ -1,17 +1,14 @@
 
 import { Star, StarHalf } from 'lucide-react'
-import { VendorData } from '../../types/vendorTypes';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {  USER, VENDOR } from '../../config/constants/constants';
 import { axiosInstanceChat } from '@/config/api/axiosInstance';
 import { useSelector } from 'react-redux';
 import UserRootState from '@/redux/rootstate/UserState';
+import { VendorProps } from '@/utils/interfaces';
 
-interface VendorProps {
-  isVendor?: boolean,
-  vendorDetails: VendorData;
-}
 export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) {
+  
   const user = useSelector((state:UserRootState)=>state.user.userData)  
   const location = useLocation();
   const isVendorDashboard = location.pathname.includes('/vendor');
@@ -21,7 +18,7 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
     if(isVendor === true){
       navigate(`${VENDOR.DATE_AVAILABILTY}`)
     } else {
-      navigate(`${USER.SERVICE_AVAILABILTY}/${vendorDetails._id}`)
+      navigate(`${USER.SERVICE_AVAILABILTY}/${vendorDetails?._id}`)
     }
     
   }
@@ -29,7 +26,7 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
  
   const handleMessageOpen = async() => {
 
-    const res= await  axiosInstanceChat.post('/',{senderId: user?._id, receiverId:vendorDetails._id})
+    const res= await  axiosInstanceChat.post('/',{senderId: user?._id, receiverId:vendorDetails?._id})
       const conversation = res.data
       console.log(conversation,'conversationnnnnnn');
       
@@ -87,10 +84,10 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
                 <div className="w-full md:w-1/2 text-center md:text-left my-5 mx-3">
                   <h2 className="text-3xl font-bold mb-4">About us</h2>
                   <p className="mb-4 text-gray-600">
-                    {vendorDetails.about}
+                    {vendorDetails?.about}
                   </p>
-                  <p className="font-semibold mb-1">{vendorDetails.name}</p>
-                  <p className="font-semibold mb-1">{vendorDetails.companyName}</p>
+                  <p className="font-semibold mb-1">{vendorDetails?.name}</p>
+                  <p className="font-semibold mb-1">{vendorDetails?.companyName}</p>
                   <p className="text-sm text-gray-500 mb-4">FOUNDER</p>
                   <div className="flex justify-center md:justify-start mb-4">
                   {renderStarRating(vendorDetails?.totalRating)}

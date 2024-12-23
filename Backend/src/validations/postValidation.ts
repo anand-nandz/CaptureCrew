@@ -1,6 +1,6 @@
 
 import * as yup from 'yup';
-import { PostStatus, ServiceProvided } from '../models/postModel';
+import { PostStatus, ServiceProvided } from '../enums/commonEnums';
 
 export const postValidationSchema = yup.object().shape({
     caption: yup

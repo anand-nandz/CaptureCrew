@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { PaymentStatus } from '../models/bookingModel';
+import { PaymentMethod, PaymentType, TransactionType } from '../enums/commonEnums';
 
 const generateUniqueId = (prefix: string): string => {
     const uniqueId = uuidv4().replace(/-/g, '').substring(0, 10);
@@ -9,34 +9,6 @@ const generateUniqueId = (prefix: string): string => {
 
 export default generateUniqueId;
 
-export enum TransactionType {
-    Credit = 'credit',
-    Debit = 'debit'
-}
-
-export enum PaymentType {
-    Booking = 'booking',
-    Refund = 'refund',
-    Cancellation = 'cancellation',
-    Other = 'other'
-}
-
-export enum PaymentMethod {
-    STRIPE = 'stripe',
-    RAZORPAY = 'razorpay'
-}
-
-export interface Transaction {
-    amount: number;
-    transactionType: TransactionType;
-    paymentType: PaymentType;
-    paymentMethod: PaymentMethod,
-    paymentId?: string,
-    description?: string;
-    bookingId?: string;
-    createdAt: Date;
-    status: PaymentStatus ;
-}
 
 export const TransactionSchema = new Schema({
     amount: { 
@@ -79,3 +51,11 @@ export const TransactionSchema = new Schema({
         default: 'pending'
     }
 });
+
+
+export interface DateRangeQuery {
+    date: string;
+    startDate?: string;
+    endDate?: string;
+  }
+  

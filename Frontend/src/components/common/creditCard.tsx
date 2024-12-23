@@ -1,14 +1,6 @@
+import { CreditCardsProps } from "@/utils/interfaces"
 import { Card, CardBody } from "@nextui-org/react"
-import { TrendingUp, TrendingDown } from 'lucide-react'
-
-interface CreditCardsProps {
-    accountDetails?: {
-        name?: string;
-        walletBalance?: number;
-        contactinfo?: string;
-    };
-    type?: 'user' | 'vendor';
-}
+// import { TrendingUp, TrendingDown } from 'lucide-react'
 
 export default function CreditCards({ accountDetails, type = 'user' }: CreditCardsProps) {
     const balance = accountDetails?.walletBalance || 0
@@ -35,14 +27,14 @@ export default function CreditCards({ accountDetails, type = 'user' }: CreditCar
                         <p className="text-xs opacity-70 mb-2">Total Balance</p>
                         <div className="flex items-baseline justify-between">
                             <h3 className="text-2xl font-semibold">₹ {balance.toFixed(2)}</h3>
-                            <div className="flex gap-2 text-sm">
+                            {/* <div className="flex gap-2 text-sm">
                                 <span className="flex items-center text-green-500">
                                     <TrendingUp className="h-4 w-4 mr-1" /> 23.65%
                                 </span>
                                 <span className="flex items-center text-red-500">
                                     <TrendingDown className="h-4 w-4 mr-1" /> 10.40%
                                 </span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </CardBody>

@@ -1,16 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, Button, Card, CardBody, Tooltip, Textarea, Spinner } from "@nextui-org/react";
 import { AlertCircle, InfoIcon, ClockIcon, WalletIcon, CalendarCheckIcon } from "lucide-react";
-import { BookingConfirmed } from '@/types/bookingTypes';
 import { BookingCancellationPolicyImpl } from '@/utils/bookingPolicyService';
-
-interface CancelModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  booking: BookingConfirmed;
-  onProcessPayment: (booking: BookingConfirmed, reason: string) => Promise<void>;
-  isCancelling?: boolean;
-}
+import { CancelModalProps } from '@/utils/interfaces';
 
 const CancelModal = ({ isOpen, onClose, booking, onProcessPayment, isCancelling}: CancelModalProps) => {
   const [isProcessing, setIsProcessing] = useState(false);

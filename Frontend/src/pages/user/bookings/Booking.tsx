@@ -7,12 +7,10 @@ import { Booking, BookingAcceptanceStatus } from "@/validations/user/bookingVali
 import { Spinner } from "@nextui-org/react";
 import { showToastMessage } from "@/validations/common/toast";
 import { AxiosError } from "axios";
-import { BookingConfirmed } from "@/types/bookingTypes";
+import { BookingConfirmed, BookingStatus } from "@/types/bookingTypes";
 import { BookingConfirmedTable } from "@/components/user/BookingConfirmedTable";
 import Swal from "sweetalert2";
-
-
-type TabValue = 'bookingHistory' | 'bookingRequests' | 'paymentDetails';
+import { PaymentStatus, TabValue } from "@/types/extraTypes";
 
 function BookingUser() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -27,6 +25,7 @@ function BookingUser() {
     setIsLoading(true)
     try {
       const response = await axiosInstance.get('/bookings')
+      
       if (response.data.bookingReqs) {
         setBookings(response.data.bookingReqs)
       }
@@ -34,9 +33,8 @@ function BookingUser() {
         setConfirmedBookings(response.data.bookingConfirmed)
         setCountConfirmed(response.data.bookingConfirmed.length)
       }
-
+    
     } catch (error) {
-      console.log(error);
       if (error instanceof AxiosError) {
         showToastMessage(error.response?.data.message || 'Error fetching booking data', 'error');
       } else {
@@ -46,6 +44,7 @@ function BookingUser() {
       setIsLoading(false)
     }
   }
+  
 
   useEffect(() => {
     fetchData()
@@ -59,47 +58,27 @@ function BookingUser() {
     setCountReq(requestBookings.length)
   }, [bookings, requestBookings]);
 
+  const updateBookingStatusToCancelled = (bookingId: string) => {
+    const updatedConfirmedBookings = confirmedBooking.map((booking) => {
+        if (booking.bookingId === bookingId) {
+            return { 
+              ...booking, 
+              bookingStatus: BookingStatus.Cancelled ,
+              cancelledAt: new Date().toISOString(),
+              advancePayment: {
+                ...booking.advancePayment,
+                status: PaymentStatus.Refund,
+                refundedAt: new Date().toISOString(),
+            },
 
-  // const handlePayNow = async (bookingId: string, sbooking: BookingConfirmed, paymentType: 'finalAmount') => {
-  //   try {
-  //     setIsLoading(true);
+            }; 
+        }
+        return booking;
+    });
 
-  //     const booking = confirmedBooking.find(b => b._id === bookingId);
-  //     if (!booking) {
-  //       showToastMessage('Booking not found', 'error');
-  //       return;
-  //     }
+    setConfirmedBookings(updatedConfirmedBookings);
+};
 
-  //     const paymentData = {
-  //       bookingId,
-  //       sbooking,
-  //       paymentType,
-  //     };
-
-  //     const paymentResponse = await axiosInstance.post('/stripe-payments', paymentData);
-
-  //     if (paymentResponse.data.success) {
-  //       const checkoutUrl = paymentResponse?.data.result.url;
-  //       if (checkoutUrl) {
-  //         window.location.href = checkoutUrl;
-  //       } else {
-  //         showToastMessage("Payment URL generation failed", 'error');
-  //       }
-  //     } else {
-  //       showToastMessage(paymentResponse.data.message || "Payment initialization failed", 'error');
-  //     }
-
-  //   } catch (error) {
-  //     console.error('Error processing payment:', error);
-  //     if (error instanceof AxiosError) {
-  //       showToastMessage(error.response?.data.message || 'Error processing payment', 'error');
-  //     } else {
-  //       showToastMessage('An unknown error occurred', 'error');
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
 
   const handleRevokeBooking = async (bookingId: string) => {
@@ -176,6 +155,15 @@ function BookingUser() {
     }
   };
 
+  
+const handleBookingUpdate = (updatedBooking: BookingConfirmed) => {
+  setConfirmedBookings(prevBookings => 
+    prevBookings.map(booking => 
+      booking._id === updatedBooking._id ? updatedBooking : booking
+    )
+  );
+};
+
   return (
     <div className="flex">
       <div className="md:block">
@@ -219,7 +207,11 @@ function BookingUser() {
                 <BookingTable title="Booking Requests" bookings={requestBookings} onCancel={handleRevokeBooking} />
               </TabPanel>
               <TabPanel value="bookingConfirmed">
-                <BookingConfirmedTable title="Booking Confirmed" bookingConfirmed={confirmedBooking}/>
+                <BookingConfirmedTable 
+                  title="Booking Confirmed" 
+                  bookingConfirmed={confirmedBooking}  
+                  onBookingCancelled={updateBookingStatusToCancelled} 
+                  onBookingUpdate={handleBookingUpdate}/>
               </TabPanel>
 
             </TabsBody>

@@ -9,8 +9,8 @@ import { Spinner } from "@nextui-org/react";
 import { AxiosError } from "axios";
 import { BookingConfirmed } from "@/types/bookingTypes";
 import { BookingConfirmedTable } from "@/components/user/BookingConfirmedTable";
+import { TabValue } from "@/types/extraTypes";
 
-type TabValue = 'bookingHistory' | 'bookingRequests' | 'paymentDetails';
 
 function BookingVendor() {
   const [currentTab, setCurrentTab] = useState<string>('bookingHistory');
@@ -25,7 +25,6 @@ function BookingVendor() {
     setIsLoading(true)
     try {
       const response = await axiosInstanceVendor.get('/bookings')
-      
       if (response.data.bookingReqs) {
         setBookings(response.data.bookingReqs)
       }
@@ -46,6 +45,7 @@ function BookingVendor() {
       setIsLoading(false)
     }
   }
+  
 
   useEffect(() => {
     fetchData()
@@ -54,7 +54,6 @@ function BookingVendor() {
   const historyBookings = bookings.filter(
     booking => booking.bookingStatus === 'accepted' || booking.bookingStatus === 'rejected' || booking.bookingStatus === 'overdue'
   );
-  // setCount(historyBookings.length)
 
   const requestBookings = bookings.filter(
     booking => booking.bookingStatus === 'requested' || booking.bookingStatus === 'revoked' || booking.bookingStatus === 'overdue'

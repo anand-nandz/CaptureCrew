@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { axiosInstanceVendor } from "../../../config/api/axiosInstance";
 import VendorDetails from "../../../components/common/vendorDetails";
 import ImageMasonry from "../../common/imageMasonary";
+import { useSelector } from "react-redux";
+import VendorRootState from "@/redux/rootstate/VendorState";
 
 const MainSectionVendor = () => {
+    const vendordetails =  useSelector((state:VendorRootState)=>state.vendor.vendorData);    
     const [vendor, setVendor] = useState(null);
 
     useEffect(() => {
@@ -16,11 +19,11 @@ const MainSectionVendor = () => {
             if (response?.data?.vendor) {
                 setVendor(response.data.vendor);
             }
-            console.log(response.data.vendor.post);
         } catch (error) {
             console.error('Error fetching vendor details:', error);
         }
     };
+
 
     return (
         <div className="w-full  mx-auto ">
@@ -28,7 +31,7 @@ const MainSectionVendor = () => {
                 <>
 
                     <div className="space-y-8">
-                        <VendorDetails isVendor={true} vendorDetails={vendor} />
+                        <VendorDetails isVendor={true} vendorDetails={vendordetails} />
                         <ImageMasonry vendorData={vendor} />
                     </div>
                 </>

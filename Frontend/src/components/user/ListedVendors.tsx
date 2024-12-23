@@ -33,6 +33,8 @@ import { useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
 import { ReportModal } from '../common/ReportModal';
 import { showToastMessage } from '@/validations/common/toast';
+import { debounce } from 'lodash';
+import { AxiosError } from 'axios';
 
 
 const ListedVendors = () => {
@@ -46,21 +48,18 @@ const ListedVendors = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const fetchData = useCallback(async () => {
+  const fetchVendorsData = useCallback(async (page: number, search: string) => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get<VendorResponse>('/vendors', {
         params: {
-          page: currentPage,
+          page: page,
           limit: 3,
-          search: searchTerm,
-
+          search: search,
         }
-      })
-      console.log(response.data.vendors);
-
+      });
 
       const transformedVendors: VendorData[] = response.data.vendors.map((vendor) => ({
         ...vendor._doc,
@@ -68,18 +67,29 @@ const ListedVendors = () => {
       }));
 
       setVendors(transformedVendors);
-
       setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error('Error fetching details:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [currentPage, searchTerm])
+  }, []); 
+
+  const debouncedFetchData = useCallback(
+    debounce(fetchVendorsData, 500),
+    [fetchVendorsData]
+  );
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (searchTerm.trim().length >= 3) {
+      debouncedFetchData(currentPage, searchTerm);
+    } else if (searchTerm.trim() === '') {
+      debouncedFetchData(currentPage, '');
+    }
+    return () => {
+      debouncedFetchData.cancel();
+    };
+  }, [currentPage, searchTerm, debouncedFetchData]);
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -117,7 +127,14 @@ const ListedVendors = () => {
   
       showToastMessage('Vendor reported successfully', 'success');
     } catch (error) {
-      showToastMessage('Failed to submit report', 'error');
+      console.log(error);
+      
+      if (error instanceof AxiosError) {
+        showToastMessage(error.response?.data.message || 'Error fetching booking data', 'error');
+      } else {
+        showToastMessage('An unknown error occurred', 'error');
+      }
+      // showToastMessage('Failed to submit report', 'error');
       throw error;
     }
   };

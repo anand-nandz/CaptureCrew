@@ -13,6 +13,7 @@ import { axiosInstanceAdmin } from '../../../config/api/axiosInstance'
 import { Switch } from '@material-tailwind/react'
 import Swal from 'sweetalert2'
 import { showToastMessage } from '../../../validations/common/toast'
+import { FlagIcon } from 'lucide-react'
 
 export default function PostListingAdmin() {
     const [allPosts, setAllPosts] = useState<PostData[]>([])
@@ -22,11 +23,8 @@ export default function PostListingAdmin() {
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedPost, setSelectedPost] = useState<PostData | null>(null)
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
-    // const [searchQuery, setSearchQuery] = useState('');
 
     const POSTS_PER_PAGE = 3
-
-
 
     const fetchPosts = useCallback(async () => {
         setIsLoading(true)
@@ -56,16 +54,14 @@ export default function PostListingAdmin() {
         }
     }, [])
 
-
-
     const filteredPosts = allPosts.filter(post => post.serviceType === selectedService)
-
 
     const totalPosts = filteredPosts.length
     const totalPages = Math.max(1, Math.ceil(totalPosts / POSTS_PER_PAGE))
     const startIndex = (currentPage - 1) * POSTS_PER_PAGE
     const endIndex = startIndex + POSTS_PER_PAGE
     const currentPosts = filteredPosts.slice(startIndex, endIndex)
+console.log(currentPosts);
 
 
     const handleServiceChange = (service: ServiceProvided) => {
@@ -115,7 +111,6 @@ export default function PostListingAdmin() {
 
         if (result.isConfirmed) {
             try {
-                alert(postId)
                 const response = await axiosInstanceAdmin.patch(`/blockp-unblockp?postId=${postId}`);
                 setAllPosts(prevPosts => 
                     prevPosts.map(post => 
@@ -137,9 +132,6 @@ export default function PostListingAdmin() {
                     'success'
                 );
 
-                // if (response.data.processHandle === 'block') {
-                //     fetchPosts();
-                // }
             } catch (error) {
                 Swal.fire(
                     'Error',
@@ -269,6 +261,7 @@ export default function PostListingAdmin() {
             </Modal>
         );
     };
+
     return (
         <div className="min-h-screen ">
             <div className="max-w-7xl mx-auto px-4">
@@ -315,8 +308,33 @@ export default function PostListingAdmin() {
                                 <div className="p-4 border-b">
                                     <div className="flex items-center justify-between">
                                         <h2 className="text-xl font-bold">{post.serviceType}</h2>
-                                        {/* <Badge color="success">{post.status}</Badge> */}
+                                        <div className="w-max flex justify-center items-center">
+                                            <Switch
+                                                id={`switch-${post._id}`} 
+                                                ripple={false}
+                                                color={post.status !== PostStatus.Blocked ? "green" : "red"}
+                                                checked={post.status !== PostStatus.Blocked}
+                                                onChange={() => {
+                                                    if (post.status) {
+                                                        handleBlockUnblock(post._id, post.status)
+                                                    }
+                                                }}
+                                                crossOrigin={undefined}
+                                                placeholder={undefined}
+                                                onPointerEnterCapture={undefined}
+                                                onPointerLeaveCapture={undefined}
+                                                className={`h-6 w-12 ${post.status !== PostStatus.Blocked ? 'bg-green-500' : 'bg-red-500'}`}
+                                                containerProps={{
+                                                    className: "relative inline-block w-12 h-6",
+                                                }}
+                                                circleProps={{
+                                                    className: `absolute left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 ease-in-out ${post.status !== PostStatus.Blocked ? 'translate-x-6' : ''
+                                                        }`,
+                                                }}
+                                            />
+                                        </div>
                                     </div>
+                                    
                                 </div>
 
                                 <div
@@ -345,35 +363,11 @@ export default function PostListingAdmin() {
                                         <Button
                                             color="danger"
                                             variant="light"
-                                            startContent={<FontAwesomeIcon icon={faHeart} />}
+                                            startContent={<FlagIcon />}
                                         >
-                                            {post.likesCount || 0}
+                                            {post.reportCount || 0}
                                         </Button>
-                                        <div className="w-max flex justify-center items-center">
-                                            <Switch
-                                                id={`switch-${post._id}`} // Add unique ID for each switch
-                                                ripple={false}
-                                                color={post.status !== PostStatus.Blocked ? "green" : "red"}
-                                                checked={post.status !== PostStatus.Blocked}
-                                                onChange={() => {
-                                                    if (post.status) {
-                                                        handleBlockUnblock(post._id, post.status)
-                                                    }
-                                                }}
-                                                crossOrigin={undefined}
-                                                placeholder={undefined}
-                                                onPointerEnterCapture={undefined}
-                                                onPointerLeaveCapture={undefined}
-                                                className={`h-6 w-12 ${post.status !== PostStatus.Blocked ? 'bg-green-500' : 'bg-red-500'}`}
-                                                containerProps={{
-                                                    className: "relative inline-block w-12 h-6",
-                                                }}
-                                                circleProps={{
-                                                    className: `absolute left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 ease-in-out ${post.status !== PostStatus.Blocked ? 'translate-x-6' : ''
-                                                        }`,
-                                                }}
-                                            />
-                                        </div>
+                                       
                                         <Button
 
                                             variant="light"

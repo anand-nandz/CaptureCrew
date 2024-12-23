@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Pagination } from "@nextui-org/react";
 import { BookingConfirmed } from '@/types/bookingTypes';
 import BookingConfirmedDetailsModal from '@/components/common/BookingDetails';
+import { formatDate, getPaymentStatusColor, getStatusColor } from '@/utils/utils';
 
 type AdminBookingTableProps = {
   title: string;
@@ -15,37 +16,6 @@ export const AdminBookingTable: React.FC<AdminBookingTableProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        return 'bg-black text-white';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB');
-  };
 
   const totalPages = Math.ceil(bookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -112,22 +82,61 @@ export const AdminBookingTable: React.FC<AdminBookingTableProps> = ({
                       {booking.advancePayment?.status.toUpperCase() ?? 'NOT PAID'}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-xs font-medium">Final: </span>
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.finalPayment?.status ?? 'not_paid')}`}>
-                      {booking.finalPayment?.status.toUpperCase() ?? 'NOT PAID'}
-                    </span>
-                  </div>
+                  {booking.advancePayment.status !== 'refunded' && (
+                    <div>
+                      <span className="text-xs font-medium">Final: </span>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.finalPayment?.status ?? 'not_paid')}`}>
+                        {booking.finalPayment?.status.toUpperCase() ?? 'NOT PAID'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm">
                 <div className="space-y-1">
-                  <div>
-                    <span className="font-medium text-xs">Final Due: </span>
-                    <span className="text-xs">{booking.finalPayment ? formatDate(booking.finalPayment.dueDate) : 'N/A'}</span>
-                  </div>
+                  {booking.advancePayment.status !== 'refunded' ? (
+                    <div>
+                      {booking.finalPayment?.status === 'completed' ? (
+                        <div>
+                          <span className="font-medium text-xs">Final: </span>
+                          <span className="text-green-500 font-semibold text-xs flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            Paid
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="font-medium text-xs">Final Due: </span>
+                          {booking.finalPayment && new Date(booking.finalPayment.dueDate) < new Date() ? (
+                            <span className="text-red-500 font-semibold text-xs">Overdue</span>
+                          ) : (
+                            <span className="text-xs">{booking.finalPayment ? formatDate(booking.finalPayment.dueDate) : 'N/A'}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="font-medium">Due: </span>
+                      {`N/A`}
+                    </div>
+                  )}
                 </div>
               </td>
+
               <td className="px-4 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
                   {`₹${calculateTotalReceived(booking)} / ₹${booking.totalAmount}`}

@@ -1,29 +1,7 @@
 import React from 'react';
 import { Input, Button } from '@nextui-org/react';
 import { Plus, Minus } from 'lucide-react';
-
-interface CustomizationOption {
-    type: string;
-    description: string;
-    price: number;
-    unit?: string;  // e.g., "per photographer", "per page"
-}
-
-interface CustomizationErrors {
-    type?: string;
-    description?: string;
-    price?: string;
-    unit?: string;
-}
-
-interface CustomizationFormProps {
-    options: CustomizationOption[];
-    onChange: (options: CustomizationOption[]) => void;
-    errors?: {
-        customizationOptions?: string;
-        optionErrors?: CustomizationErrors[];
-    };
-}
+import { CustomizationFormProps, CustomizationOption } from '@/utils/interfaces';
 
 export const CustomizationForm: React.FC<CustomizationFormProps> = ({
     options,
