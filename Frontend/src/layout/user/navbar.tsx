@@ -22,7 +22,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { USER } from '../../config/constants/constants';
 import { showToastMessage } from '../../validations/common/toast';
 import UserRootState from '@/redux/rootstate/UserState';
-// import { Typography } from '@material-tailwind/react';
 
 
 export default function UserNavbar() {
@@ -120,7 +119,7 @@ export default function UserNavbar() {
             POST
           </Link>
         </NavbarItem>
-        <NavbarItem className="max-w-xs hidden md:flex">
+        {/* <NavbarItem className="max-w-xs hidden md:flex">
           <Input
             classNames={{
 
@@ -133,15 +132,15 @@ export default function UserNavbar() {
             startContent={icons.search}
             type="search"
           />
+        </NavbarItem> */}
+        <NavbarItem>
+          <Link to={`${USER.VENDORLIST}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
+            VENDORS
+          </Link>
         </NavbarItem>
         <NavbarItem>
-          {/* <Typography as="a" href="#" className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
-            onPointerEnterCapture={undefined} onClick={handleProfileClick}
-            onPointerLeaveCapture={undefined}>
-            PROFILE
-          </Typography> */}
           <Link to={`${USER.BOOKING}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
-            BOOKING
+            BOOKINGS
           </Link>
           {/* <li onClick={() => navigate(`${USER.PROFILE}`)}>profile</li> */}
         </NavbarItem>
