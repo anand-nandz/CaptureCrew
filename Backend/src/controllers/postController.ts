@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import { handleError } from "../utils/handleError";
 import { CustomError } from "../error/customError";
 import { VendorRequest } from "../types/vendorTypes";
-import postService from "../services/postService";
 import mongoose from "mongoose";
 import { AuthenticatedRequest } from "../types/userTypes";
 import { AuthRequest } from "../types/adminTypes";
 import { IPostService } from "../interfaces/serviceInterfaces/post.Service.interface";
 import HTTP_statusCode from "../enums/httpStatusCode";
+import Messages from "../enums/errorMessage";
 
 
 class PostController {
@@ -23,7 +23,7 @@ class PostController {
             const vendorId = req.vendor?._id;
 
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
             const files = Array.isArray(req.files) ? req.files : [];
@@ -48,12 +48,12 @@ class PostController {
             const {caption, location, serviceType, status, existingImages ,deletedImages} = req.body;
             
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
     
             if (!postId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Post ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.POST_ID_MISSING });
                 return;
             }
             const files = Array.isArray(req.files) ? req.files : [];
@@ -84,7 +84,7 @@ class PostController {
     getPosts = async(req:VendorRequest, res:Response) : Promise<void> =>{
         try {
             if (!req.vendor?._id) {
-                throw new CustomError('Vendor not found in request', 401);
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, HTTP_statusCode.Unauthorized);
             }
             const vendorId =  new mongoose.Types.ObjectId(req.vendor._id);            
             let page = parseInt(req.query.page as string) || 1;
@@ -109,7 +109,7 @@ class PostController {
     getAllPostsUser = async(req: AuthenticatedRequest, res: Response): Promise<void>=> {
         try {
             if (!req.user?._id) {
-                throw new CustomError('Vendor not found in request', 401);
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, HTTP_statusCode.Unauthorized);
             }
             const userId = new mongoose.Types.ObjectId(req.user._id);
             let page = parseInt(req.query.page as string) || 1;
@@ -134,7 +134,7 @@ class PostController {
     getVendorIdPosts = async(req:AuthenticatedRequest,res:Response): Promise<void> =>{
         try {
             if(!req.user?._id){
-                throw new CustomError('User not found',404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
             const vendorId = req.params.vendorId
             
@@ -142,7 +142,6 @@ class PostController {
             const limit = parseInt(req.query.limit as string) || 3;
 
             const result = await this.postService.singleVendorPosts(vendorId.toString(),page,limit)     
-            console.log(result,'posrtfoi');
                    
             res.status(HTTP_statusCode.OK).json({
                 status : 'success',

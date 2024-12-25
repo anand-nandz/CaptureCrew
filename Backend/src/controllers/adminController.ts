@@ -6,13 +6,14 @@ import { IAdminService } from "../interfaces/serviceInterfaces/admin.Service.Int
 import { CustomError } from "../error/customError";
 import { IUserService } from "../interfaces/serviceInterfaces/user.Service.Interface";
 import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
-import { AcceptanceStatus, PostStatus } from "../enums/commonEnums";
+import { AcceptanceStatus, BlockStatus, PostStatus } from "../enums/commonEnums";
 import jwt from 'jsonwebtoken';
 import { IBookingService } from "../interfaces/serviceInterfaces/booking.Service.interface";
 import { IReportService } from "../interfaces/serviceInterfaces/report.Service.Interface";
 import { IPostService } from "../interfaces/serviceInterfaces/post.Service.interface";
 import HTTP_statusCode from "../enums/httpStatusCode";
 import { DateRangeQuery } from "../utils/extraUtils";
+import Messages from "../enums/errorMessage";
 
 
 dotenv.config();
@@ -83,7 +84,7 @@ class AdminController {
         try {
 
             if (!req.admin?._id) {
-                throw new CustomError('AdminId not found in request', 401);
+                throw new CustomError(Messages.ADMIN_ID_MISSING, HTTP_statusCode.Unauthorized);
             }
 
             const page = parseInt(req.query.page as string) || 1
@@ -108,7 +109,7 @@ class AdminController {
         try {
             const adminId = req.admin?._id
             if (!adminId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Admin ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.ADMIN_ID_MISSING});
                 return;
             }
 
@@ -134,12 +135,12 @@ class AdminController {
         try {
             const userId: string | undefined = req.query.userId as string | undefined;
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'UserId is missing or invalid' })
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING })
                 return
             }
             const updatedStatus = await this.userService.SUserBlockUnblock(userId)
             res.status(HTTP_statusCode.OK).json({
-                message: 'User block/unblock status updated succesfully.',
+                message: Messages.UPDATE_USER_STATUS,
                 proceesHandle: updatedStatus
             })
         } catch (error) {
@@ -152,15 +153,15 @@ class AdminController {
             const postId: string | undefined = req.query.postId as string | undefined;
 
             if (!postId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'PostId is missing or invalid' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.POST_ID_MISSING});
                 return;
             }
 
             const result = await this.postService.SPostBlockUnblock(postId);
 
             res.status(HTTP_statusCode.OK).json({
-                message: 'Post status updated successfully',
-                processHandle: result.status === PostStatus.Blocked ? 'block' : 'unblock'
+                message: Messages.UPDATE_POST_STATUS,
+                processHandle: result.status === PostStatus.Blocked ? BlockStatus.BLOCK : BlockStatus.UNBLOCK
             });
         } catch (error) {
             handleError(res, error, 'PostBlockUnblock');
@@ -171,7 +172,7 @@ class AdminController {
         try {
             const vendorId: string | undefined = req.query.vendorId as string | undefined;
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'VendorId is missing or invalid' })
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING })
                 return
             }
 
@@ -209,21 +210,18 @@ class AdminController {
         try {
 
             const jwtTokenAdmin = req.cookies.jwtTokenAdmin;
-            console.log(jwtTokenAdmin, 'create Reftreshtoken calll');
 
             if (!jwtTokenAdmin) {
-                throw new CustomError('No refresh token provided', 401);
+                throw new CustomError(Messages.NO_REFRESHTOKEN, HTTP_statusCode.Unauthorized);
             }
 
             try {
                 const newAccessToken = await this.adminService.createRefreshToken(jwtTokenAdmin);
-                console.log(newAccessToken, 'newAces token crearted admin');
-
                 res.status(HTTP_statusCode.OK).json({ token: newAccessToken });
             } catch (error) {
                 if (error instanceof jwt.TokenExpiredError) {
                     res.clearCookie('jwtTokenAdmin');
-                    throw new CustomError('Refresh token expired', 401);
+                    throw new CustomError(Messages.REFRESHTOKEN_EXP, HTTP_statusCode.Unauthorized);
                 }
                 throw error;
             }
@@ -238,7 +236,7 @@ class AdminController {
             const adminId = req.admin?._id;
             const search = req.query.search as string || '';
             if (!adminId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Admin ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.ADMIN_ID_MISSING});
                 return;
             }
 
@@ -269,7 +267,7 @@ class AdminController {
 
             res.status(HTTP_statusCode.OK).json({
                 success: true,
-                message: 'Dashboard statistics retrieved successfully',
+                message: Messages.DASHBOARD_DETAILS,
                 data: dashboardStats
             });
         } catch (error) {
@@ -288,10 +286,7 @@ class AdminController {
             console.log(date, startDate, endDate);
 
             const response = await this.adminService.getRevenueDetails(date, startDate, endDate)
-            console.log(response, 'ressssssssssssssssss');
-
             if (response) {
-                ~
                 res.status(HTTP_statusCode.OK).json({ revenue: response })
             }
         } catch (error) {
@@ -303,7 +298,7 @@ class AdminController {
         try {
             const adminId = req.admin?._id;
             if (!adminId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Admin ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.ADMIN_ID_MISSING});
                 return;
             }
 

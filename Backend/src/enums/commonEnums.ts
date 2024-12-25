@@ -69,3 +69,31 @@ export enum BlockStatus {
 
 export const OTP_EXPIRY_TIME = 2 * 60 * 1000;
 export const RESEND_COOLDOWN = 2 * 60 * 1000;
+
+
+export enum ReportType {
+    POST = 'Post',
+    VENDOR = 'Vendor'
+  }
+  
+  export enum ReportReason {
+    INAPPROPRIATE_CONTENT = 'Inappropriate Content',
+    SPAM = 'Spam',
+    MISLEADING = 'Misleading Information',
+    HARASSMENT = 'Harassment',
+    COPYRIGHT = 'Copyright Infringement',
+    FraudulentActivity = 'Fraudulent Activity',
+    PoorCustomerService = 'Poor Customer Service',
+    UnresponsivetoCommunication = 'Unresponsive to Communication',
+    ViolationofTermsofService = 'Violation of Terms of Service',
+    UnethicalBusinessPractices = 'Unethical Business Practices',
+    OTHER = 'Other'
+  }
+  
+  export enum ReportStatus {
+    PENDING = 'Pending',
+    REVIEWED = 'Reviewed',
+    RESOLVED = 'Resolved',
+    DISMISSED = 'Dismissed'
+  }
+

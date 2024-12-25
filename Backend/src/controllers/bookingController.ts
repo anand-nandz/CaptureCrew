@@ -6,6 +6,7 @@ import { VendorRequest } from "../types/vendorTypes";
 import bookingRequestModel from "../models/bookingRequestModel";
 import { IBookingService } from "../interfaces/serviceInterfaces/booking.Service.interface";
 import HTTP_statusCode from "../enums/httpStatusCode";
+import Messages from "../enums/errorMessage";
 
 
 class BookingController  {
@@ -19,7 +20,7 @@ class BookingController  {
         try {
             const userId = req.user?._id
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
 
@@ -49,7 +50,7 @@ class BookingController  {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING});
                 return;
             }
 
@@ -67,7 +68,7 @@ class BookingController  {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
 
@@ -90,13 +91,13 @@ class BookingController  {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(401).json({ message: 'User ID is missing' });
+                res.status(401).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
             const result = await this.bookingService.revokeRequest(bookingId, userId.toString());
             
             if (result) {
-                res.status(HTTP_statusCode.OK).json({ message: 'Booking cancelled successfully' });
+                res.status(HTTP_statusCode.OK).json({ message: Messages.BOOKING_CANCELLED });
             } else {
                 res.status(HTTP_statusCode.BadRequest).json({ message: 'Unable to cancel booking' });
             }
@@ -113,11 +114,11 @@ class BookingController  {
             const vendorId = req.vendor?._id;
 
             if (!bookingId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'bookingId is missing or invalid' })
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.BOOKING_ID_MISSING })
                 return
             }
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
             if (!action || !['accept', 'reject'].includes(action)) {
@@ -139,7 +140,7 @@ class BookingController  {
             const userId = req.user?._id;
             const { vendorId, bookingId } = req.body;
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
 
@@ -187,7 +188,7 @@ class BookingController  {
             if (!bookingId || !amountPaid || !paymentId) {
                 res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
-                    message: 'Missing required payment information'
+                    message: Messages.MISSING_PAYMENT_INFO
                 });
                 return;
             }
@@ -202,7 +203,7 @@ class BookingController  {
                 res.redirect(`${process.env.FRONTEND_URL}/paymentFailed`)
                 res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
-                    message: 'Failed to confirm payment'
+                    message: Messages.FAILED_CONFIRM_PAYMENT
                 });
             }
         } catch (error) {
@@ -224,9 +225,6 @@ class BookingController  {
                         finalAmount: paymentData.sbooking.finalPayment.amount,
                         paymentcId: result.id,
                     });
-                    // res.cookie('bookingcId', paymentData?.bookingId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', })
-                    // res.cookie('finalAmount', paymentData.sbooking.finalPayment.amount, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
-                    // res.cookie('paymentcId', result.id, { httpOnly: true, secure: process.env.NODE_ENV === 'production', });
                     res.status(HTTP_statusCode.OK).json({ success: true, result, paymentData })
                 }
             }
@@ -242,7 +240,7 @@ class BookingController  {
             if (!bookingcId || !finalAmount  || !paymentcId) {
                 res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
-                    message: 'Missing required payment information'
+                    message: Messages.MISSING_PAYMENT_INFO
                 });
                 return;
             }
@@ -262,7 +260,7 @@ class BookingController  {
                 res.redirect(`${process.env.FRONTEND_URL}/paymentFailed`)
                 res.status(HTTP_statusCode.BadRequest).json({
                     success: false,
-                    message: 'Failed to confirm payment'
+                    message: Messages.FAILED_CONFIRM_PAYMENT
                 });
             }
         } catch (error) {
@@ -276,7 +274,7 @@ class BookingController  {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(404).json({ message: 'User ID is missing' });
+                res.status(404).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
             const result = await bookingRequestModel.findOne({
@@ -299,13 +297,13 @@ class BookingController  {
             const {bookingId, cancellationReason } =req.body;
             
             if (!bookingId) {
-                throw new Error('Booking ID is required.');
+                throw new Error(Messages.BOOKING_ID_MISSING)
             }
             const result = await this.bookingService.cancelBooking(bookingId,cancellationReason);
             
             res.status(HTTP_statusCode.OK).json({ 
                 success: true,
-                message: 'Booking cancelled successfully'
+                message: Messages.BOOKING_CANCELLED
             });
         } catch (error) {
             handleError(res, error, 'refundCancelAmt')

@@ -4,15 +4,11 @@ import { CustomError } from "../error/customError";
 import { VendorRequest } from "../types/vendorTypes";
 import jwt from 'jsonwebtoken';
 import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
-import { VendorSession } from "../interfaces/commonInterfaces";
+import { OTP, VendorSession } from "../interfaces/commonInterfaces";
 import HTTP_statusCode from "../enums/httpStatusCode";
 import { DateRangeQuery } from "../utils/extraUtils";
+import Messages from "../enums/errorMessage";
 
-interface OTP {
-    otp: string | undefined;
-    email: string;
-    otpSetTimestamp: number | undefined
-}
 
 declare module 'express-session' {
     interface Session {
@@ -20,7 +16,6 @@ declare module 'express-session' {
         otp: OTP | undefined
     }
 }
-
 
 class VendorController {
 
@@ -48,10 +43,10 @@ class VendorController {
             req.session.save((err) => {
                 if (err) {
                     console.error('Session save error:', err);
-                    throw new CustomError('Error saving session', HTTP_statusCode.InternalServerError);
+                    throw new CustomError(Messages.SAVE_SESSION, HTTP_statusCode.InternalServerError);
                 }
                 res.status(HTTP_statusCode.OK).json({
-                    message: `OTP send to Email for Verification`,
+                    message: Messages.OTP_SENT,
                     email: email,
                     otpExpiry: vendorData.otpExpiry,
                     resendAvailableAt: vendorData.resendTimer
@@ -70,11 +65,11 @@ class VendorController {
             const { name, email, city, password, contactinfo, otpCode, companyName, about, otpExpiry } = req.session.vendor
 
             if (otp !== otpCode) {
-                throw new CustomError('Invalid OTP', HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.INVALID_OTP, HTTP_statusCode.BadRequest)
             }
             const currentTime = Date.now();
             if (currentTime > otpExpiry) {
-                throw new CustomError('OTP has expired. Please request a new one.', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.OTP_EXPIRED, HTTP_statusCode.BadRequest);
             }
 
             if (otp === otpCode) {
@@ -87,7 +82,7 @@ class VendorController {
                     companyName,
                     about
                 )
-                res.status(201).json({ vendor, message: 'Account created successfully!' })
+                res.status(201).json({ vendor, message: Messages.ACCOUNT_CREATED })
             }
         } catch (error) {
             handleError(res, error, 'VerifyOTP')
@@ -131,7 +126,7 @@ class VendorController {
             const refreshToken = req.cookies.jwtToken;
 
             if (!refreshToken) {
-                throw new CustomError('No refresh token provided', 401);
+                throw new CustomError(Messages.NO_REFRESHTOKEN, 401);
             }
             try {
 
@@ -141,7 +136,7 @@ class VendorController {
             } catch (error) {
                 if (error instanceof jwt.TokenExpiredError) {
                     res.clearCookie('refreshToken');
-                    throw new CustomError('Refresh token expired', 401);
+                    throw new CustomError(Messages.REFRESHTOKEN_EXP, 401);
                 }
                 throw error;
             }
@@ -155,16 +150,16 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id
             if (!vendorId) {
-                throw new CustomError('Vendor not found', 404)
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, 404)
             }
             const vendor = await this.vendorService.checkBlock(vendorId.toString())
             if (!vendor) {
-                throw new CustomError('Vendor not found', 404)
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, 404)
             }
 
             if (!vendor.isActive) {
                 res.status(403).json({
-                    message: 'Blocked by Admin',
+                    message: Messages.BLOCKED,
                     isBlocked: true
                 })
                 return
@@ -181,11 +176,11 @@ class VendorController {
         try {
             const { email } = req.body
             if (!email) {
-                throw new CustomError('Email is required', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.EMAIL_REQUIRED, HTTP_statusCode.BadRequest);
             }
 
             await this.vendorService.handleForgotPassword(email)
-            res.status(HTTP_statusCode.OK).json({ message: 'Password reset link sent to your email' });
+            res.status(HTTP_statusCode.OK).json({ message: Messages.PASSWORD_RESET_LINK });
 
         } catch (error) {
             handleError(res, error, 'forgotPassword')
@@ -197,14 +192,14 @@ class VendorController {
         const { password } = req.body;
         try {
             if (!token) {
-                throw new CustomError('Session Expired', HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.SESSION_EXPIRED, HTTP_statusCode.BadRequest)
             } else if (!password) {
-                throw new CustomError("Password required", HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.PASSWORD_REQUIRED, HTTP_statusCode.BadRequest)
             }
 
             await this.vendorService.newPasswordChange(token, password)
 
-            res.status(HTTP_statusCode.OK).json({ message: 'Password Reset Successfull' })
+            res.status(HTTP_statusCode.OK).json({ message: Messages.PASSWORD_RESET_SUCCESS})
 
         } catch (error) {
             handleError(res, error, 'changePassword')
@@ -216,7 +211,7 @@ class VendorController {
 
         try {
             if (!token) {
-                throw new CustomError('Token is required', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.TOKEN_REQUIRED, HTTP_statusCode.BadRequest);
             }
             const isValid = await this.vendorService.validateToken(token);
             res.status(HTTP_statusCode.OK).json({ isValid });
@@ -229,7 +224,7 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
 
@@ -246,7 +241,7 @@ class VendorController {
             const vendorId = req.vendor?._id;
 
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
             if ((!name && !contactinfo && !companyName && !city && !about && !req.file) || (name === '' && contactinfo === '' && companyName === '' && city === '' && about === '' && !req.file)) {
@@ -266,7 +261,7 @@ class VendorController {
         try {
 
             if (!req.vendor?._id) {
-                throw new CustomError('Vendor not found in request', 401);
+                throw new CustomError(Messages.VENDOR_ID_MISSING, HTTP_statusCode.Unauthorized);
             }
 
             const vendorId = req.vendor?._id;
@@ -299,7 +294,7 @@ class VendorController {
 
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'VendorId is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return
             }
 
@@ -341,7 +336,7 @@ class VendorController {
             } = req.body
 
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
 
@@ -375,7 +370,7 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'Vendor ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING });
                 return;
             }
 
@@ -392,7 +387,7 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(401).json({ success: false, message: 'VendorId is missing' })
+                res.status(401).json({ success: false, message: Messages.VENDOR_ID_MISSING})
                 return
             }
 
@@ -414,7 +409,7 @@ class VendorController {
             const { dates } = req.body;
 
             if (!vendorId) {
-                res.status(401).json({ success: false, message: 'VendorId is missing' })
+                res.status(401).json({ success: false, message: Messages.VENDOR_ID_MISSING })
                 return
             }
 
@@ -449,7 +444,7 @@ class VendorController {
             const { dates } = req.body;
 
             if (!vendorId) {
-                res.status(401).json({ success: false, message: 'VendorId is missing' });
+                res.status(401).json({ success: false, message: Messages.VENDOR_ID_MISSING });
                 return;
             }
 
@@ -471,12 +466,12 @@ class VendorController {
 
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(401).json({ success: false, message: 'VendorId is missing' });
+                res.status(401).json({ success: false, message: Messages.VENDOR_ID_MISSING });
                 return;
             }
             await this.vendorService.passwordCheckVendor(currentPassword, newPassword, vendorId)
 
-            res.status(HTTP_statusCode.OK).json({ message: "Password reset successfully." });
+            res.status(HTTP_statusCode.OK).json({ message: Messages.PASSWORD_RESET_SUCCESS });
         } catch (error) {
             handleError(res, error, 'changePassword')
         }
@@ -486,13 +481,13 @@ class VendorController {
         try {
             const vendorId: string = req.query.vendorId as string
             if (!vendorId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'VendorId is missing' })
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_ID_MISSING })
                 return
             }
 
             const data = await this.vendorService.getSingleVendor(vendorId)
             if (!data) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: "Vendor not Found." })
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.VENDOR_NOT_FOUND })
             } else {
                 res.status(HTTP_statusCode.OK).json({ data: data })
             }
@@ -507,11 +502,10 @@ class VendorController {
             const { date, startDate, endDate } = req.query as unknown as DateRangeQuery;
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(401).json({ success: false, message: 'VendorId is missing' });
+                res.status(HTTP_statusCode.Unauthorized).json({ success: false, message: Messages.VENDOR_ID_MISSING });
                 return;
             }
             const response = await this.vendorService.getRevenueDetails(date,  vendorId.toString(), startDate, endDate)
-            console.log(response, 'ressssssssssssssssss');
 
             if (response) {
                 res.status(HTTP_statusCode.OK).json({ revenue: response })

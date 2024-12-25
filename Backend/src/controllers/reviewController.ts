@@ -7,6 +7,7 @@ import { CustomError } from '../error/customError';
 import { VendorRequest } from '../types/vendorTypes';
 import { IReviewService } from '../interfaces/serviceInterfaces/review.Service.Interface';
 import HTTP_statusCode from '../enums/httpStatusCode';
+import Messages from '../enums/errorMessage';
 
 class ReviewController {
     private reviewService: IReviewService;
@@ -25,12 +26,11 @@ class ReviewController {
                 rating,
                 content
             )
-            console.log(result,'reviewadded');
             
             if (!result) {
-                res.status(HTTP_statusCode.BadRequest).json({ error: "Couldn't add reviews" })
+                res.status(HTTP_statusCode.BadRequest).json({ error: Messages.COULDNOT_ADD_REVIEW })
             }
-            res.status(HTTP_statusCode.OK).json({ message: 'Review Added for this booking.',review: result  })
+            res.status(HTTP_statusCode.OK).json({ message: Messages.ADDED_REVIEW,review: result  })
 
         } catch (error) {
             handleError(res, error, 'getAllPostsAdmin')
@@ -55,7 +55,7 @@ class ReviewController {
             const { reviewId } = req.params;
             const { rating, content } = req.body;
             const updated = await this.reviewService.updateReviews(reviewId, rating, content);
-            res.status(HTTP_statusCode.OK).json({ message: 'Review updated successfully', review: updated })
+            res.status(HTTP_statusCode.OK).json({ message: Messages.REVIEW_UPDATED, review: updated })
         } catch (error) {
             handleError(res, error, 'updateReviews')
         }
@@ -66,7 +66,7 @@ class ReviewController {
             const { bookingId } = req.params
             const userId = req.user?._id
             if (!userId) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
             const review = await this.reviewService.checkReviews(bookingId, userId?.toString());
             if (review) {
@@ -85,7 +85,7 @@ class ReviewController {
             const page: number = parseInt(req.query.page as string) || 1;
             const pageSize: number = parseInt(req.query.pageSize as string) || 6;
             if (!vendorId) {
-                throw new CustomError('Vendor not found', 404)
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, HTTP_statusCode.NotFound)
             }
             
             const { reviews, count } =  await this.reviewService.singleVendorReviews(vendorId.toString(),page,pageSize)

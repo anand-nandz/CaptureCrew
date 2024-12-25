@@ -10,6 +10,7 @@ import { IUserService } from "../interfaces/serviceInterfaces/user.Service.Inter
 import { IVendorService } from "../interfaces/serviceInterfaces/vendor.service.interface";
 import { OTP_EXPIRY_TIME, RESEND_COOLDOWN } from "../enums/commonEnums";
 import HTTP_statusCode from "../enums/httpStatusCode";
+import Messages from "../enums/errorMessage";
 
 declare module 'express-session' {
     interface Session {
@@ -67,7 +68,6 @@ class UserController {
         try {
             const { email, password, name, contactinfo } = req.body;
             const otpCode = await generateOTP(email);
-            console.log(otpCode, 'otpcode');
 
             if (otpCode !== undefined) {
                 const otpSetTimestamp = Date.now();
@@ -87,11 +87,11 @@ class UserController {
                 req.session.save((err) => {
                     if (err) {
                         console.error('Session save error:', err);
-                        throw new CustomError('Error saving session', HTTP_statusCode.InternalServerError);
+                        throw new CustomError(Messages.SAVE_SESSION, HTTP_statusCode.InternalServerError);
                     }
 
                     res.status(HTTP_statusCode.OK).json({
-                        message: `OTP sent to Email for Verification`,
+                        message: Messages.OTP_SENT,
                         email: email,
                         otpExpiry: userData.otpExpiry,
                         resendAvailableAt: userData.resendTimer
@@ -99,7 +99,7 @@ class UserController {
                 });
 
             } else {
-                throw new CustomError("Couldn't generate OTP", HTTP_statusCode.InternalServerError);
+                throw new CustomError(Messages.GENERATE_OTP, HTTP_statusCode.InternalServerError);
             }
         } catch (error) {
             handleError(res, error, 'UserSignUp')
@@ -112,12 +112,12 @@ class UserController {
             const userData = req.session.user;
 
             if (!userData) {
-                throw new CustomError('Session expired. Please sign up again.', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.SESSION_EXPIRED, HTTP_statusCode.BadRequest);
             }
             const currentTime = Date.now();
 
             if (currentTime > userData.otpExpiry) {
-                throw new CustomError('OTP has expired. Please request a new one.', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.OTP_EXPIRED, HTTP_statusCode.BadRequest);
             }
 
             if (otp === userData.otpCode) {
@@ -134,9 +134,9 @@ class UserController {
                 });
 
 
-                res.status(201).json({ user, message: 'Account created successfully!' });
+                res.status(201).json({ user, message: Messages.ACCOUNT_CREATED });
             } else {
-                throw new CustomError('Invalid Otp !!', HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.INVALID_OTP, HTTP_statusCode.BadRequest)
             }
         } catch (error) {
             handleError(res, error, 'VerifyOTP')
@@ -147,7 +147,7 @@ class UserController {
         try {
             const userData: IUserSession | undefined = req.session.user;            
             if (!userData) {
-                throw new CustomError('Session expired. Please sign up again.', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.SESSION_EXPIRED, HTTP_statusCode.BadRequest);
             }
             const currentTime = Date.now();
             if (currentTime < userData.resendTimer) {
@@ -181,7 +181,7 @@ class UserController {
 
             const refreshToken = req.cookies.refreshToken;
             if (!refreshToken) {
-                throw new CustomError('No refresh token provided', 401);
+                throw new CustomError(Messages.NO_REFRESHTOKEN, 401);
             }
 
             try {
@@ -190,7 +190,7 @@ class UserController {
             } catch (error) {
                 if (error instanceof jwt.TokenExpiredError) {
                     res.clearCookie('refreshToken');
-                    throw new CustomError('Refresh token expired', 401);
+                    throw new CustomError(Messages.REFRESHTOKEN_EXP, 401);
                 }
                 throw error;
             }
@@ -205,16 +205,16 @@ class UserController {
             const userId = req.user?._id
 
             if (!userId) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, 404)
             }
             const user = await this.userService.checkBlock(userId.toString())
             if (!user) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, 404)
             }
 
             if (!user.isActive) {
                 res.status(HTTP_statusCode.NoAccess).json({
-                    message: 'Blocked by Admin',
+                    message: Messages.BLOCKED,
                     isBlocked: true
                 })
                 return
@@ -232,10 +232,10 @@ class UserController {
             const { email } = req.body
 
             if (!email) {
-                throw new CustomError('Email is required', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.EMAIL_REQUIRED, HTTP_statusCode.BadRequest);
             }
             await this.userService.handleForgotPassword(email)
-            res.status(HTTP_statusCode.OK).json({ message: 'Password reset link sent to your email' });
+            res.status(HTTP_statusCode.OK).json({ message: Messages.PASSWORD_RESET_LINK});
 
         } catch (error) {
             handleError(res, error, 'forgotPassword')
@@ -248,13 +248,13 @@ class UserController {
 
         try {
             if (!token) {
-                throw new CustomError('Session Expired', HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.SESSION_EXPIRED, HTTP_statusCode.BadRequest)
             } else if (!password) {
-                throw new CustomError("Password required", HTTP_statusCode.BadRequest)
+                throw new CustomError(Messages.PASSWORD_REQUIRED, HTTP_statusCode.BadRequest)
             }
 
             await this.userService.newPasswordChange(token, password)
-            res.status(HTTP_statusCode.OK).json({ message: 'Password Reset Successfull' })
+            res.status(HTTP_statusCode.OK).json({ message: Messages.PASSWORD_RESET_SUCCESS})
 
         } catch (error) {
             handleError(res, error, 'changePassword')
@@ -265,7 +265,7 @@ class UserController {
         const { token } = req.params;
         try {
             if (!token) {
-                throw new CustomError('Token is required', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.TOKEN_REQUIRED, HTTP_statusCode.BadRequest);
             }
             const isValid = await this.userService.validateToken(token);
             if (isValid) res.status(HTTP_statusCode.OK).json({ isValid });
@@ -283,7 +283,7 @@ class UserController {
 
 
             if (!decodedData) {
-                throw new CustomError('Invalid token', HTTP_statusCode.BadRequest);
+                throw new CustomError(Messages.INVALID_TOKEN, HTTP_statusCode.BadRequest);
             }
             const { name, email, sub: googleId }: IDecodedData = decodedData;
 
@@ -292,7 +292,7 @@ class UserController {
             if (user) {
                 res.status(HTTP_statusCode.OK).json({
                     success: true,
-                    message: 'User saved successfully'
+                    message: Messages.ACCOUNT_CREATED
                 }),
                     user
             }
@@ -355,7 +355,7 @@ class UserController {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
 
@@ -372,7 +372,7 @@ class UserController {
             const userId = req.user?._id;
 
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
 
@@ -398,7 +398,7 @@ class UserController {
 
             const userId = req.user?._id;
             if (!userId) {
-                res.status(HTTP_statusCode.BadRequest).json({ message: 'User ID is missing' });
+                res.status(HTTP_statusCode.BadRequest).json({ message: Messages.USER_ID_MISSING });
                 return;
             }
             await this.userService.passwordCheckUser(currentPassword, newPassword, userId)
@@ -413,13 +413,13 @@ class UserController {
         try {
             const userId: string = req.query.userId as string
             if(!userId){
-                res.status(HTTP_statusCode.BadRequest).json({message:'UserId is missing'})
+                res.status(HTTP_statusCode.BadRequest).json({message: Messages.USER_ID_MISSING})
                 return
             }
 
             const data = await this.userService.getSingleUser(userId)
             if(!data){
-                res.status(HTTP_statusCode.BadRequest).json({message: "User not Found."})
+                res.status(HTTP_statusCode.BadRequest).json({message: Messages.USER_NOT_FOUND})
             } else {
                 res.status(HTTP_statusCode.OK).json({data: data})
             }
@@ -453,13 +453,13 @@ class UserController {
         try {
             const userId: string = req.query.userId as string
             if(!userId){
-                res.status(HTTP_statusCode.BadRequest).json({message:'userId is missing'})
+                res.status(HTTP_statusCode.BadRequest).json({message: Messages.USER_ID_MISSING})
                 return
             }
 
             const data = await this.userService.getSingleUser(userId)
             if(!data){
-                res.status(HTTP_statusCode.BadRequest).json({message: "user not Found."})
+                res.status(HTTP_statusCode.BadRequest).json({message: Messages.USER_NOT_FOUND})
             } else {
                 res.status(HTTP_statusCode.OK).json({data: data})
             }

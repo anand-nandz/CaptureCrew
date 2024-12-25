@@ -207,6 +207,13 @@ export interface CancelBookingResult {
     reason?: string;
   }
 
+export interface OTP {
+    otp: string | undefined;
+    email: string;
+    otpSetTimestamp: number | undefined
+}
+
+
   
   export interface FindAllVendorsResult {
     vendors:( Vendor | undefined)[]
@@ -214,33 +221,6 @@ export interface CancelBookingResult {
     total: number;
 }
   
-
-export enum ReportType {
-    POST = 'Post',
-    VENDOR = 'Vendor'
-  }
-  
-  export enum ReportReason {
-    INAPPROPRIATE_CONTENT = 'Inappropriate Content',
-    SPAM = 'Spam',
-    MISLEADING = 'Misleading Information',
-    HARASSMENT = 'Harassment',
-    COPYRIGHT = 'Copyright Infringement',
-    FraudulentActivity = 'Fraudulent Activity',
-    PoorCustomerService = 'Poor Customer Service',
-    UnresponsivetoCommunication = 'Unresponsive to Communication',
-    ViolationofTermsofService = 'Violation of Terms of Service',
-    UnethicalBusinessPractices = 'Unethical Business Practices',
-    OTHER = 'Other'
-  }
-  
-  export enum ReportStatus {
-    PENDING = 'Pending',
-    REVIEWED = 'Reviewed',
-    RESOLVED = 'Resolved',
-    DISMISSED = 'Dismissed'
-  }
-
   export interface IVendorLoginResponse {
     vendor: object,
     message: string,

@@ -19,6 +19,7 @@ import BookingRepository from './repositories/bookingRepository';
 import { errorLogStream } from './config/loggerConfig';
 import { corsOption } from './config/corsConfig';
 import { sessionOptions } from './config/session.Config';
+import HTTP_statusCode from './enums/httpStatusCode';
 
 dotenv.config();
 
@@ -29,7 +30,7 @@ configSocketIO(server);
 app.use(
   morgan('combined', {
     stream: errorLogStream,
-    skip: (req: Request, res: Response) => res.statusCode < 400,
+    skip: (req: Request, res: Response) => res.statusCode < HTTP_statusCode.BadRequest,
   })
 );
 
