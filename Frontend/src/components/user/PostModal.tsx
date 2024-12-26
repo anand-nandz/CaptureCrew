@@ -3,7 +3,7 @@ import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMapMarkerAlt, faHeart, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faMapMarkerAlt, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 // import { Button } from '@nextui-org/react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { PostModalProps } from '../../types/postTypes';

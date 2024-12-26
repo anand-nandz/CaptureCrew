@@ -29,11 +29,11 @@ export interface PackageFormData {
 
 
 export interface CustomizationOption {
-    _id: string;
+    _id?: string;
     type: string;
     description: string;
     price: number;
-    unit?: string;  // e.g., "per photographer", "per page"
+    unit?: string; 
 }
 
 

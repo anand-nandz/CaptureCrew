@@ -98,13 +98,22 @@ const AddEditPackage: React.FC<AddEditPackageProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
+    // const handleInputChange = (field: keyof PackageFormData, value: string | number | CustomizationOption[]) => {
+    //     setFormData(prev => ({ ...prev, [field]: value }));
+    //     if (errors[field]) {
+    //         setErrors(prev => {
+    //             const { [field]: _, ...rest } = prev;
+    //             return rest;
+    //         });
+    //     }
+    // };
+    
     const handleInputChange = (field: keyof PackageFormData, value: string | number | CustomizationOption[]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
-            setErrors(prev => {
-                const { [field]: _, ...rest } = prev;
-                return rest;
-            });
+            setErrors(prev => Object.fromEntries(
+                Object.entries(prev).filter(([key]) => key !== field)
+            ));
         }
     };
 

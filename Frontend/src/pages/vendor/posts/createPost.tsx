@@ -61,10 +61,13 @@ export default function CreatePost({
         try {
             const schema = postValidationSchema(isEditMode, existingPost);
             await schema.validateAt(field, { ...formData, [field]: value });
-            setErrors(prev => {
-                const { [field]: _, ...rest } = prev;
-                return rest;
-            });
+            // setErrors(prev => {
+            //     const { [field]: _, ...rest } = prev;
+            //     return rest;
+            // });
+            setErrors(prev => Object.fromEntries(
+                Object.entries(prev).filter(([key]) => key !== field)
+            ));
         } catch (error) {
             if (error instanceof Yup.ValidationError) {
                 setErrors(prev => ({
@@ -79,10 +82,10 @@ export default function CreatePost({
     const handleInputChange = (field: keyof PostFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
-            setErrors(prev => {
-                const { [field]: _, ...rest } = prev;
-                return rest;
-            });
+            setErrors(prev => Object.fromEntries(
+                Object.entries(prev).filter(([key]) => key !== field)
+            ));
+    
         }
     };
 
