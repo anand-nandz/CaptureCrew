@@ -38,7 +38,6 @@ const Sidebar = () => {
   }, []);
 
 
-
   const menuItems: MenuItem[] = [
     { icon: UserCircleIcon, label: 'Profile', path: USER.PROFILE, badge: null },
     { icon: Wallet, label: 'Wallet', path: USER.WALLET, badge: null },
