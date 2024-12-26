@@ -4,7 +4,7 @@ import { IConversationService } from "../interfaces/serviceInterfaces/conversati
 import { ConversationDocument } from "../models/coversationModel";
 import conversationRepository from "../repositories/conversationRepository";
 
-class conversationService implements IConversationService {
+export default class conversationService implements IConversationService {
 
     private conversationRepository: IConversationRepository;
 
@@ -41,14 +41,21 @@ class conversationService implements IConversationService {
         }
     }
 
-    updateConversation = async(id: string, text: string): Promise<ConversationDocument | null>=>{
+    // updateConversation = async(id: string, text: string): Promise<ConversationDocument | null>=>{
+    //     try {
+    //         return await this.conversationRepository.findByIdAndUpdate(id,text)
+    //     } catch (error) {
+    //         console.error("Error in updateConversation:", error);
+    //         throw new CustomError("Error updateing Conversation.", 500);
+    //     }
+    // }
+    async updateConversation(id: string, text: string): Promise<ConversationDocument | null> {
         try {
-            return await this.conversationRepository.findByIdAndUpdate(id,text)
+            return await this.conversationRepository.findByIdAndUpdate(id, text);
         } catch (error) {
             console.error("Error in updateConversation:", error);
-            throw new CustomError("Error updateing Conversation.", 500);
+            throw new CustomError("Error updating Conversation.", 500);
         }
     }
 }
 
-export default conversationService

@@ -1,5 +1,5 @@
+import { ReportReason, ReportType } from "../../enums/commonEnums";
 import { IReport } from "../../models/reportModel";
-import { ReportReason, ReportType } from "../commonInterfaces";
 
 export interface IReportService {
     reportItems(

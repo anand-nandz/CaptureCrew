@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, model } from 'mongoose';
-import { ReportReason, ReportStatus, ReportType } from '../interfaces/commonInterfaces';
+import { ReportReason, ReportStatus, ReportType } from '../enums/commonEnums';
 
 export interface IReport extends Document {
   reportedBy: mongoose.Types.ObjectId;

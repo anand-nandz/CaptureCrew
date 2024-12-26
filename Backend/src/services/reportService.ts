@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { CustomError } from "../error/customError";
 import generateUniqueId from "../utils/extraUtils";
-import { ReportReason, ReportStatus, ReportType } from "../interfaces/commonInterfaces";
+import { ReportReason, ReportStatus, ReportType } from '../enums/commonEnums';
 import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Repository.interface";
 import { IPostRepository } from "../interfaces/repositoryInterfaces/post.repository.interface";
 import { IReportRepository } from "../interfaces/repositoryInterfaces/report.Repository.Interfaces";

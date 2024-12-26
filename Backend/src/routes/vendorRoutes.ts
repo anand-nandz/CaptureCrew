@@ -73,7 +73,7 @@ router.get('/view-packages',authenticateTokenVendor,vendorController.getPackages
 router.post('/add-package',authenticateTokenVendor,vendorController.createPackage.bind(vendorController));
 router.put('/edit-package/:id',authenticateTokenVendor,vendorController.updatePackge.bind(vendorController));
 
-router.get('/vendorDetails',authenticateTokenVendor,vendorController.getVendorWithAll.bind(vendorController));
+router.get('/vendorDetails',authenticateTokenVendor, vendorController.getVendorWithAll.bind(vendorController));
 
 router.get('/dateAvailabilty',authenticateTokenVendor,vendorController.showUnavailableDates.bind(vendorController));
 router.post('/dateAvailabilty',authenticateTokenVendor,vendorController.addUnavailableDates.bind(vendorController));

@@ -1,6 +1,5 @@
 import Post, { PostDocument } from "../models/postModel";
 import { BaseRepository } from "./baseRepository";
-import Vendor, { VendorDocument } from "../models/vendorModel";
 import mongoose from "mongoose";
 import { IPostRepository } from "../interfaces/repositoryInterfaces/post.repository.interface";
 
@@ -23,7 +22,12 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
         vendorId: mongoose.Types.ObjectId,
         page: number,
         limit: number
-    ) =>{
+    ):Promise <{
+        posts :PostDocument[],
+        total: number;
+        totalPages: number;
+        currentPage: number
+    }> =>{
         try {
             const skip = (page - 1) * limit;
 

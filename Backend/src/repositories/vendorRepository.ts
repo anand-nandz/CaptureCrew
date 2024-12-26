@@ -81,7 +81,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
             const posts = await Post.find({ vendor_id: new mongoose.Types.ObjectId(vendorId) })
                 .sort({ createdAt: -1 })
                 .lean()
-                .exec();
+                .exec() as PostDocument[];
 
             const packages = await Package.find({ vendor_id: new mongoose.Types.ObjectId(vendorId) })
                 .sort({ createdAt: -1 })
