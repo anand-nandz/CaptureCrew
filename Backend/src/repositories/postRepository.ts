@@ -7,23 +7,12 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
     constructor() {
         super(Post)
     }
-
-    // async create(postData: Partial<PostDocument>): Promise<PostDocument> {
-    //     const post = await Post.create(postData);
-    //     await Vendor.updateOne(
-    //         { _id: postData.vendor_id },
-    //         { $inc: { postCount: 1 } }
-    //     );
-
-    //     return post;
-    // }
-
     getVendorPosts = async(
         vendorId: mongoose.Types.ObjectId,
         page: number,
         limit: number
     ):Promise <{
-        posts :PostDocument[],
+        posts : PostDocument[],
         total: number;
         totalPages: number;
         currentPage: number
@@ -52,7 +41,7 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
                 .sort({ createdAt: -1 })
                 // .skip(validSkip)
                 // .limit(limit)
-                .lean();
+                .lean<PostDocument[]>();
 
             return {
                 posts,
@@ -145,7 +134,7 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
                 // .skip(skip)
                 // .limit(limit)
                 .populate('vendor_id', 'name companyName city about contactinfo imageUrl')
-                .lean()
+                .lean<PostDocument[]>();
 
             const totalPages = Math.ceil(total / limit);
 
