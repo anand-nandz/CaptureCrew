@@ -6,7 +6,7 @@ dotenv.config()
 const MongoDBStore = connectMongoDBSession(session);
 
 export const sessionStore = new MongoDBStore({
-  uri: process.env.MONGO_ATLAS_URI as string,
+  uri: process.env.MONGO_URI as string,
   collection: 'sessions',
 });
 
