@@ -29,13 +29,21 @@ export interface PackageFormData {
 
 
 export interface CustomizationOption {
-    _id?: string;
+    _id: string;
     type: string;
     description: string;
     price: number;
     unit?: string; 
 }
 
+
+export interface CustomizationOptionPackage {
+    _id?: string;
+    type: string;
+    description: string;
+    price: number;
+    unit?: string; 
+}
 
 export interface FormErrors {
     serviceType?: string;

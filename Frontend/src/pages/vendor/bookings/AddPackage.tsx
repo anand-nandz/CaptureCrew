@@ -11,7 +11,7 @@ import {
 } from '@nextui-org/react';
 import { Plus, Minus, Save } from 'lucide-react';
 import { ServiceProvided } from '../../../types/postTypes';
-import { PackageFormData, PackageData, FormErrors, CustomizationOption } from '../../../types/packageTypes';
+import { PackageFormData, PackageData, FormErrors,CustomizationOptionPackage } from '../../../types/packageTypes';
 import { axiosInstanceVendor } from '../../../config/api/axiosInstance';
 import { showToastMessage } from '../../../validations/common/toast';
 import SidebarVendor from '../../../layout/vendor/SidebarProfileVendor';
@@ -108,7 +108,7 @@ const AddEditPackage: React.FC<AddEditPackageProps> = ({
     //     }
     // };
     
-    const handleInputChange = (field: keyof PackageFormData, value: string | number | CustomizationOption[]) => {
+    const handleInputChange = (field: keyof PackageFormData, value: string | number | CustomizationOptionPackage[]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => Object.fromEntries(

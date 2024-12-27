@@ -296,7 +296,6 @@ export interface ValidationErrors {
   about: string,
 }
 
-
 export interface AutoTableOptions {
   startY?: number;
   head: string[][];
@@ -316,7 +315,6 @@ export interface AutoTableOptions {
   alternateRowStyles?: {
     fillColor?: [number, number, number];
   };
-  
 }
 
 export interface VendorReviewsProps {
