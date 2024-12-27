@@ -1,15 +1,18 @@
-import mongoose from 'mongoose' ;
 
-export const connectDB = async ()=>{
-    try {
-        if(!process.env.MONGO_URI){
-            throw new Error('MONGODB_URI is not defined')
-        }
-        const connect = await mongoose.connect(process.env.MONGO_URI);
-        console.log(`MongoDb Connected : ${connect.connection.host}`);
-        
-    } catch (error) {
-        console.error(`Error from DB: ${error}`);
-        process.exit(1)
+import mongoose from 'mongoose';
+
+export const connectDB = async () => {
+  try {
+    const uri =  process.env.MONGO_ATLAS_URI || process.env.MONGO_URI;
+    if (!uri) {
+      throw new Error('MONGO_URI or MONGO_ATLAS_URI must be defined');
     }
-}
+
+    const connect = await mongoose.connect(uri)
+
+    console.log(`MongoDB Connected: ${connect.connection.host}`);
+  } catch (error) {
+    console.error(`Error from DB: ${error}`);
+    process.exit(1); // Exit the process with failure
+  }
+};
