@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { AutoTableOptions } from './interfaces';
 
+
 declare module 'jspdf' {
     interface jsPDF {
       autoTable: (options: AutoTableOptions) => jsPDF;
@@ -13,12 +14,10 @@ declare module 'jspdf' {
 export const generateBookingPDF = (booking: BookingConfirmed) => {
     const doc = new jsPDF();
 
-    // Updated color scheme to black/grey
     const primaryColor = '#2C2C2C';
     const secondaryColor = '#4A4A4A';
     const tertiaryColor = '#6E6E6E';
 
-    // Helper function to format date and time
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
         return {
@@ -159,7 +158,7 @@ export const generateBookingPDF = (booking: BookingConfirmed) => {
         }
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+    // yPos = (doc as any).lastAutoTable.finalY + 10;
 
     // Detailed Payment Information
     addSectionTitle("Payment Details", yPos);
@@ -193,16 +192,8 @@ export const generateBookingPDF = (booking: BookingConfirmed) => {
     const dueDate = new Date(booking.finalPayment.dueDate);
     addRow("Due Date:", dueDate.toLocaleDateString(), yPos += 7);
 
-    // // Add QR Code placeholder with grey styling
-    // doc.setDrawColor(tertiaryColor);
-    // doc.setFillColor(245, 245, 245);
-    // doc.roundedRect(160, 240, 40, 40, 5, 5, 'FD');
-    // doc.setFontSize(8);
-    // doc.setTextColor(tertiaryColor);
-    // doc.text("Scan for digital verification", 162, 286);
 
-    // Footer with grey styling
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = doc.getNumberOfPages();
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     for (let i = 1; i <= pageCount; i++) {
