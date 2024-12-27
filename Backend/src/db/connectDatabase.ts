@@ -1,18 +1,18 @@
+import mongoose from 'mongoose' ;
+import dotenv from 'dotenv';
 
-import mongoose from 'mongoose';
-
-export const connectDB = async () => {
-  try {
-    const uri =  process.env.MONGO_ATLAS_URI;
-    if (!uri) {
-      throw new Error('MONGO_URI or MONGO_ATLAS_URI must be defined');
+dotenv.config();
+export const connectDB = async ()=>{
+    try {
+        if(!process.env.MONGO_ATLAS_URI){
+            throw new Error('MONGODB_URI is not defined')
+        }
+        const connect = await mongoose.connect(process.env.MONGO_ATLAS_URI);
+        console.log(`MongoDb Connected : ${connect.connection.host}`);
+        
+    } catch (error) {
+        console.error(`Error from DB: ${error}`);
+        process.exit(1)
     }
+}
 
-    const connect = await mongoose.connect(uri)
-
-    console.log(`MongoDB Connected: ${connect.connection.host}`);
-  } catch (error) {
-    console.error(`Error from DB: ${error}`);
-    process.exit(1); // Exit the process with failure
-  }
-};
