@@ -1,8 +1,6 @@
 import cron from 'node-cron';
-import bookingRequestModel from '../models/bookingRequestModel';
 import { sendEmail } from './sendEmail';
 import { emailTemplates } from './emailTemplates';
-import bookingRepository from '../repositories/bookingRepository';
 import { BookingAcceptanceStatus } from '../enums/commonEnums';
 import { IBookingReqRepository } from '../interfaces/repositoryInterfaces/bookingReq.Repository.Interface';
 
