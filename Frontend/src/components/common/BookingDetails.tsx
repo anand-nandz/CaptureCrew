@@ -32,7 +32,6 @@ const BookingConfirmedDetailsModal: React.FC<BookingConfirmedDetailsModalProps> 
   };
 
   const handleDownload = () => {
-    alert('hi')
     generateBookingPDF(booking);
   };
 

@@ -3,15 +3,13 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { AutoTableOptions } from './interfaces';
 
-
 declare module 'jspdf' {
     interface jsPDF {
-      autoTable: (options: AutoTableOptions) => jsPDF;
+        autoTable: (options: AutoTableOptions) => jsPDF;
     }
-  }
-  
+}
 
-export const generateBookingPDF = (booking: BookingConfirmed) => {
+export const generateBookingPDF = async (booking: BookingConfirmed) => {
     const doc = new jsPDF();
 
     const primaryColor = '#2C2C2C';
@@ -26,188 +24,188 @@ export const generateBookingPDF = (booking: BookingConfirmed) => {
         };
     };
 
-    // Helper function to add a section title
     const addSectionTitle = (title: string, y: number) => {
         doc.setFillColor(primaryColor);
-        doc.rect(0, y, 210, 8, 'F');
+        doc.rect(0, y, 210, 10, 'F'); 
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text(title, 10, y + 6);
+        doc.setFontSize(13); 
+        doc.text(title, 10, y + 7); 
     };
 
-    // Helper function to add a subsection title
     const addSubsectionTitle = (title: string, y: number) => {
         doc.setTextColor(primaryColor);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.text(title, 10, y);
-        doc.setLineWidth(0.1);
-        doc.line(10, y + 1, 200, y + 1);
-        return y + 5;
+        doc.setLineWidth(0.2); 
+        doc.line(10, y + 2, 200, y + 2);
+        return y + 6;
     };
 
-    // Helper function to add a two-column row
     const addRow = (left: string, right: string, y: number) => {
         doc.setTextColor(secondaryColor);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.text(left, 10, y);
-        doc.text(right, 85, y);
+
+        if (right.includes('₹')) {
+            doc.text(right, 200, y, { align: 'right' });
+        } else {
+            doc.text(right, 85, y);
+        }
     };
 
-    // Header
     doc.setFillColor(primaryColor);
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.rect(0, 0, 210, 45, 'F'); 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.text("CaptureCrew", 70, 25);
+    doc.setFontSize(28); 
+    doc.text("CaptureCrew", 70, 30);
 
-    // Logo placeholder
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.rect(10, 10, 20, 20);
-    doc.setFontSize(8);
-    doc.text("LOGO", 15, 22);
+    const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
+        try {
+            const response = await fetch(imagePath);
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('Error loading image:', error);
+            throw error;
+        }
+    };
 
-    let yPos = 50;
+    try {
+        const logoPath = '/images/logo3.png'; 
+        const logoBase64 = await loadImageAsBase64(logoPath);
 
-    // Booking Summary
+        doc.addImage(logoBase64, 'PNG', 15, 12, 25, 25);
+    } catch (error) {
+        console.error('Error adding logo:', error);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.5);
+        doc.rect(15, 12, 25, 25);
+        doc.setFontSize(10);
+        doc.text("CC", 22, 27);
+    }
+
+
+    let yPos = 55; 
+
+    const checkPageOverflow = (currentY: number, requiredSpace: number = 20) => {
+        if (currentY + requiredSpace > doc.internal.pageSize.height - 40) {
+            doc.addPage();
+            return 20; 
+        }
+        return currentY;
+    };
+
+    yPos = checkPageOverflow(yPos);
     addSectionTitle("Booking Summary", yPos);
-    yPos += 15;
+    yPos += 18; 
     addRow("Booking Reference:", booking.bookingId, yPos);
-    yPos += 7;
+    yPos += 8;
     const bookingDate = formatDateTime(booking.createdAt);
     addRow("Booking Date:", `${bookingDate.date} at ${bookingDate.time}`, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Current Status:", booking.bookingStatus.toUpperCase(), yPos);
-    yPos += 10;
+    yPos += 12; 
 
-    // Client Details
+    yPos = checkPageOverflow(yPos);
     addSectionTitle("Client Details", yPos);
-    yPos += 15;
+    yPos += 18;
     addRow("Client Name:", booking.clientName, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Email Address:", booking.email, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Contact Number:", booking.phone, yPos);
-    yPos += 10;
+    yPos += 12;
 
-    // Event Information
+    yPos = checkPageOverflow(yPos);
     addSectionTitle("Event Information", yPos);
-    yPos += 15;
+    yPos += 18;
     addRow("Event Type:", booking.serviceType, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Location:", booking.venue, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Event Date:", booking.startingDate, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Duration:", `${booking.noOfDays} day(s)`, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("All Dates:", booking.requestedDates.join(", "), yPos);
-    yPos += 10;
+    yPos += 12;
 
-    // Vendor Information
+    yPos = checkPageOverflow(yPos);
     addSectionTitle("Vendor Information", yPos);
-    yPos += 15;
+    yPos += 18;
     addRow("Business Name:", booking.vendorId.companyName, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Vendor Name:", booking.vendorId.name, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Contact:", booking.vendorId.contactinfo, yPos);
-    yPos += 7;
+    yPos += 8;
     addRow("Location:", booking.vendorId.city, yPos);
-    yPos += 10;
+    yPos += 12;
 
-    // Package Details
-    addSectionTitle("Package Details", yPos);
-    yPos += 15;
-    addRow("Photographers:", booking.packageId.photographerCount.toString(), yPos);
-    yPos += 7;
-
-    // Package description with word wrap
-    doc.setTextColor(secondaryColor);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const splitDescription = doc.splitTextToSize(booking.packageId.description, 180);
-    doc.text(splitDescription, 10, yPos);
-    yPos += splitDescription.length * 7 + 5;
-    yPos += 25;
-    // Features table with improved styling
-    doc.autoTable({
-        startY: yPos,
-        head: [['Included Features']],
-        body: booking.packageId.features.map(feature => [feature]),
-        theme: 'striped',
-        headStyles: {
-            fillColor: [44, 44, 44],
-            textColor: 255,
-            fontStyle: 'bold'
-        },
-        styles: {
-            cellPadding: 5,
-            fontSize: 10,
-            textColor: [74, 74, 74]
-        },
-        columnStyles: {
-            0: { cellWidth: 180 }
-        },
-        alternateRowStyles: {
-            fillColor: [245, 245, 245]
-        }
-    });
-
-    // yPos = (doc as any).lastAutoTable.finalY + 10;
-
-    // Detailed Payment Information
+    yPos = checkPageOverflow(yPos);
     addSectionTitle("Payment Details", yPos);
-    yPos += 15;
+    yPos += 18;
 
-    // Total Amount
     yPos = addSubsectionTitle("Total Package Cost", yPos);
-    addRow("Base Amount:", `₹${booking.totalAmount}`, yPos += 7);
+    addRow("Base Amount:", `₹${booking.totalAmount}`, yPos += 8);
 
-    // Advance Payment Details
-    yPos = addSubsectionTitle("Advance Payment", yPos += 10);
-    addRow("Amount Paid:", `₹${booking.advancePayment.amount}`, yPos += 7);
-    addRow("Payment Status:", booking.advancePayment.status.toUpperCase(), yPos += 7);
-    addRow("Payment ID:", booking.advancePayment?.paymentId ?? "N/A", yPos += 7);
+    yPos = addSubsectionTitle("Advance Payment", yPos += 12);
+    addRow("Amount Paid:", `₹${booking.advancePayment.amount}`, yPos += 8);
+    addRow("Payment Status:", booking.advancePayment.status.toUpperCase(), yPos += 8);
+    addRow("Payment ID:", booking.advancePayment?.paymentId ?? "N/A", yPos += 8);
     const advanceDate = booking.advancePayment.paidAt
         ? formatDateTime(booking.advancePayment.paidAt)
         : { date: "N/A", time: "N/A" };
-    addRow("Paid On:", `${advanceDate.date} at ${advanceDate.time}`, yPos += 7);
+    addRow("Paid On:", `${advanceDate.date} at ${advanceDate.time}`, yPos += 8);
 
-    // Final Payment Details
-    yPos = addSubsectionTitle("Final Payment", yPos += 10);
-    addRow("Amount:", `₹${booking.finalPayment.amount}`, yPos += 7);
-    addRow("Payment Status:", booking.finalPayment.status.toUpperCase(), yPos += 7);
+    yPos = addSubsectionTitle("Final Payment", yPos += 12);
+    addRow("Amount:", `₹${booking.finalPayment.amount}`, yPos += 8);
+    addRow("Payment Status:", booking.finalPayment.status.toUpperCase(), yPos += 8);
     if (booking.finalPayment.paymentId) {
-        addRow("Payment ID:", booking.finalPayment.paymentId, yPos += 7);
+        addRow("Payment ID:", booking.finalPayment.paymentId, yPos += 8);
     }
     if (booking.finalPayment.paidAt) {
         const finalDate = formatDateTime(booking.finalPayment.paidAt);
-        addRow("Paid On:", `${finalDate.date} at ${finalDate.time}`, yPos += 7);
+        addRow("Paid On:", `${finalDate.date} at ${finalDate.time}`, yPos += 8);
     }
     const dueDate = new Date(booking.finalPayment.dueDate);
-    addRow("Due Date:", dueDate.toLocaleDateString(), yPos += 7);
+    addRow("Due Date:", dueDate.toLocaleDateString(), yPos += 8);
 
+    const addFooter = () => {
+        const pageCount = doc.getNumberOfPages();
 
-    const pageCount = doc.getNumberOfPages();
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
         doc.setTextColor(tertiaryColor);
-        const footerText = `Page ${i} of ${pageCount} | Generated on ${new Date().toLocaleString()} | This is a computer-generated document. No signature is required.`;
-        doc.text(
-            footerText,
-            doc.internal.pageSize.width / 2,
-            doc.internal.pageSize.height - 10,
-            { align: "center" }
-        );
-    }
 
-    // Save the PDF
-    doc.save(`Booking-${booking.bookingId}.pdf`);
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+
+            const pageHeight = doc.internal.pageSize.height;
+            const footerY = pageHeight - 20;
+
+            doc.setDrawColor(tertiaryColor);
+            doc.setLineWidth(0.1);
+            doc.line(20, footerY - 5, doc.internal.pageSize.width - 20, footerY - 5);
+
+            doc.text(`Page ${i} of ${pageCount}`, 20, footerY);
+            doc.text(`Generated on ${new Date().toLocaleString()}`, doc.internal.pageSize.width - 20, footerY, { align: 'right' });
+            doc.text('This is a computer-generated document. No signature is required.',
+                doc.internal.pageSize.width / 2, footerY + 5, { align: 'center' });
+        }
+    };
+
+    addFooter();
+
+    doc.save(`CaptureCrew_Booking_${booking.bookingId}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
+

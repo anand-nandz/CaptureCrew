@@ -1,4 +1,6 @@
-const { nextui } = require("@nextui-org/react");
+// const { nextui } = require("@nextui-org/react");
+import { nextui } from "@nextui-org/react";
+
 
 module.exports = {
   content: [
@@ -77,11 +79,9 @@ module.exports = {
       themes: {
         light: {
           colors: {
-            // Customize NextUI component colors
             primary: {
               DEFAULT: "#000000",
             },
-            // Add more NextUI color customizations here
           },
         },
       },
