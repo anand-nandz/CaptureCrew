@@ -4,26 +4,40 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const MongoDBStore = connectMongoDBSession(session);
-console.log('MongoDB URI for session store:', process.env.MONGO_URI);
+
+const mongoURI = process.env.MONGO_URI as string;
+console.log('MongoDB URI format check:', mongoURI?.includes('mongodb+srv://'));
+
+const databaseName = mongoURI.split('/').pop()?.split('?')[0];
+console.log(databaseName,'dbname');
+
 export const sessionStore = new MongoDBStore({
   uri: process.env.MONGO_URI as string,
   collection: 'sessions',
-  databaseName: 'CaptureCrew',
   connectionOptions: {
+    ssl: true,
+    sslValidate: true,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 10000,
     serverSelectionTimeoutMS: 10000,
-    directConnection: true
-  }
-});
-
-sessionStore.on('connected', () => {
-  console.log('Session store connected to MongoDB successfully');
+  },
+  databaseName 
 });
 
 sessionStore.on('error', (error) => {
   console.error('Session store error details:', {
     message: error.message,
     stack: error.stack,
-    uri: process.env.MONGO_URI // This will help verify the URI being used
+    mongoURI: mongoURI?.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') // Hide credentials in logs
+  });
+});
+
+
+sessionStore.on('error', (error) => {
+  console.error('Session store error details:', {
+    message: error.message,
+    stack: error.stack,
+    mongoURI: mongoURI?.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')
   });
 });
 if (!process.env.SESSION_SECRET) {
@@ -32,12 +46,14 @@ if (!process.env.SESSION_SECRET) {
 export const sessionOptions: session.SessionOptions  ={
     secret: process.env.SESSION_SECRET,
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24, 
+      maxAge: 1000 * 60 * 60 * 24,
+      httpOnly:true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const
     },
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    rolling: true
+    rolling: true,
+    proxy: process.env.NODE_ENV === 'production'
   }

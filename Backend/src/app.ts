@@ -18,7 +18,7 @@ import BookingStatusCron from './utils/BookingStatusCron';
 import BookingRepository from './repositories/bookingRepository';
 import { errorLogStream } from './config/loggerConfig';
 import { corsOption } from './config/corsConfig';
-import { sessionOptions } from './config/session.Config';
+import { sessionOptions, sessionStore } from './config/session.Config';
 import HTTP_statusCode from './enums/httpStatusCode';
 
 dotenv.config();
@@ -33,6 +33,11 @@ app.use(
     skip: (req: Request, res: Response) => res.statusCode < HTTP_statusCode.BadRequest,
   })
 );
+
+
+sessionStore.on('connected', () => {
+  console.log('Session store connected to MongoDB successfully');
+});
 
 app.use(morgan('dev'));
 app.use(cors(corsOption));
