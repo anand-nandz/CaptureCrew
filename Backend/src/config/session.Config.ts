@@ -16,7 +16,6 @@ export const sessionStore = new MongoDBStore({
   collection: 'sessions',
   connectionOptions: {
     ssl: true,
-    sslValidate: true,
     connectTimeoutMS: 10000,
     socketTimeoutMS: 10000,
     serverSelectionTimeoutMS: 10000,
