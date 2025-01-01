@@ -2,7 +2,8 @@ import { Socket, Server as SocketServer } from "socket.io";
 import { Server as HttpServer } from "http";
 import ConversationRepository from '../repositories/conversationRepository';
 import ConversationService from '../services/conversationService';
-
+import dotenv from 'dotenv';
+dotenv.config(); 
 interface Client {
     clientId: string;
     socketId: string;
@@ -18,7 +19,7 @@ const conversationService = new ConversationService(conversationRepository)
 const configSocketIO = (server: HttpServer) => {
     io = new SocketServer(server, {
         cors: {
-            origin: ['http://localhost:5173'],
+            origin: [process.env.FRONTEND_URL || 'http://localhost:5173'],
             methods: ['GET', 'POST'],
             credentials: true
         },
