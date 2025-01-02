@@ -97,7 +97,7 @@ const VendorLogin = () => {
             onOpenChange();
             Swal.fire({
                 title: 'Reset Link Sent!',
-                text: 'A password reset link has been sent to your email. It will be active for the next 5 minutes.',
+                text: 'A password reset link has been sent to your email. It will be active for the next 30 minutes.',
                 icon: 'success',
                 timer: 5000,
                 timerProgressBar: true,
@@ -129,16 +129,13 @@ const VendorLogin = () => {
                 axiosInstanceVendor
                     .post('/login', values)
                     .then((response) => {
-                        localStorage.setItem('vendorToken', response.data.token);
-                        // localStorage.setItem('vendorRefresh', response.data.refreshToken);
-                        console.log(response.data.vendor,'vendorrrrrrrrrrrrrrr');
-                        
+                        localStorage.setItem('vendorToken', response.data.token);                        
                         dispatch(setVendorInfo(response.data.vendor));
                         showToastMessage(response.data.message, 'success')
                         navigate(`${VENDOR.DASHBOARD}`);
                     })
                     .catch((error) => {
-                        console.error(error,'eroro iin login vendor ');
+                        console.error(error,'error in login vendor ');
                         const errorMessage = error.response?.data?.message || 'An error occurred during login';
                         showToastMessage(errorMessage, 'error')
                     });

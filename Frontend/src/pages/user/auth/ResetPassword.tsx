@@ -27,6 +27,7 @@ const ResetPassword: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -76,11 +77,11 @@ const ResetPassword: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true)
         const errors = validatePassword(formValues)
         setFormErrors(errors);
 
         if (Object.values(errors).every((error) => error === "")) {
-            setIsLoading(true);
             try {
                 await validateToken()
                 if (!isTokenValid) {
@@ -95,7 +96,7 @@ const ResetPassword: React.FC = () => {
                 console.error(error)
                 showToastMessage('Failed to reset password', 'error');
             } finally {
-                setIsLoading(false);
+                setIsSubmitting(false);
             }
         }
 
@@ -177,7 +178,7 @@ const ResetPassword: React.FC = () => {
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setShowConfirmPassword(showConfirmPassword)}
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                                 >
                                      {showConfirmPassword ? <Eye className="h-4 w-4 text-gray-500" /> : <EyeOff className="h-4 w-4 text-gray-500" />}
@@ -198,9 +199,9 @@ const ResetPassword: React.FC = () => {
                             variant="gradient"
                             onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }} placeholder={undefined}
                             className="bg-black mb-5 text-white mt-2 rounded-md py-2 px-4 hover:bg-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 flex items-center justify-center"
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         >
-                            {isLoading ? (
+                            {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Reseting Password...

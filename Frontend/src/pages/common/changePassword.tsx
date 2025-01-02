@@ -60,12 +60,10 @@ const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose,
             ...prev,
             [name]: value
         }));
-        // Clear specific field error when user starts typing
         setErrors(prev => ({
             ...prev,
             [name]: ''
         }));
-        // Clear any previous API error
         setApiError(null);
     };
 
@@ -86,25 +84,20 @@ const ChangePasswordModal: React.FC<PasswordChangeDetails> = ({ isOpen, onClose,
 
         setErrors(allErrors);
 
-        // Only proceed if there are no validation errors
         if (!Object.values(allErrors).some(error => error !== '')) {
             try {
                 await onSave(formData);
                 handleClose();
             } catch (error) {
                 if (axios.isAxiosError(error)) {
-                    // More detailed error handling
                     const errorMessage = error.response?.data?.message || 
                                          error.response?.data?.error || 
                                          'Error changing password';
                     
-                    // Set API error to display in the modal
                     setApiError(errorMessage);
                     
-                    // Also show toast for additional visibility
                     showToastMessage(errorMessage, 'error');
                 } else {
-                    // Handle unexpected errors
                     const unexpectedError = error instanceof Error 
                         ? error.message 
                         : 'Unexpected error occurred';

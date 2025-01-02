@@ -92,12 +92,11 @@ export const useLoginUser = () => {
                     "An error occurred while processing your request";
                 showToastMessage(errorMessage, "error");
             } else {
-                // This is an unknown error
                 console.error('An unexpected error occurred:', error);
                 showToastMessage("An unexpected error occurred", "error");
             }
         } finally {
-            setIsLoading(false); // Stop loading regardless of outcome
+            setIsLoading(false); 
         }
     };
 

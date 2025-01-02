@@ -24,6 +24,8 @@ import { formatDate } from "@/utils/userUtils";
 const UserProfile = () => {
   const dispatch = useDispatch();
   const userD = useSelector((state: UserRootState) => state.user.userData);
+  console.log(userD,'userD');
+  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [count, setCount] = useState(0);
@@ -250,7 +252,7 @@ const UserProfile = () => {
           onSave={handleSaveProfile}
         />
       )}
-      {userD && isPasswordModalOpen && (
+      { userD && isPasswordModalOpen && (
         <ChangePasswordModal
           isOpen={isPasswordModalOpen}
           onClose={() => setIsPasswordModalOpen(false)}
