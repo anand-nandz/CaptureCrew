@@ -14,9 +14,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import { showToastMessage } from '../../../validations/common/toast';
 import { validateProfile } from '../../../validations/vendor/vendorRegVal';
 import { ProfileFormData, ValidationErrors, VendorDetails } from '@/utils/interfaces';
+import imageCompression from 'browser-image-compression';
+import { Loader2 } from 'lucide-react';
 
 const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClose, onSave }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(vendor?.imageUrl || null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState<ProfileFormData>({
         name: vendor?.name || '',
@@ -42,7 +45,7 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
         about: '',
     })
 
-    
+
 
     useEffect(() => {
         if (vendor) {
@@ -64,7 +67,7 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
     }, [vendor]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        
+
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -73,23 +76,33 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
         setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
-    
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            
-            setFormData(prev => ({ ...prev, imageUrl: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewUrl(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressedImage = await imageCompression(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1280,
+                    useWebWorker: true
+                });
+
+                setFormData(prev => ({ ...prev, imageUrl: compressedImage }));
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setPreviewUrl(reader.result as string);
+                };
+                reader.readAsDataURL(compressedImage);
+            } catch (error) {
+                console.error('Error compressing image', error)
+                showToastMessage('Error compressing image', 'error')
+            }
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+        setIsLoading(true)
         const validationErrors = validateProfile({
             name: formData.name,
             contactinfo: formData.contactinfo,
@@ -101,14 +114,14 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
 
         const hasErrors = Object.values(validationErrors).some(error => error !== '');
         if (!hasErrors) {
-             try {
+            try {
                 const token = localStorage.getItem('vendorToken');
                 if (!token) {
                     showToastMessage('Authentication required', 'error');
                     return;
                 }
 
-                const formDataToSend =new FormData();
+                const formDataToSend = new FormData();
                 if (formData.name !== vendor?.name) formDataToSend.append('name', formData.name);
                 if (formData.contactinfo !== vendor?.contactinfo) formDataToSend.append('contactinfo', formData.contactinfo);
                 if (formData.imageUrl) formDataToSend.append('image', formData.imageUrl);
@@ -118,12 +131,12 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
 
 
                 if (
-                    formDataToSend.has('name') || 
-                    formDataToSend.has('contactinfo') || 
-                    formDataToSend.has('image') || 
-                    formDataToSend.has('companyName') || 
+                    formDataToSend.has('name') ||
+                    formDataToSend.has('contactinfo') ||
+                    formDataToSend.has('image') ||
+                    formDataToSend.has('companyName') ||
                     formDataToSend.has('city') ||
-                    formDataToSend.has('about')                    
+                    formDataToSend.has('about')
                 ) {
                     await onSave(formDataToSend);
                     onClose();
@@ -134,6 +147,8 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
             } catch (error) {
                 console.error('Error updating profile:', error);
                 showToastMessage('Error updating profile', 'error');
+            } finally {
+                setIsLoading(false)
             }
         }
     };
@@ -157,7 +172,7 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
                         <Grid container spacing={3}>
                             <Grid item xs={12} md={4}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <input
+                                    <input
                                         accept="image/*"
                                         style={{ display: 'none' }}
                                         id="image-upload"
@@ -266,9 +281,15 @@ const EditProfileModalVendor: React.FC<VendorDetails> = ({ vendor, isOpen, onClo
                             <Button
                                 variant="contained"
                                 type="submit"
+                                disabled={isLoading}
                                 sx={{ backgroundColor: 'black', color: 'white', '&:hover': { backgroundColor: '#333' } }}
                             >
-                                Save Changes
+                               {isLoading ? (
+                                    <>
+                                        <Loader2 className="animate-spin mr-2 bg-black text-white" size={16} />
+                                        Saving...
+                                    </>
+                                ) : 'Save Changes'}
                             </Button>
 
                         </Box>

@@ -39,11 +39,10 @@ const Chat = () => {
       setCurrentChat(selectedConversation);
       const friendId = selectedConversation.members.find((m) => m !== vendor?._id);
       const response = await axiosInstanceVendor.get(`/getUser?userId=${friendId}`)
-      console.log(response.data.data, 'user details');
 
       setUser(response.data.data)
     } catch (error) {
-      console.log('Error in handleConversationSelect', error);
+      console.error('Error in handleConversationSelect', error);
 
     }
   }
@@ -58,7 +57,6 @@ const Chat = () => {
         )
       );
     });
-    console.log(conversation, 'conv');
 
 
     return () => {
@@ -101,9 +99,7 @@ const Chat = () => {
       setMessages((prev) => [...prev, arrivalMessage]);
     }
   }, [arrivalMessage, currentChat]);
-  console.log(messages,'new');
-  console.log(arrivalMessage,'arrival');
-  
+
 
 
   useEffect(() => {
@@ -137,7 +133,7 @@ const Chat = () => {
         setMessages(response.data)
         setIsUpdated(false)
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }
     getMessages()
@@ -175,11 +171,10 @@ const Chat = () => {
     try {
       const response = await axiosInstanceMessage.post('/', message)
       setMessages([...messages, response.data])
-      console.log(message, 'messages');
 
       setnewMessage('')
     } catch (error) {
-      console.log(error);
+      console.error(error);
 
     }
 
@@ -203,10 +198,11 @@ const Chat = () => {
   const changeIsRead = async (chatId: string) => {
     try {
       const data = { chatId, senderId: vendor?._id }
-      await axiosInstanceMessage.patch('/changeIsRead', data, { withCredentials: true })
+      const res = await axiosInstanceMessage.patch('/changeIsRead', data, { withCredentials: true })
+      console.log(res, 'changeread');
 
     } catch (error) {
-      console.log(error);
+      console.error(error);
 
     }
   }

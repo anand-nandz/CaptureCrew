@@ -45,7 +45,6 @@ export const VendorReviewList: React.FC = () => {
               pageSize: rowsPerPage
             }
         });
-        console.log(response.data.reviews);
         
         setReviews(response.data.reviews);
         setTotalCount(response.data.reviews.length);

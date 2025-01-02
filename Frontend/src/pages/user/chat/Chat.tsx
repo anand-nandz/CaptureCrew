@@ -40,6 +40,8 @@ const Chat = () => {
       const friendId = selectedConversation.members.find((m) => m !== user?._id);
       const response = await axiosInstance.get(`/getVendor?vendorId=${friendId}`)
       setVendor(response.data.data)
+      console.log(vendor,'vendor');
+      
 
     } catch (error) {
       console.log('Error in handleConversationSelect', error);
@@ -255,6 +257,7 @@ const Chat = () => {
                         isActive={activeUsers.some(
                           (u) => u.clientId === receiverId
                         )}
+                        
                       // unreadMessages={unreadMessages}
 
                       />

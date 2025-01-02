@@ -18,7 +18,6 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
-            console.log(token,'tokeng');
             return config;
         },
         (error) => Promise.reject(error)
@@ -66,7 +65,6 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
                             return Promise.reject(refreshError);
                         }
                     } else if (error.response.data.message === 'Session expired') {
-                        console.log('Session expired. Redirecting to login...');
                         window.location.href = baseUrl.includes('/vendor') ? '/vendor/login' : '/login';
                         return Promise.reject(error);
                     } 
@@ -103,7 +101,6 @@ axiosSessionInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401 && error.response.data.message === 'Session expired') {
-            console.log('Session expired. Redirecting to signup...');
             window.location.href = '/signup';
         }
         return Promise.reject(error);
@@ -120,7 +117,6 @@ axiosSessionInstanceV.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401 && error.response.data.message === 'Session expired') {
-            console.log('Session expired. Redirecting to signup...');
             window.location.href = '/signup';
         }
         return Promise.reject(error);

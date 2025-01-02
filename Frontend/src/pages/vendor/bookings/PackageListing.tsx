@@ -23,8 +23,6 @@ const PackageListing = () => {
     const fetchPackages = async () => {
         try {
             const response = await axiosInstanceVendor.get('/view-packages');
-            console.log(response.data);
-
             setPackages(response.data.data.packages);
         } catch (error) {
             console.error('Error fetching packages:', error);

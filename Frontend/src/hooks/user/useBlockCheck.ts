@@ -49,7 +49,6 @@ export const useBlockCheck = () => {
         try {
             if (location.pathname.startsWith('/vendor') && vendorSignedIn) {
                 const response = await axiosInstanceVendor.get('/check-block-status');
-                console.log(response.data.isBlocked,'response block');
                 if (response.data.isBlocked) {
                     await handleBlockedAccount('vendor');
                   }
@@ -57,7 +56,6 @@ export const useBlockCheck = () => {
                       !location.pathname.startsWith('/vendor') && 
                       userSignedIn) {
                 const response = await axiosInstance.get('/check-block-status');
-                console.log(response.data.isBlocked,'in blockcheck');
                
                 if (response.data.isBlocked===true) {
                     

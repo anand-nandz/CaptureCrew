@@ -19,6 +19,7 @@ const ChatListVendor: React.FC<ConversationsProps> = ({
     const [user, setUser] = useState<UserData>();
 
     const friendId = conversation.members.find((m) => m !== currentUser?._id);
+    console.log(isActive,'isActive vendorSide');
 
 
     useEffect(() => {

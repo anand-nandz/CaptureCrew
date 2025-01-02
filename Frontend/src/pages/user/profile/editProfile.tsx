@@ -14,6 +14,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { validateProfile } from '../../../validations/user/userVal';
 import { showToastMessage } from '../../../validations/common/toast';
 import { IProfileFormData, IUserDetails, IValidationErrors } from '@/utils/interfaces';
+import imageCompression from 'browser-image-compression';
+import { Loader } from 'lucide-react';
 
 
 const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSave }) => {
@@ -27,23 +29,34 @@ const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSav
         createdAt: user?.createdAt || '',
         updatedAt: user?.updatedAt || '',
     });
+    const [isLoading, setIsLoading] = useState(false);
 
     const [errors, setErrors] = useState<IValidationErrors>({
         name: '',
         contactinfo: ''
     })
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            setFormData(prev => ({ ...prev, image: file }));
 
-            // Update preview URL
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewUrl(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressedImage = await imageCompression(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1280,
+                    useWebWorker: true
+                });
+
+                setFormData(prev => ({ ...prev, image: compressedImage }));
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setPreviewUrl(reader.result as string);
+                };
+                reader.readAsDataURL(compressedImage);
+            } catch (error) {
+                console.error('Error compressing image:', error);
+                showToastMessage('Error compressing image', 'error');
+            }
         }
     };
 
@@ -73,6 +86,8 @@ const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSav
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
+
         const validationErrors = validateProfile({
             name: formData.name,
             contactinfo: formData.contactinfo
@@ -92,7 +107,7 @@ const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSav
                 if (formData.contactinfo !== user?.contactinfo) formDataToSend.append('contactinfo', formData.contactinfo);
                 if (formData.image) formDataToSend.append('image', formData.image);
                 if (formDataToSend.has('name') || formDataToSend.has('contactinfo') || formDataToSend.has('image')) {
-                    await onSave(formDataToSend); 
+                    await onSave(formDataToSend);
                     onClose();
                 } else {
                     showToastMessage('No changes to save', 'error');
@@ -101,6 +116,9 @@ const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSav
             } catch (error) {
                 console.error('Error updating profile:', error);
                 showToastMessage('Error updating profile', 'error');
+            }
+            finally {
+                setIsLoading(false);
             }
         }
     };
@@ -204,9 +222,15 @@ const EditProfileModal: React.FC<IUserDetails> = ({ user, isOpen, onClose, onSav
                             <Button
                                 variant="contained"
                                 type="submit"
+                                disabled={isLoading}
                                 sx={{ backgroundColor: 'black', color: 'white', '&:hover': { backgroundColor: '#333' } }}
                             >
-                                Save Changes
+                                {isLoading ? (
+                                    <>
+                                        <Loader className="animate-spin mr-2 bg-black text-white" size={16} />
+                                        Saving...
+                                    </>
+                                ) : 'Save Changes'}
                             </Button>
 
                         </Box>
