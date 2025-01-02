@@ -79,7 +79,6 @@ const DashboardDetails = () => {
           stats.totalUsers.count,
           stats.totalPosts.count,
         ];
-        console.log(donutSeries,'series');
         
         const donutLabels = ['Vendors', 'Users', 'Posts'];
 

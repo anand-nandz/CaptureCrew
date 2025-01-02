@@ -33,7 +33,6 @@ export default async function generateOTP(email:string): Promise<string>{
         }
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent: ' + info.response);
         return otpCode
         
     } catch (error) {

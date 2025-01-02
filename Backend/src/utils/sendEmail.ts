@@ -22,11 +22,9 @@ export async function sendEmail(to: string | string[], subject: string, htmlBody
       subject,
       html: htmlBody
     };
-    console.log(mailOptions,'mail otitions');
     
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent: ' + info.response);
     return true;
   } catch (error) {
     console.error('Error sending email:', error);

@@ -229,7 +229,6 @@ const SignUp = () => {
                 shape='rectangular'
                 onSuccess={handleGoogleSuccess}
                 onError={() => {
-                  console.log('Sign Up Failed');
                   showToastMessage('Google sign up failed', 'error');
                 }}
               />

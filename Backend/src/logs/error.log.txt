@@ -3,3 +3,5 @@ C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20241220-00
 C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20241222-0025-01-error.log
 C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20241223-0000-01-error.log
 C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20241227-0000-01-error.log
+C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20250102-0000-01-error.log
+C:\Users\user\Desktop\brototype\WEEK 23\CaptureCrew\Backend\src\logs\20250103-0000-01-error.log

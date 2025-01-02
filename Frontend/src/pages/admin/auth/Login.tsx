@@ -63,15 +63,11 @@ const Login = () => {
         initialValues,
         validationSchema: loginValidationSchema,
         onSubmit: (values) => {
-            if (Object.keys(formik.errors).length === 0) {
-                console.log('insdie formik in admin login ');
-                
+            if (Object.keys(formik.errors).length === 0) {                
                 axiosInstanceAdmin
                     .post('/login', values)
                     .then((response) => {
-                        localStorage.setItem('adminToken', response.data.token);
-                        console.log(response.data);
-                        
+                        localStorage.setItem('adminToken', response.data.token);                        
                         dispatch(setAdminInfo(response.data.adminData));
                         showToastMessage(response.data.message, 'success')
                         navigate(`/admin${ADMIN.DASHBOARD}`);

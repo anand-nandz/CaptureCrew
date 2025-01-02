@@ -7,6 +7,7 @@ import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Rep
 import { IReviewService } from "../interfaces/serviceInterfaces/review.Service.Interface"
 import { IReviewRepository } from "../interfaces/repositoryInterfaces/review.Repository.interface"
 import { ReviewDocument } from "../models/reviewModel"
+import HTTP_statusCode from "../enums/httpStatusCode"
 
 class Reviewservice implements IReviewService{
 
@@ -35,7 +36,7 @@ class Reviewservice implements IReviewService{
             const vendorData = await this.vendorRepository.getById(vendorId)
             
             if (!vendorData) {
-                throw new CustomError('Vendor Not found', 404)
+                throw new CustomError('Vendor Not found', HTTP_statusCode.NotFound)
             }
             const reviewDatas = await this.reviewRepository.create({
                 vendorId: vendor_id,
@@ -44,7 +45,6 @@ class Reviewservice implements IReviewService{
                 rating,
                 content
             })
-            console.log(reviewDatas);
 
             const vendorReview = await this.reviewRepository.findByCondition({ vendorId })
 
@@ -75,8 +75,6 @@ class Reviewservice implements IReviewService{
                     return review;
                 })
             );
-            console.log(processedReviews, 'dataaaaa');
-
 
             return {
                 reviews: processedReviews,

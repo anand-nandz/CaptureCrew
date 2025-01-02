@@ -26,7 +26,6 @@ function AdminBooking() {
           search: search
         }
       })
-      console.log(response.data.bookingReqs, 'daataaaa');
 
       if (response.data.bookingReqs) {
         setBookings(response.data.bookingReqs)

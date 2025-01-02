@@ -110,7 +110,6 @@ export const validateProfile = (values: Pick<ValidationValues,'name' | 'contacti
       city: "",
       about: "",
     };
-    console.log(values.name,'rest password in  validate email');
     const mobileRegex = /^(91)?0?[6-9]\d{9}$/;
     // Regular Expression for email validation
     if (!values.name.trim()) {

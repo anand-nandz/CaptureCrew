@@ -387,7 +387,7 @@ class VendorController {
         try {
             const vendorId = req.vendor?._id;
             if (!vendorId) {
-                res.status(401).json({ success: false, message: Messages.VENDOR_ID_MISSING})
+                res.status(HTTP_statusCode.Unauthorized).json({ success: false, message: Messages.VENDOR_ID_MISSING})
                 return
             }
 

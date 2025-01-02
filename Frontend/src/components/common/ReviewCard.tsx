@@ -66,7 +66,6 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  console.log(initialReviews, 'initi');
 
   useEffect(() => {
 

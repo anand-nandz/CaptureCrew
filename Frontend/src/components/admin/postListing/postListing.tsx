@@ -35,9 +35,6 @@ export default function PostListingAdmin() {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
-            console.log(response.data.data.posts);
-
-
             const publishedPosts = response.data.data.posts.filter(
                 (post: PostData) => post.status === PostStatus.Published || PostStatus.Blocked
             )
@@ -61,8 +58,6 @@ export default function PostListingAdmin() {
     const startIndex = (currentPage - 1) * POSTS_PER_PAGE
     const endIndex = startIndex + POSTS_PER_PAGE
     const currentPosts = filteredPosts.slice(startIndex, endIndex)
-console.log(currentPosts);
-
 
     const handleServiceChange = (service: ServiceProvided) => {
         setSelectedService(service)

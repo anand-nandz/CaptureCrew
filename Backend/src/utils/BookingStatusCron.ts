@@ -24,14 +24,13 @@ class BookingStatusCron  {
                 console.error('Error in payment status cron job:', error);
             }
         });
-        console.log('Booking status cron jobs initialized');
+        
     }
 
     private async checkOverduePayments(){
         try {
             const overdueBookings = await this.bookingRepository.overdueBookings()
 
-            console.log(overdueBookings,'overduebooingsssssss');
             
             for (const booking of overdueBookings){
                 await this.processOverdueBooking(booking);
@@ -46,7 +45,6 @@ class BookingStatusCron  {
         try {
             booking.bookingStatus = BookingAcceptanceStatus.PaymentOverdue;
             booking.advancePayment.status = 'overdue'
-            console.log(booking,'bookingssssssssss');
             
             // if (booking.requestedDates) {
             //     await bookingRepository.rollbackVendorDates(
@@ -80,7 +78,6 @@ class BookingStatusCron  {
             );
 
             await booking.save();
-            console.log(`Successfully processed overdue booking: ${booking.bookingReqId}`);
 
         } catch (error) {
             console.error(`Error processing overdue booking ${booking.bookingReqId}:`, error);

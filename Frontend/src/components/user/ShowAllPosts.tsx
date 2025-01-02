@@ -29,21 +29,16 @@ export default function ShowAllPosts() {
                 headers: { Authorization: `Bearer ${token}` },
             })
 
-            // Log the raw response to check what we're getting
-            console.log('Raw response:', response.data.data.posts)
-
             const publishedPosts = response.data.data.posts.filter(
                 (post : PostData) => post.status === PostStatus.Published
             )
 
 
-            // Add data validation before setting state
             if (Array.isArray(publishedPosts)) {
                 setAllPosts(publishedPosts)
-                // Log the serviceType of each post to verify
-                publishedPosts.forEach(post => {
-                    console.log('Post service type:', post.serviceType)
-                })
+                // publishedPosts.forEach(post => {
+                //     console.log('Post service type:', post.serviceType)
+                // })
             } else {
                 console.error('Published posts is not an array:', publishedPosts)
             }

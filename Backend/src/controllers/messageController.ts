@@ -46,6 +46,7 @@ class MessageController {
         try {
             const { chatId, senderId } = req.body
             const updateResult = await this.messageservice.changeReadStatus(chatId, senderId)
+            
             res.status(200).json({ 
                 updateResult,
                 matchedCount: updateResult.matchedCount,

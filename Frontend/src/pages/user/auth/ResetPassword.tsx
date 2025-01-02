@@ -42,7 +42,6 @@ const ResetPassword: React.FC = () => {
         try {
 
             const response = await axiosClient.get(`/validate-reset-token/${token}`);
-            console.log(response);
 
             setIsTokenValid(response.data.isValid);
         } catch (error) {

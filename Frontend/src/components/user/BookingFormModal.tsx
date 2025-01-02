@@ -109,7 +109,6 @@ export const BookingModal: FC<BookingModalProps> = ({
     const availableServiceTypes = [...new Set(packages.map(pkg => pkg.serviceType))];
 
     const getPackagesForServiceType = (serviceType: string) => {
-        console.log(packages.filter(pkg => pkg.serviceType === serviceType));
         return packages.filter(pkg => pkg.serviceType === serviceType);
     };
 

@@ -72,7 +72,6 @@ interface ValidationErrors {
     const errors: Pick<ValidationErrors, 'email'>= {
       email: "",
     };
-    console.log(values.email,'email in  vlaidate email');
     
     // Regular Expression for email validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -93,7 +92,6 @@ interface ValidationErrors {
       password: "",
       confirmPassword: "",
     };
-    console.log(values.password,'rest password in  vlaidate email');
     
     // Regular Expression for email validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -124,7 +122,6 @@ interface ValidationErrors {
       name: "",
       contactinfo: "",
     };
-    console.log(values.name,'rest password in  vlaidate email');
     const mobileRegex = /^(91)?0?[6-9]\d{9}$/;
     if (!values.name.trim()) {
       errors.name = 'Name is required';

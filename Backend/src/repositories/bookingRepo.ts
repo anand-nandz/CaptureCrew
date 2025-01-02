@@ -6,6 +6,7 @@ import { BookingStatus, PaymentStatus } from "../enums/commonEnums";
 import { BookingInterface } from "../interfaces/commonInterfaces";
 import { IBookingRepository } from "../interfaces/repositoryInterfaces/booking.Repository.interface";
 import mongoose from "mongoose";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 
 class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -21,37 +22,14 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
 
     findBookingConfirmedReqs = async (userId: string): Promise<BookingInterface[] | null> => {
         try {
-            console.log(userId);
-            console.log(typeof userId);
             
-            
-            // const ConfirmedBooking = await Booking
-            //     .find({ userId: userId })
-            //     .populate('userId', 'name email contactinfo isActive transactions')
-            //     .populate('vendorId', 'name companyName bookedDates contactinfo city isActive transactions')
-            //     .populate({
-            //         path: 'packageId',
-            //         model: 'Package',
-            //         select: 'price description features photographerCount serviceType duration videographerCount customizationOptions'
-            //     })
-            //     .populate({
-            //         path: 'reviews',
-            //         model: 'Review', // Ensure 'Review' is the correct model name in your codebase
-            //         match: { userId: userId }, // Fetch reviews only for the current user
-            //         select: 'rating content createdAt updatedAt', // Select specific fields if needed
-            //     })
-            //     .sort({ createdAt: -1 })
-            //     .lean()
-
-            //     console.log(ConfirmedBooking,'ConfirmedBooking reviesadded');
-
             const ConfirmedBooking = await Booking.aggregate([
                 {
-                    $match: { userId: new mongoose.Types.ObjectId(userId) } // Match bookings by userId
+                    $match: { userId: new mongoose.Types.ObjectId(userId) } 
                 },
                 {
                     $lookup: {
-                        from: 'users', // Collection name for users
+                        from: 'users', 
                         localField: 'userId',
                         foreignField: '_id',
                         as: 'userDetails'
@@ -59,7 +37,7 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
                 },
                 {
                     $lookup: {
-                        from: 'vendors', // Collection name for vendors
+                        from: 'vendors', 
                         localField: 'vendorId',
                         foreignField: '_id',
                         as: 'vendorDetails'
@@ -67,7 +45,7 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
                 },
                 {
                     $lookup: {
-                        from: 'packages', // Collection name for packages
+                        from: 'packages', 
                         localField: 'packageId',
                         foreignField: '_id',
                         as: 'packageDetails'
@@ -75,7 +53,7 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
                 },
                 {
                     $lookup: {
-                        from: 'reviews', // Collection name for reviews
+                        from: 'reviews', 
                         let: { bookingId: '$_id', userId: new mongoose.Types.ObjectId(userId) },
                         pipeline: [
                             {
@@ -149,19 +127,14 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
                             price: { $arrayElemAt: ['$packageDetails.price', 0] },
                             customizationOptions: { $arrayElemAt: ['$packageDetails.customizationOptions', 0] }
                         },
-                        reviews: { $arrayElemAt: ['$reviews', 0] } // Extract the first (and only) review
+                        reviews: { $arrayElemAt: ['$reviews', 0] } 
                     }
                 },
                 {
-                    $sort: { createdAt: -1 } // Sort by createdAt in descending order
+                    $sort: { createdAt: -1 } 
                 }
             ]);
             
-            
-            
-            console.log(ConfirmedBooking, 'ConfirmedBooking with reviews added');
-            
-
 
             return ConfirmedBooking
         } catch (error) {
@@ -225,13 +198,13 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
             if (paymentType === 'finalAmount') {
 
                 if (booking.finalPayment.status !== PaymentStatus.Pending) {
-                    throw new CustomError('Final payment is already completed or not required.', 400);
+                    throw new CustomError('Final payment is already completed or not required.', HTTP_statusCode.BadRequest);
                 }
                 if (Number(amountPaid) !== booking.finalPayment.amount) {
-                    throw new CustomError('Incorrect final payment amount.', 400);
+                    throw new CustomError('Incorrect final payment amount.', HTTP_statusCode.BadRequest);
                 }
                 if (new Date() > new Date(booking.finalPayment.dueDate)) {
-                    throw new CustomError('Final payment is overdue.', 400);
+                    throw new CustomError('Final payment is overdue.', HTTP_statusCode.BadRequest);
                 }
 
                 booking.finalPayment = {
@@ -244,7 +217,7 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
                 booking.bookingStatus = BookingStatus.Completed
 
             } else {
-                throw new CustomError('Invalid payment type.', 400);
+                throw new CustomError('Invalid payment type.', HTTP_statusCode.BadRequest);
             }
 
             const updatedBooking = await booking.save();
@@ -255,7 +228,7 @@ class BookingRepo extends BaseRepository<BookingDocument> implements IBookingRep
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to confirm payment.', 500);
+            throw new CustomError('Failed to confirm payment.', HTTP_statusCode.InternalServerError);
         }
     }
 

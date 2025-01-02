@@ -68,7 +68,6 @@ export function ReportManagement() {
                 }
                 
             });
-            console.log(response.data);
 
             setReports(response.data.reports);
             setTotalPages(response.data.totalPages);

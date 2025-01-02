@@ -6,6 +6,7 @@ import mongoose, { Document } from "mongoose";
 import { CustomError } from "../error/customError";
 import { IVendorRepository } from "../interfaces/repositoryInterfaces/vendor.Repository.interface";
 import { VendorDetailsWithAll } from "../interfaces/commonInterfaces";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 type VendorDocumentWithId = Document<unknown, {}, VendorDocument> &
     VendorDocument &
@@ -63,7 +64,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
             return result.modifiedCount > 0;
         } catch (error) {
             console.error('Error in updatePassword:', error);
-            throw new CustomError('Failed to update password in database', 500);
+            throw new CustomError('Failed to update password in database', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -95,7 +96,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
             };
         } catch (error) {
             console.error('Error in getAllPopulate:', error);
-            throw new CustomError('Failed to getAll populated data from database', 500);
+            throw new CustomError('Failed to getAll populated data from database', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -126,7 +127,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
                 );
 
                 if (!updated) {
-                    throw new CustomError('Failed to update vendor', 500)
+                    throw new CustomError('Failed to update vendor', HTTP_statusCode.InternalServerError)
                 }
                 updatedVendor = updated;
             }
@@ -140,7 +141,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
 
         } catch (error) {
             console.error('Error in adding dates', error);
-            throw new CustomError('Failed to add new Dates', 500)
+            throw new CustomError('Failed to add new Dates', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -164,7 +165,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
             );
 
             if (!updatedVendor) {
-                throw new CustomError('Failed to update vendor', 500);
+                throw new CustomError('Failed to update vendor', HTTP_statusCode.InternalServerError);
             }
 
             return {

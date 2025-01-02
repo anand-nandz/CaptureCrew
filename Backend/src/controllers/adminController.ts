@@ -283,7 +283,6 @@ class AdminController {
     getRevenue = async (req: Request, res: Response): Promise<void> => {
         try {
             const { date, startDate, endDate } = req.query as unknown as DateRangeQuery;
-            console.log(date, startDate, endDate);
 
             const response = await this.adminService.getRevenueDetails(date, startDate, endDate)
             if (response) {

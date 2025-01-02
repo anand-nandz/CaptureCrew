@@ -36,15 +36,14 @@ export default function EnhancedPosts() {
       const response = await axiosInstanceVendor.get('/posts', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      console.log(response.data.data.posts);
 
       const publishedPosts = response.data.data.posts
 
       if (Array.isArray(publishedPosts)) {
         setPosts(publishedPosts)
-        publishedPosts.forEach(post => {
-          console.log('Post service type:', post.serviceType)
-        })
+        // publishedPosts.forEach(post => {
+        //   console.log('Post service type:', post.serviceType)
+        // })
       } else {
         console.error('Published posts is not an array:', publishedPosts)
       }

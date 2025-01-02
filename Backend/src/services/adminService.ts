@@ -6,6 +6,7 @@ import { IAdminService } from '../interfaces/serviceInterfaces/admin.Service.Int
 import { IAdminRepository } from '../interfaces/repositoryInterfaces/admin.Repository.Interface';
 import { createAccessToken } from '../config/jwt.config';
 import { IBookingRepository } from '../interfaces/repositoryInterfaces/booking.Repository.interface';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 class AdminService implements IAdminService {
   private adminRepository: IAdminRepository;
@@ -25,10 +26,10 @@ class AdminService implements IAdminService {
       const existingAdmin = await this.adminRepository.findByEmail(email);
 
       if (!existingAdmin) {
-        throw new CustomError('Admin not exist!..', 404);
+        throw new CustomError('Admin not exist!..', HTTP_statusCode.NotFound);
       }
       if (password !== existingAdmin.password) {
-        throw new CustomError('Incorrect Password', 401)
+        throw new CustomError('Incorrect Password', HTTP_statusCode.Unauthorized)
       }
 
       const token = createAccessToken(existingAdmin._id.toString())
@@ -61,7 +62,7 @@ class AdminService implements IAdminService {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new CustomError('Failed to login', 500);
+      throw new CustomError('Failed to login', HTTP_statusCode.InternalServerError);
     }
   }
 
@@ -77,7 +78,7 @@ class AdminService implements IAdminService {
       const admin = await this.adminRepository.getById(decodedToken._id);
 
       if (!admin || admin.refreshToken !== jwtTokenAdmin) {
-        throw new CustomError('Invalid refresh Token', 401)
+        throw new CustomError('Invalid refresh Token', HTTP_statusCode.Unauthorized)
       }
 
       const accessToken = createAccessToken(admin._id.toString())
@@ -89,7 +90,7 @@ class AdminService implements IAdminService {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new CustomError('Failed to create refresh Token', 500);
+      throw new CustomError('Failed to create refresh Token', HTTP_statusCode.InternalServerError);
     }
   }
 
@@ -169,12 +170,11 @@ class AdminService implements IAdminService {
 
 
           default:
-            throw new CustomError('Invalid Date Parameter', 400)
+            throw new CustomError('Invalid Date Parameter', HTTP_statusCode.InternalServerError)
         }
       }
 
       const revenueData = await this.bookingRepo.getAllRevenueData(start, end, groupBy, sortField);
-      console.log(revenueData, 'revenueData');
 
    if (dateType === 'custom') {
       const dailyRevenue = new Array(arrayLength).fill(0);
@@ -205,7 +205,6 @@ class AdminService implements IAdminService {
         }
       });
 
-      console.log(dailyRevenue, 'dailyRevenue');
       return dailyRevenue;
     }
 

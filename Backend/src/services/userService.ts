@@ -15,6 +15,8 @@ import { IUserService } from '../interfaces/serviceInterfaces/user.Service.Inter
 import { IUserRepository } from '../interfaces/repositoryInterfaces/user.repository.Interface';
 import { createAccessToken, createRefreshToken, isTokenExpiringSoon } from '../config/jwt.config';
 import { BlockStatus } from '../enums/commonEnums';
+import HTTP_statusCode from '../enums/httpStatusCode';
+import Messages from '../enums/errorMessage';
 
 
 
@@ -33,7 +35,7 @@ class UserService implements IUserService {
             const existingUser = await this.userRepository.findByEmail(email);
 
             if (!existingUser) {
-                throw new CustomError('User Not Exist!!..', 404)
+                throw new CustomError('User Not Exist!!..', HTTP_statusCode.NotFound)
             }
 
             const passwordMatch = await bcrypt.compare(
@@ -87,7 +89,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to login', 500)
+            throw new CustomError('Failed to login', HTTP_statusCode.InternalServerError)
         }
     };
 
@@ -101,7 +103,7 @@ class UserService implements IUserService {
         try {
             const existingUser = await this.userRepository.findByEmail(email);
             if (existingUser) {
-                throw new CustomError('User already exists', 404);
+                throw new CustomError('User already exists', HTTP_statusCode.NotFound);
             }
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
@@ -122,7 +124,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to sign up new User', 500)
+            throw new CustomError('Failed to sign up new User', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -136,7 +138,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError((error as Error).message || 'Failed to resend new Otp', 500);
+            throw new CustomError((error as Error).message || 'Failed to resend new Otp', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -161,7 +163,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create refresh Token', 500);
+            throw new CustomError('Failed to create refresh Token', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -169,13 +171,13 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId.toString())
             if (user) return user
-            throw new CustomError('User not found', 404)
+            throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
         } catch (error) {
             console.error('Error while checking user ', error);
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to check block status', 500);
+            throw new CustomError('Failed to check block status', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -183,10 +185,10 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.findByEmail(email)
             if (!user) {
-                throw new CustomError('User not exists', 404);
+                throw new CustomError('User not exists', HTTP_statusCode.NotFound);
             }
             const resetToken = crypto.randomBytes(20).toString('hex');
-            const resetTokenExpiry = new Date(Date.now() + 50 * 60 * 1000);
+            const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
 
             user.resetPasswordToken = resetToken;
             user.resetPasswordExpires = resetTokenExpiry;
@@ -206,7 +208,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to process forgot password request', 500);
+            throw new CustomError('Failed to process forgot password request', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -215,10 +217,10 @@ class UserService implements IUserService {
             const user = await this.userRepository.findByToken(token);
 
             if (!user) {
-                throw new CustomError('Invalid token', 400);
+                throw new CustomError('Invalid token', HTTP_statusCode.InternalServerError);
             }
             if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
-                throw new CustomError('Password reset token has expired', 400);
+                throw new CustomError('Password reset token has expired', HTTP_statusCode.InternalServerError);
             }
 
             const salt = await bcrypt.genSalt(10);
@@ -226,7 +228,7 @@ class UserService implements IUserService {
             let updateSuccess = await this.userRepository.UpdatePasswordAndClearToken(user._id, hashedPassword);
 
             if (!updateSuccess) {
-                throw new CustomError('Failed to Update password', 500)
+                throw new CustomError('Failed to Update password', HTTP_statusCode.InternalServerError)
             }
 
             await sendEmail(
@@ -240,7 +242,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to password', 500);
+            throw new CustomError('Failed to password', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -249,10 +251,10 @@ class UserService implements IUserService {
             const user = await this.userRepository.findByToken(token)
 
             if (!user) {
-                throw new CustomError('Invalid token', 400);
+                throw new CustomError('Invalid token', HTTP_statusCode.InternalServerError);
             }
             if (!user.resetPasswordExpires) {
-                throw new CustomError('No reset token expiry date found', 400);
+                throw new CustomError('No reset token expiry date found', HTTP_statusCode.InternalServerError);
             }
 
             const currentTime = new Date().getTime()
@@ -269,7 +271,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError((error as Error).message || 'Failed to validate token', 500);
+            throw new CustomError((error as Error).message || 'Failed to validate token', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -280,7 +282,7 @@ class UserService implements IUserService {
             if (existingUser) {
                 if (existingUser.isGoogleUser) return { user: existingUser };
                 else {
-                    throw new CustomError('Email already registered with different method', 400);
+                    throw new CustomError('Email already registered with different method', HTTP_statusCode.InternalServerError);
                 }
             }
 
@@ -300,7 +302,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to SignIn using Google', 500)
+            throw new CustomError('Failed to SignIn using Google', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -364,7 +366,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to authenticate with Google', 500);
+            throw new CustomError('Failed to authenticate with Google', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -372,7 +374,7 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId.toString());
             if (!user) {
-                throw new CustomError('User not found', 400);
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.InternalServerError);
             }
             if (user?.imageUrl) {
                 try {
@@ -392,7 +394,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError((error as Error).message || 'Failed to get profile details', 500);
+            throw new CustomError((error as Error).message || 'Failed to get profile details', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -405,7 +407,7 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId.toString())
             if (!user) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
 
             const updateData: {
@@ -430,17 +432,17 @@ class UserService implements IUserService {
                     updateData.imageUrl = imageFileName;
                 } catch (error) {
                     console.error('Error uploading to S3:', error);
-                    throw new CustomError('Failed to upload image to S3', 500);
+                    throw new CustomError('Failed to upload image to S3', HTTP_statusCode.InternalServerError);
                 }
             }
 
             if (Object.keys(updateData).length === 0) {
-                throw new CustomError('No changes to update', 400);
+                throw new CustomError('No changes to update', HTTP_statusCode.InternalServerError);
             }
 
             const updatedUser = await this.userRepository.update(userId, updateData)
             if (!updatedUser) {
-                throw new CustomError('Failed to update user', 500);
+                throw new CustomError('Failed to update user', HTTP_statusCode.InternalServerError);
             }
             await updatedUser.save();
             const freshUser = await this.userRepository.getById(userId.toString());
@@ -464,7 +466,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to update profile.", 500);
+            throw new CustomError("Failed to update profile.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -472,10 +474,10 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId.toString())
             if (!user) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
             if (!user.password) {
-                throw new CustomError("User password not set", 400)
+                throw new CustomError("User password not set", HTTP_statusCode.InternalServerError)
             }
 
             const passwordMatch = await bcrypt.compare(
@@ -494,7 +496,7 @@ class UserService implements IUserService {
             const newHashedPassword = await bcrypt.hash(newPassword, salt);
             const updateSuccess = await this.userRepository.UpdatePassword(userId, newHashedPassword)
             if (!updateSuccess) {
-                throw new CustomError('Failed to update password', 500);
+                throw new CustomError('Failed to update password', HTTP_statusCode.InternalServerError);
             }
             await sendEmail(
                 user.email,
@@ -507,7 +509,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to changing password.", 500);
+            throw new CustomError("Failed to changing password.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -516,7 +518,7 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId)
             if (!user) {
-                throw new CustomError('User Not Found', 400)
+                throw new CustomError('User Not Found', HTTP_statusCode.InternalServerError)
             }
             let userWithSignedUrl = user.toObject();
             if (user?.imageUrl) {
@@ -536,7 +538,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to get user", 500);
+            throw new CustomError("Failed to get user", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -550,7 +552,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to get Users', 500)
+            throw new CustomError('Failed to get Users', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -558,7 +560,7 @@ class UserService implements IUserService {
         try {
             const user = await this.userRepository.getById(userId);
             if (!user) {
-                throw new CustomError('User not Found', 404)
+                throw new CustomError('User not Found', HTTP_statusCode.NotFound)
             }
             user.isActive = !user.isActive
             await user.save()
@@ -568,7 +570,7 @@ class UserService implements IUserService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to block and Unblock', 500)
+            throw new CustomError('Failed to block and Unblock', HTTP_statusCode.InternalServerError)
         }
     }
 

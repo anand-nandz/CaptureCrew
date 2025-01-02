@@ -80,14 +80,11 @@ export const ReviewFormModal: FC<ReviewModelProps> = ({
           rating,
           content: trimmedReview
         };
-
-        console.log(payload,'payload');
         
 
       const response = await axiosInstance.post<{ message: string; review: Review }>(endpoint, payload, {
         withCredentials: true
       });
-      console.log(response.data,'newwwwwwwwww');
       
       const updatedReview: Review = {
         _id: bookingDetails.existingReview?._id || response.data.review._id,
@@ -99,7 +96,6 @@ export const ReviewFormModal: FC<ReviewModelProps> = ({
         createdAt: response.data.review.createdAt,
         updatedAt: response.data.review.updatedAt
       };
-      console.log(updatedReview,'new?updated');
       
 
       onReviewUpdate(bookingDetails.bookingId, updatedReview);

@@ -7,6 +7,7 @@ import generateUniqueId from "../utils/extraUtils";
 import { IBookingReqRepository } from "../interfaces/repositoryInterfaces/bookingReq.Repository.Interface";
 import { BookingReqInterface } from "../interfaces/commonInterfaces";
 import { BookingAcceptanceStatus } from "../enums/commonEnums";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 
 class BookingRepository extends BaseRepository<BookingReqDocument> implements IBookingReqRepository{
@@ -61,7 +62,7 @@ class BookingRepository extends BaseRepository<BookingReqDocument> implements IB
             if (existingBooking) {
                 throw new CustomError(
                     'You already have a booking with this vendor for this date and service type',
-                    400
+                    HTTP_statusCode.BadRequest
                 );
             }
 
@@ -191,7 +192,7 @@ class BookingRepository extends BaseRepository<BookingReqDocument> implements IB
                 // Combine status and existence check in a single query
                 throw new CustomError(
                     'Booking not found or status is not "Requested"',
-                    404
+                    HTTP_statusCode.NotFound
                 );
             }
     
@@ -262,13 +263,13 @@ class BookingRepository extends BaseRepository<BookingReqDocument> implements IB
         });
     
         if (!booking) {
-            throw new CustomError('Booking not Found', 404);
+            throw new CustomError('Booking not Found', HTTP_statusCode.NotFound);
         }
     
         if (booking.bookingStatus !== expectedStatus) {
             throw new CustomError(
                 `Cannot perform operation. Current status: ${booking.bookingStatus}`,
-                400
+                HTTP_statusCode.BadRequest
             );
         }
     

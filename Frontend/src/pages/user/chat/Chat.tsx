@@ -39,9 +39,7 @@ const Chat = () => {
       setCurrentChat(selectedConversation);
       const friendId = selectedConversation.members.find((m) => m !== user?._id);
       const response = await axiosInstance.get(`/getVendor?vendorId=${friendId}`)
-      setVendor(response.data.data)
-      console.log(vendor,'vendor');
-      
+      setVendor(response.data.data)      
 
     } catch (error) {
       console.log('Error in handleConversationSelect', error);
@@ -106,7 +104,6 @@ const Chat = () => {
   const getConversation = async () => {
     try {
       const response = await axiosInstanceChat.get(`/?userId=${user?._id}`);
-      console.log(response.data, 'getconverstion');
       setConversation(response.data);
     } catch (error) {
       console.log(error);

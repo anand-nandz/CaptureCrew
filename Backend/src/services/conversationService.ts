@@ -1,3 +1,4 @@
+import HTTP_statusCode from "../enums/httpStatusCode";
 import { CustomError } from "../error/customError";
 import { IConversationRepository } from "../interfaces/repositoryInterfaces/conversation.repository.interface";
 import { IConversationService } from "../interfaces/serviceInterfaces/conversation.service.interface";
@@ -17,7 +18,7 @@ export default class conversationService implements IConversationService {
             return await this.conversationRepository.findConversations(userId)
         } catch (error) {
             console.error("Error in findChat:", error);
-            throw new CustomError("Error finding chats.", 500);
+            throw new CustomError("Error finding chats.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -37,7 +38,7 @@ export default class conversationService implements IConversationService {
             return chat
         } catch (error) {
             console.error("Error in initializeChat:", error);
-            throw new CustomError("Error initializing Chat.", 500);
+            throw new CustomError("Error initializing Chat.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -46,7 +47,7 @@ export default class conversationService implements IConversationService {
     //         return await this.conversationRepository.findByIdAndUpdate(id,text)
     //     } catch (error) {
     //         console.error("Error in updateConversation:", error);
-    //         throw new CustomError("Error updateing Conversation.", 500);
+    //         throw new CustomError("Error updateing Conversation.", HTTP_statusCode.InternalServerError);
     //     }
     // }
     async updateConversation(id: string, text: string): Promise<ConversationDocument | null> {
@@ -54,7 +55,7 @@ export default class conversationService implements IConversationService {
             return await this.conversationRepository.findByIdAndUpdate(id, text);
         } catch (error) {
             console.error("Error in updateConversation:", error);
-            throw new CustomError("Error updating Conversation.", 500);
+            throw new CustomError("Error updating Conversation.", HTTP_statusCode.InternalServerError);
         }
     }
 }

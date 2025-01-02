@@ -132,7 +132,6 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
   const handleBookingSubmit = async (e: React.FormEvent, formData?: BookingFormData) => {
     e.preventDefault();
     try {
-      console.log(formData || bookingForm, 'bookingform');
 
       const response = await axiosInstance.post('/bookings/request', {
         ...(formData || bookingForm),

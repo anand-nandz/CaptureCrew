@@ -156,7 +156,6 @@ const UserLogin: React.FC = () => {
                                 shape='rectangular'
                                 onSuccess={handleGoogleSuccess}
                                 onError={() => {
-                                    console.log('Login Failed');
                                     showToastMessage('Google login failed', 'error');
                                 }}
                             />

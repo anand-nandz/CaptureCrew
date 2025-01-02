@@ -7,6 +7,7 @@ import { IPostRepository } from "../interfaces/repositoryInterfaces/post.reposit
 import { IReportRepository } from "../interfaces/repositoryInterfaces/report.Repository.Interfaces";
 import { IReport } from "../models/reportModel";
 import { IReportService } from "../interfaces/serviceInterfaces/report.Service.Interface";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 class Reportservice implements IReportService {
 
@@ -40,7 +41,7 @@ class Reportservice implements IReportService {
             });
     
             if (existingReport) {
-                throw new CustomError('You have already reported this item.', 400);
+                throw new CustomError('You have already reported this item.', HTTP_statusCode.InternalServerError);
             }
     
             let reportedItem;
@@ -51,7 +52,7 @@ class Reportservice implements IReportService {
             }
 
             if (!reportedItem) {
-                throw new CustomError('Reported item not found', 404)
+                throw new CustomError('Reported item not found', HTTP_statusCode.NotFound)
             }
             let reportId = generateUniqueId('ID');
 
@@ -87,7 +88,7 @@ class Reportservice implements IReportService {
                 throw new CustomError(error.message, error.statusCode);
             }
     
-            throw new CustomError('Failed to report item', 500);
+            throw new CustomError('Failed to report item', HTTP_statusCode.InternalServerError);
         }
 
     }
@@ -98,7 +99,7 @@ class Reportservice implements IReportService {
             return result
         } catch (error) {
             console.error('Error in getting reports :', error)
-            throw new CustomError('Failed to get report ', 500)
+            throw new CustomError('Failed to get report ', HTTP_statusCode.InternalServerError)
         }
     }
 }

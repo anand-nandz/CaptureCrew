@@ -38,7 +38,6 @@ const VendorPorfolio = () => {
         setIsLoading(true)
         try {
             const response = await axiosInstance.get(`/portfolio/${vendorId}`)
-            console.log(response.data.data);
             
             const publishedPosts = response.data.data.post.filter(
                 (post: PostData) => post.status === PostStatus.Published

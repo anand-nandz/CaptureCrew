@@ -5,6 +5,7 @@ import { CustomError, StripeRefundError } from '../error/customError';
 import { BookingDocument } from '../models/bookingModel';
 import { IPaymentService } from '../interfaces/serviceInterfaces/payment.Service.Interface';
 import { PaymentData, RefundResult } from '../interfaces/commonInterfaces';
+import HTTP_statusCode from '../enums/httpStatusCode';
 dotenv.config()
 
 const Api: AxiosInstance = axios.create({
@@ -74,7 +75,7 @@ class PaymentService implements IPaymentService{
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to make payment.', 500);
+            throw new CustomError('Failed to make payment.', HTTP_statusCode.InternalServerError);
         }
 
     }
@@ -117,7 +118,7 @@ class PaymentService implements IPaymentService{
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to make payment.', 500);
+            throw new CustomError('Failed to make payment.', HTTP_statusCode.InternalServerError);
         }
 
     }
@@ -125,13 +126,11 @@ class PaymentService implements IPaymentService{
     async processRefund(booking: BookingDocument): Promise<RefundResult>{
         const session = await stripeClient.checkout.sessions.retrieve(booking.advancePayment.paymentId);
         const paymentIntentId = session.payment_intent;
-        console.log(paymentIntentId,'paymentIntentId');
         
         if (!paymentIntentId || typeof paymentIntentId !== 'string') {
             throw new Error('Invalid payment intent ID');
         }
         const paymentIntent = await stripeClient.paymentIntents.retrieve(paymentIntentId);
-        console.log(paymentIntent,'paymentIntent');
 
         if (!paymentIntent) {
             throw new Error('Payment intent not found');
@@ -150,8 +149,6 @@ class PaymentService implements IPaymentService{
                 payment_intent: paymentIntentId,
                 amount: Math.floor(booking.advancePayment.amount * 100) 
             });
-
-            console.log(refund, 'refund detailsssssssss');
 
             return { success: true, refundId: refund.id };
         } catch (error: unknown) {

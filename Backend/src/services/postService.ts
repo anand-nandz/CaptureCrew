@@ -14,6 +14,7 @@ import { PostStatus, ServiceProvided } from "../enums/commonEnums";
 import { IPackageRepository } from "../interfaces/repositoryInterfaces/package.repository.intrface";
 import { IReviewRepository } from "../interfaces/repositoryInterfaces/review.Repository.interface";
 import { ReviewDocument } from "../models/reviewModel";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 class PostService implements IPostService {
     private imageService: ImageService;
@@ -55,7 +56,7 @@ class PostService implements IPostService {
             if (!validationResult.isValid) {
                 throw new CustomError(
                     `Validation failed : ${validationResult.errors?.join(', ')}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 )
             }
 
@@ -73,7 +74,7 @@ class PostService implements IPostService {
                         console.error(`Error processing image: ${file.originalname}`, error);
                         throw new CustomError(
                             `Failed to process image: ${file.originalname}`,
-                            500
+                            HTTP_statusCode.InternalServerError
                         );
 
                     }
@@ -115,7 +116,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create new post', 500);
+            throw new CustomError('Failed to create new post', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -182,7 +183,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to fetch vendor posts', 500);
+            throw new CustomError('Failed to fetch vendor posts', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -243,7 +244,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to fetch vendor posts', 500);
+            throw new CustomError('Failed to fetch vendor posts', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -268,10 +269,9 @@ class PostService implements IPostService {
                 this.vendorRepository.getById(vendorId),
                 this.reviewRepository.getReviewsByVendorId(vendorId,1,1)
             ]);
-            console.log(reviews,'vendor reviewwww');
             
             if (!vendorDetails) {
-                throw new CustomError('Wrong VendorId', 404)
+                throw new CustomError('Wrong VendorId', HTTP_statusCode.NotFound)
             }
 
             const processedReviews = Array.isArray(reviews.reviews) && reviews.reviews.length > 0 ? reviews.reviews : [];
@@ -341,7 +341,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to fetch VendorId Posts", 500)
+            throw new CustomError("Failed to fetch VendorId Posts", HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -406,7 +406,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to fetch vendor posts', 500);
+            throw new CustomError('Failed to fetch vendor posts', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -427,7 +427,7 @@ class PostService implements IPostService {
             const existingPost = await this.postRepository.getById(postId);
 
             if (!existingPost) {
-                throw new CustomError('Post not found', 404);
+                throw new CustomError('Post not found', HTTP_statusCode.NotFound);
             }
             if (existingPost.vendor_id.toString() !== vendorId) {
                 throw new CustomError('Unauthorized to edit this post', 403);
@@ -496,7 +496,7 @@ class PostService implements IPostService {
             if (finalImages.length < 4 || finalImages.length > 6) {
                 throw new CustomError(
                     `Total images must be between 4 and 6. Current: ${finalImages.length}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 );
             }
 
@@ -516,7 +516,7 @@ class PostService implements IPostService {
             );
 
             if (!updatedPost) {
-                throw new CustomError('Failed to update post', 500);
+                throw new CustomError('Failed to update post', HTTP_statusCode.InternalServerError);
             }
 
             return updatedPost;
@@ -526,7 +526,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to update post', 500);
+            throw new CustomError('Failed to update post', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -536,7 +536,7 @@ class PostService implements IPostService {
             const post = await this.postRepository.getById(postId);
 
             if (!post) {
-                throw new CustomError('Post not Found', 404);
+                throw new CustomError('Post not Found', HTTP_statusCode.NotFound);
             }
 
             post.status = post.status === PostStatus.Blocked 
@@ -550,7 +550,7 @@ class PostService implements IPostService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to update post status', 500);
+            throw new CustomError('Failed to update post status', HTTP_statusCode.InternalServerError);
         }
     }
 

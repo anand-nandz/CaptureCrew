@@ -91,12 +91,9 @@ export const BookingConfirmedTable: React.FC<BookingConfirmedTableProps> = ({
                 paymentType: 'finalAmount',
                 paymentMethod
             };
-            console.log(paymentData, 'payment Dtaa');
 
             const paymentEndpoint = paymentMethod === 'stripe' ? '/stripe-payments' : '/razorpay-payment';
             const paymentResponse = await axiosInstance.post(paymentEndpoint, paymentData);
-            console.log(paymentResponse, 'payment Response');
-
 
             if (paymentResponse.data.success) {
                 const checkoutUrl = paymentResponse?.data.result.url;

@@ -23,7 +23,6 @@ export default function WalletDashboard({ isVendor = false }) {
             const axiosinstance = isVendor ? axiosInstanceVendor : axiosInstance
 
             const response = await axiosinstance.get('/profile')
-            console.log(response, 'res');
 
             setDetails(response.data);
         } catch (error) {

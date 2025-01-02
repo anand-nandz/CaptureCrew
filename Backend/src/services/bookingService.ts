@@ -26,6 +26,8 @@ import { IUserRepository } from '../interfaces/repositoryInterfaces/user.reposit
 import { IPaymentService } from '../interfaces/serviceInterfaces/payment.Service.Interface';
 import { IVendorRepository } from '../interfaces/repositoryInterfaces/vendor.Repository.interface';
 import { IPackageRepository } from '../interfaces/repositoryInterfaces/package.repository.intrface';
+import HTTP_statusCode from '../enums/httpStatusCode';
+import Messages from '../enums/errorMessage';
 
 class BookingService implements IBookingService {
 
@@ -67,15 +69,15 @@ class BookingService implements IBookingService {
                 this.vendorRepository.getById(vendorId)
             ])
 
-            if (!user) throw new CustomError('No user found', 400);
-            if (!vendor) throw new CustomError('No Vendor found', 404);
+            if (!user) throw new CustomError('No user found', HTTP_statusCode.NotFound);
+            if (!vendor) throw new CustomError('No Vendor found', HTTP_statusCode.NotFound);
             if (bookingData.startingDate) {
                 const slotAvailabilty = await this.bookingRepository.checkIsAvailable(bookingData.startingDate, vendorId);
 
                 if (slotAvailabilty === true) {
 
                     if (!bookingData.packageId) {
-                        throw new CustomError('Package ID is required', 400);
+                        throw new CustomError('Package ID is required', HTTP_statusCode.InternalServerError);
                     }
                     const pkgGot = typeof bookingData.packageId === 'string'
                         ? new mongoose.Types.ObjectId(bookingData.packageId)
@@ -85,12 +87,12 @@ class BookingService implements IBookingService {
 
 
                     if (!pkgamt || typeof pkgamt.price !== 'number') {
-                        throw new CustomError('Invalid package or package price not found', 400);
+                        throw new CustomError('Invalid package or package price not found', HTTP_statusCode.InternalServerError);
                     }
 
                     const noOfDays = Number(bookingData.noOfDays);
                     if (isNaN(noOfDays) || noOfDays <= 0) {
-                        throw new CustomError('Invalid number of days', 400);
+                        throw new CustomError('Invalid number of days', HTTP_statusCode.InternalServerError);
                     }
 
                     let totalPrice = noOfDays * pkgamt.price;
@@ -110,7 +112,7 @@ class BookingService implements IBookingService {
                     }
 
                     if (totalPrice !== bookingData.totalPrice) {
-                        throw new CustomError('Price mismatch in calculations', 400);
+                        throw new CustomError('Price mismatch in calculations', HTTP_statusCode.InternalServerError);
                     }
 
                     const createBookingReq = await this.bookingRepository.saveBookingReq(
@@ -182,7 +184,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create new Booking Request.', 500);
+            throw new CustomError('Failed to create new Booking Request.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -209,7 +211,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to find Booking Requests.', 500);
+            throw new CustomError('Failed to find Booking Requests.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -241,7 +243,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to find Booking Requests.', 500);
+            throw new CustomError('Failed to find Booking Requests.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -256,7 +258,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to delete Booking Requests.', 500);
+            throw new CustomError('Failed to delete Booking Requests.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -269,13 +271,13 @@ class BookingService implements IBookingService {
             ]);
 
             if (!bookingReq) {
-                throw new CustomError('No booking Request for this Id', 404)
+                throw new CustomError('No booking Request for this Id', HTTP_statusCode.NotFound)
             }
             if (!vendor) {
-                throw new CustomError('Vendor not found', 404);
+                throw new CustomError('Vendor not found', HTTP_statusCode.NotFound);
             }
             if (bookingReq.bookingStatus !== 'requested') {
-                throw new CustomError('Booking has already been processed', 400);
+                throw new CustomError('Booking has already been processed', HTTP_statusCode.InternalServerError);
             }
 
             const statusMap = {
@@ -293,7 +295,7 @@ class BookingService implements IBookingService {
                 if (conflicts.hasConflict) {
                     throw new CustomError(
                         `Booking cannot be accepted. The following dates are unavailable: ${conflicts.conflictingDates.join(', ')}`,
-                        400
+                        HTTP_statusCode.InternalServerError
                     );
                 }
 
@@ -305,7 +307,7 @@ class BookingService implements IBookingService {
                 if (daysTillEvent < 5) {
                     throw new CustomError(
                         'Booking cannot be accepted. Event date must be at least 5 days from today.',
-                        400
+                        HTTP_statusCode.InternalServerError
                     );
                 }
 
@@ -370,7 +372,7 @@ class BookingService implements IBookingService {
                 if (action === 'accept') {
                     await this.bookingRepository.rollbackVendorDates(vendorId, requestedDates);
                 }
-                throw new CustomError('Failed to update booking status', 500);
+                throw new CustomError('Failed to update booking status', HTTP_statusCode.InternalServerError);
             }
 
         } catch (error) {
@@ -378,7 +380,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to acceptRejectReq', 500)
+            throw new CustomError('Failed to acceptRejectReq', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -411,7 +413,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to fetchAllBookings.', 500);
+            throw new CustomError('Failed to fetchAllBookings.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -440,7 +442,7 @@ class BookingService implements IBookingService {
             if (conflicts.hasConflict) {
                 throw new CustomError(
                     `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 );
             }
 
@@ -454,7 +456,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to check BookingAccepted.', 500);
+            throw new CustomError('Failed to check BookingAccepted.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -468,14 +470,14 @@ class BookingService implements IBookingService {
             if (result) {
                 return result
             }
-            throw new CustomError('Failed to make the payment.', 400);
+            throw new CustomError('Failed to make the payment.', HTTP_statusCode.InternalServerError);
 
         } catch (error) {
             console.error('Error in makeBookingPayment:', error);
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to make payment.', 500);
+            throw new CustomError('Failed to make payment.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -483,13 +485,13 @@ class BookingService implements IBookingService {
         try {
             const bookingRequest = await this.bookingRepository.getById(bookingId)
             if (!bookingRequest) {
-                throw new CustomError('Booking request not found', 404);
+                throw new CustomError('Booking request not found', HTTP_statusCode.NotFound);
             }
 
             const vendor = await this.vendorRepository.getById(bookingRequest.vendor_id.toString());
 
             if (!vendor) {
-                throw new CustomError('Vendor not found', 404);
+                throw new CustomError('Vendor not found', HTTP_statusCode.NotFound);
             }
 
             const { finalAmount, finalPaymentDue } =
@@ -507,7 +509,7 @@ class BookingService implements IBookingService {
             if (conflicts.hasConflict) {
                 throw new CustomError(
                     `Booking dates are no longer available: ${conflicts.conflictingDates.join(', ')}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 );
             }
 
@@ -546,7 +548,7 @@ class BookingService implements IBookingService {
             ]);
 
             if (!updated) {
-                throw new CustomError('Failed to update vendor availability', 500);
+                throw new CustomError('Failed to update vendor availability', HTTP_statusCode.InternalServerError);
             }
 
             await this.bookingRepository.deleteBookingRequest(bookingId);
@@ -568,7 +570,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to confirm payment.', 500);
+            throw new CustomError('Failed to confirm payment.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -600,33 +602,33 @@ class BookingService implements IBookingService {
         try {
 
             if (!paymentData || !paymentData.sbooking || !paymentData.paymentType) {
-                throw new CustomError('Invalid payment data received.', 400);
+                throw new CustomError('Invalid payment data received.', HTTP_statusCode.InternalServerError);
             }
 
             const booking = await this.bookingRepo.getById(paymentData.sbooking._id);
 
             if (!booking) {
-                throw new CustomError('Booking not found.', 404);
+                throw new CustomError('Booking not found.', HTTP_statusCode.NotFound);
             }
 
             if (booking.bookingStatus !== 'confirmed') {
-                throw new CustomError('Booking is not confirmed or not active.', 400);
+                throw new CustomError('Booking is not confirmed or not active.', HTTP_statusCode.InternalServerError);
             }
 
             if (paymentData.paymentType === 'finalAmount') {
                 if (booking.advancePayment?.status === 'pending') {
-                    throw new CustomError('Advance payment must be completed before final payment.', 400);
+                    throw new CustomError('Advance payment must be completed before final payment.', HTTP_statusCode.InternalServerError);
                 }
                 if (booking.finalPayment?.status === 'completed') {
-                    throw new CustomError('Final payment has already been made.', 400);
+                    throw new CustomError('Final payment has already been made.', HTTP_statusCode.InternalServerError);
                 }
             } else {
-                throw new CustomError('Invalid payment type.', 400);
+                throw new CustomError('Invalid payment type.', HTTP_statusCode.InternalServerError);
             }
 
             const amount = paymentData.sbooking.finalPayment?.amount;
             if (!amount) {
-                throw new CustomError('Invalid payment data: missing amount.', 400);
+                throw new CustomError('Invalid payment data: missing amount.', HTTP_statusCode.InternalServerError);
             }
 
             return await this.paymentService.makeMFPayment(amount, paymentData);
@@ -636,7 +638,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to make payment.', 500);
+            throw new CustomError('Failed to make payment.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -665,11 +667,11 @@ class BookingService implements IBookingService {
 
 
             if (!vendor) {
-                throw new CustomError('Vendor not found', 400)
+                throw new CustomError('Vendor not found', HTTP_statusCode.InternalServerError)
             }
 
             if (!user) {
-                throw new CustomError('User not found', 400)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.InternalServerError)
             }
             const emailPromises = [
                 sendEmail(
@@ -696,7 +698,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to confirmmf payment.', 500);
+            throw new CustomError('Failed to confirmmf payment.', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -712,7 +714,7 @@ class BookingService implements IBookingService {
             if (!refundEligibility.isEligible) {
                 throw new CustomError(
                     refundEligibility.reason || 'Cancellation not permitted',
-                    400
+                    HTTP_statusCode.InternalServerError
                 );
             }
 
@@ -723,7 +725,7 @@ class BookingService implements IBookingService {
 
             try {
                 const refundResult: RefundResult = await this.paymentService.processRefund(booking);
-                if (!refundResult.success) throw new CustomError('Refund failed', 500);
+                if (!refundResult.success) throw new CustomError('Refund failed', HTTP_statusCode.InternalServerError);
 
                 const userTransaction = {
                     amount: userRefundAmount,
@@ -793,10 +795,10 @@ class BookingService implements IBookingService {
                     console.error('Stripe Refund Error:', error.message, error.code);
 
                     if (error.code === 'charge_already_refunded') {
-                        throw new CustomError('Refund already processed', 400)
+                        throw new CustomError('Refund already processed', HTTP_statusCode.InternalServerError)
                     }
                 }
-                throw new CustomError('Failed to process refund', 500);
+                throw new CustomError('Failed to process refund', HTTP_statusCode.InternalServerError);
             }
 
 
@@ -806,7 +808,7 @@ class BookingService implements IBookingService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to cancel booking.', 500);
+            throw new CustomError('Failed to cancel booking.', HTTP_statusCode.InternalServerError);
         }
     }
 

@@ -42,7 +42,6 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     action: 'cancel' | 'accept' | 'reject',
     errorMessage?: string
   ) => {
-    console.log(`Processing ${action} action for booking ${bookingId}`);
 
     const handleError = async (error: BookingError, action: string) => {
       console.error(`Error ${action}ing booking:`, error);

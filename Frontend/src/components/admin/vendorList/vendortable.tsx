@@ -117,7 +117,6 @@ export function SortableTableVendor() {
         if (result.isConfirmed) {
             try {
                 const response = await axiosInstanceAdmin.patch(`/vendorblock-unblock?vendorId=${vendorId}`);
-                console.log(response.data, 'while blcok');
 
                 showToastMessage(response.data.message, 'success');
                 Swal.fire(

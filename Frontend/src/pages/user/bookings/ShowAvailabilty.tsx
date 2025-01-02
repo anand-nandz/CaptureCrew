@@ -29,10 +29,7 @@ const ShowAvailabilty = () => {
             if (Array.isArray(response.data.data.package)) {
                 setPackages(response.data.data.package);
             }
-            console.log(response.data.data,'vendordateda availbilty show');
             
-
-
         } catch (error) {
             console.error('Error fetching posts:', error)
             if(error instanceof AxiosError){

@@ -6,10 +6,8 @@ dotenv.config()
 const MongoDBStore = connectMongoDBSession(session);
 
 const mongoURI = process.env.MONGO_URI as string;
-console.log('MongoDB URI format check:', mongoURI?.includes('mongodb+srv://'));
 
 const databaseName = mongoURI.split('/').pop()?.split('?')[0];
-console.log(databaseName,'dbname');
 
 export const sessionStore = new MongoDBStore({
   uri: process.env.MONGO_URI as string,

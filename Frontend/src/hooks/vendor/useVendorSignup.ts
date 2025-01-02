@@ -79,7 +79,6 @@ export const useVendorSignup = () => {
   const submitHandler = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     const errors = validate(formValues);
-    console.log(errors, 'errors');
 
     setFormErrors(errors)
     if (Object.values(errors).every((error) => error === "")) {

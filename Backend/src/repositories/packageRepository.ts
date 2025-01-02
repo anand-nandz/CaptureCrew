@@ -4,6 +4,7 @@ import { BaseRepository } from "./baseRepository";
 import { CustomError } from "../error/customError";
 import { ServiceProvided } from "../enums/commonEnums";
 import { IPackageRepository } from "../interfaces/repositoryInterfaces/package.repository.intrface";
+import HTTP_statusCode from "../enums/httpStatusCode";
 
 
 class PackageRepository extends BaseRepository<PackageDocument> implements IPackageRepository{
@@ -29,7 +30,7 @@ class PackageRepository extends BaseRepository<PackageDocument> implements IPack
             return packages
         } catch (error) {
             console.error('Error in getting package details')
-            throw new CustomError('Failed to get packages from database',500)
+            throw new CustomError('Failed to get packages from database',HTTP_statusCode.InternalServerError)
         }
     }
     

@@ -269,8 +269,7 @@ export default function CreatePost({
             const response = await axiosInstanceVendor[method](endpoint, submitFormData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-            console.log(response, 'respomne got');
-
+            console.log(response, 'response got');
 
             showToastMessage(
                 isEditMode ? "Post updated successfully!" : "Post created successfully!",

@@ -19,6 +19,8 @@ import { IPackageRepository } from "../interfaces/repositoryInterfaces/package.r
 import { PostDocument } from "../models/postModel";
 import { IBookingRepository } from "../interfaces/repositoryInterfaces/booking.Repository.interface";
 import generateOTP from "../utils/generateOtp";
+import HTTP_statusCode from "../enums/httpStatusCode";
+import Messages from "../enums/errorMessage";
 
 class VendorService implements IVendorService {
 
@@ -54,7 +56,7 @@ class VendorService implements IVendorService {
 
         const otpCode = await generateOTP(email);
 
-        if (!otpCode) throw new CustomError("Couldn't generate OTP", 500);
+        if (!otpCode) throw new CustomError("Couldn't generate OTP", HTTP_statusCode.InternalServerError);
 
         const otpSetTimestamp = Date.now();
         return {
@@ -103,11 +105,11 @@ class VendorService implements IVendorService {
 
             return { vendor: newVendor }
         } catch (error) {
-            console.log('Error in Signup', error);
+            console.error('Error in Signup', error);
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create a New Vendor', 500)
+            throw new CustomError('Failed to create a New Vendor', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -116,7 +118,7 @@ class VendorService implements IVendorService {
         try {
             const existingVendor = await this.vendorRepository.findByEmail(email);
 
-            if (!existingVendor) throw new CustomError('Vendor not Registered', 404);
+            if (!existingVendor) throw new CustomError('Vendor not Registered', HTTP_statusCode.NotFound);
 
             let vendorWithSignedUrl = existingVendor.toObject();
             if (existingVendor.imageUrl) {
@@ -139,7 +141,7 @@ class VendorService implements IVendorService {
                 throw new CustomError('Admin needs to verify Your Account', 403);
             }
 
-            if (!passwordMatch) throw new CustomError('Incorrect Password ,Try again', 401)
+            if (!passwordMatch) throw new CustomError('Incorrect Password ,Try again', HTTP_statusCode.Unauthorized)
             if (existingVendor.isActive === false) throw new CustomError('Account is Blocked by Admin', 403);
 
             const token = createAccessToken(existingVendor._id.toString())
@@ -161,13 +163,13 @@ class VendorService implements IVendorService {
             }
 
         } catch (error) {
-            console.log('Error in login', error);
+            console.error('Error in login', error);
 
             if (error instanceof CustomError) {
                 throw error;
             }
 
-            throw new CustomError('Failed to login', 500);
+            throw new CustomError('Failed to login', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -181,7 +183,7 @@ class VendorService implements IVendorService {
             const vendor = await this.vendorRepository.getById(decodedToken._id);
 
             if (!vendor || vendor.refreshToken !== refreshToken) {
-                throw new CustomError('Invalid refresh token', 401)
+                throw new CustomError('Invalid refresh token', HTTP_statusCode.Unauthorized)
             }
 
             const accessToken = createAccessToken(vendor._id.toString())
@@ -192,7 +194,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create refresh Token', 500);
+            throw new CustomError('Failed to create refresh Token', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -200,13 +202,13 @@ class VendorService implements IVendorService {
         try {
             const vendor = await this.vendorRepository.getById(vendorId.toString())
             if (vendor) return vendor
-            throw new CustomError('Vendor not found', 404)
+            throw new CustomError('Vendor not found', HTTP_statusCode.NotFound)
         } catch (error) {
             console.error('Error while checking vendor ', error);
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to check block status', 500);
+            throw new CustomError('Failed to check block status', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -251,7 +253,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to get Users', 500)
+            throw new CustomError('Failed to get Users', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -289,7 +291,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to Verify vendor', 500);
+            throw new CustomError('Failed to Verify vendor', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -297,7 +299,7 @@ class VendorService implements IVendorService {
         try {
             const vendor = await this.vendorRepository.getById(vendorId);
             if (!vendor) {
-                throw new CustomError('Vendor not Found', 404)
+                throw new CustomError('Vendor not Found', HTTP_statusCode.NotFound)
             }
             vendor.isActive = !vendor.isActive
             await vendor.save()
@@ -307,7 +309,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to block and Unblock', 500)
+            throw new CustomError('Failed to block and Unblock', HTTP_statusCode.InternalServerError)
         }
     }
 
@@ -315,10 +317,10 @@ class VendorService implements IVendorService {
         try {
             const vendor = await this.vendorRepository.findByEmail(email)
             if (!vendor) {
-                throw new CustomError('User not exists', 404);
+                throw new CustomError('User not exists', HTTP_statusCode.NotFound);
             }
             const resetToken = crypto.randomBytes(20).toString('hex');
-            const resetTokenExpiry = new Date(Date.now() + 1 * 60 * 1000);
+            const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
 
             vendor.resetPasswordToken = resetToken;
             vendor.resetPasswordExpires = resetTokenExpiry;
@@ -337,7 +339,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to process forgot password request', 500);
+            throw new CustomError('Failed to process forgot password request', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -346,10 +348,10 @@ class VendorService implements IVendorService {
             const vendor = await this.vendorRepository.findByToken(token)
 
             if (!vendor) {
-                throw new CustomError('Invalid token', 400);
+                throw new CustomError('Invalid token', HTTP_statusCode.BadRequest);
             }
             if (!vendor.resetPasswordExpires || new Date() > vendor.resetPasswordExpires) {
-                throw new CustomError('Password reset token has expired', 400);
+                throw new CustomError('Password reset token has expired', HTTP_statusCode.InternalServerError);
             }
 
             const salt = await bcrypt.genSalt(10);
@@ -357,7 +359,7 @@ class VendorService implements IVendorService {
             let updateSuccess = await this.vendorRepository.UpdatePassword(vendor._id, hashedPassword);
 
             if (!updateSuccess) {
-                throw new CustomError('Failed to Update password', 500)
+                throw new CustomError('Failed to Update password', HTTP_statusCode.InternalServerError)
             } else {
                 vendor.isActive = true;
                 vendor.resetPasswordExpires = undefined;
@@ -375,7 +377,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to password', 500);
+            throw new CustomError('Failed to password', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -384,10 +386,10 @@ class VendorService implements IVendorService {
             const vendor = await this.vendorRepository.findByToken(token)
 
             if (!vendor) {
-                throw new CustomError('Invalid token', 400);
+                throw new CustomError('Invalid token', HTTP_statusCode.InternalServerError);
             }
             if (!vendor.resetPasswordExpires) {
-                throw new CustomError('No reset token expiry date found', 400);
+                throw new CustomError('No reset token expiry date found', HTTP_statusCode.InternalServerError);
             }
 
             const currentTime = new Date().getTime()
@@ -406,7 +408,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError((error as Error).message || 'Failed to validate token', 500);
+            throw new CustomError((error as Error).message || 'Failed to validate token', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -415,7 +417,7 @@ class VendorService implements IVendorService {
             const vendor = await this.vendorRepository.getById(vendorId.toString());
 
             if (!vendor) {
-                throw new CustomError('Vendor not found', 400)
+                throw new CustomError('Vendor not found', HTTP_statusCode.InternalServerError)
             }
 
             if (vendor?.imageUrl) {
@@ -437,7 +439,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError((error as Error).message || 'Failed to get profile details', 500);
+            throw new CustomError((error as Error).message || 'Failed to get profile details', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -454,7 +456,7 @@ class VendorService implements IVendorService {
 
             const vendor = await this.vendorRepository.getById(vendorId.toString())
             if (!vendor) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
 
             const updateData: {
@@ -489,17 +491,17 @@ class VendorService implements IVendorService {
                     updateData.imageUrl = imageFileName;
                 } catch (error) {
                     console.error('Error uploading to S3:', error);
-                    throw new CustomError('Failed to upload image to S3', 500);
+                    throw new CustomError('Failed to upload image to S3', HTTP_statusCode.InternalServerError);
                 }
             }
 
             if (Object.keys(updateData).length === 0) {
-                throw new CustomError('No changes to update', 400);
+                throw new CustomError('No changes to update', HTTP_statusCode.InternalServerError);
             }
 
             const updatedVendor = await this.vendorRepository.update(vendorId, updateData)
             if (!updatedVendor) {
-                throw new CustomError('Failed to update user', 500);
+                throw new CustomError('Failed to update user', HTTP_statusCode.InternalServerError);
             }
             await updatedVendor.save();
 
@@ -524,7 +526,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to update profile.", 500);
+            throw new CustomError("Failed to update profile.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -557,7 +559,7 @@ class VendorService implements IVendorService {
             if (!validationResult.isValid) {
                 throw new CustomError(
                     `Validation failed: ${validationResult.errors?.join(', ')}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 )
             }
 
@@ -591,7 +593,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to create new package', 500);
+            throw new CustomError('Failed to create new package', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -611,7 +613,7 @@ class VendorService implements IVendorService {
             const existingPkg = await this.packageRepository.getById(packageId);
 
             if (!existingPkg) {
-                throw new CustomError('Package not found', 404)
+                throw new CustomError('Package not found', HTTP_statusCode.NotFound)
             }
             if (existingPkg.vendor_id.toString() !== vendorId.toString()) {
                 throw new CustomError('Unauthorized to edit this package', 403);
@@ -633,7 +635,7 @@ class VendorService implements IVendorService {
             if (!validationResult.isValid) {
                 throw new CustomError(
                     `Validation failed: ${validationResult.errors?.join(', ')}`,
-                    400
+                    HTTP_statusCode.InternalServerError
                 );
             }
 
@@ -641,7 +643,7 @@ class VendorService implements IVendorService {
 
 
             if (!updatedPackage) {
-                throw new CustomError('Failed to update package', 500);
+                throw new CustomError('Failed to update package', HTTP_statusCode.InternalServerError);
             }
             return { package: updatedPackage };
 
@@ -650,7 +652,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to update package', 500);
+            throw new CustomError('Failed to update package', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -658,7 +660,7 @@ class VendorService implements IVendorService {
         try {
             const packages = await this.packageRepository.getPkgs(vendorId)
             // if (packages.length === 0) {
-            //     throw new CustomError('No packages added', 404)
+            //     throw new CustomError('No packages added', HTTP_statusCode.NotFound)
             // }
             return packages
         } catch (error) {
@@ -666,7 +668,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError('Failed to fetch vendor packages', 500);
+            throw new CustomError('Failed to fetch vendor packages', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -732,7 +734,7 @@ class VendorService implements IVendorService {
 
         } catch (error) {
             console.error('Error in getAllDetails:', error);
-            throw new CustomError('Failed to getAllDetails from database', 500);
+            throw new CustomError('Failed to getAllDetails from database', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -749,7 +751,7 @@ class VendorService implements IVendorService {
             })
 
             if (!isValidDates) {
-                throw new CustomError('Invalid date format. Use DD/MM/YYYY', 400);
+                throw new CustomError('Invalid date format. Use DD/MM/YYYY', HTTP_statusCode.InternalServerError);
             }
 
             const today = new Date();
@@ -762,7 +764,7 @@ class VendorService implements IVendorService {
             });
 
             if (hasInvalidDate) {
-                throw new CustomError('Cannot add dates from the past', 400);
+                throw new CustomError('Cannot add dates from the past', HTTP_statusCode.InternalServerError);
             }
 
             const { newDates, alreadyBooked, updatedVendor } = await this.vendorRepository.addDates(dates, vendorId);
@@ -778,7 +780,7 @@ class VendorService implements IVendorService {
 
             // const maxBlockedDates = 30; // Example business rule
             // if (updatedVendor.bookedDates.length > maxBlockedDates) {
-            //     throw new CustomError(`Vendor cannot block more than ${maxBlockedDates} dates`, 400);
+            //     throw new CustomError(`Vendor cannot block more than ${maxBlockedDates} dates`, HTTP_statusCode.InternalServerError);
             // }
             return {
                 success: true,
@@ -791,7 +793,7 @@ class VendorService implements IVendorService {
 
         } catch (error) {
             console.error('Error in addDates:', error);
-            throw new CustomError('Failed to addDates', 500);
+            throw new CustomError('Failed to addDates', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -801,7 +803,7 @@ class VendorService implements IVendorService {
             return vendor
         } catch (error) {
             console.error('Error in showUnavailble dates:', error);
-            throw new CustomError('Failed to getDatesfrom database', 500);
+            throw new CustomError('Failed to getDatesfrom database', HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -816,7 +818,7 @@ class VendorService implements IVendorService {
             });
 
             if (!isValidDates) {
-                throw new CustomError('Invalid date format. Use DD/MM/YYYY', 400);
+                throw new CustomError('Invalid date format. Use DD/MM/YYYY', HTTP_statusCode.InternalServerError);
             }
 
             const today = new Date();
@@ -829,7 +831,7 @@ class VendorService implements IVendorService {
             });
 
             if (hasInvalidDate) {
-                throw new CustomError('Cannot modify dates from the past', 400);
+                throw new CustomError('Cannot modify dates from the past', HTTP_statusCode.InternalServerError);
             }
 
             const result = await this.vendorRepository.removeDates(dates, vendorId);
@@ -848,10 +850,10 @@ class VendorService implements IVendorService {
         try {
             const vendor = await this.vendorRepository.getById(vendorId.toString())
             if (!vendor) {
-                throw new CustomError('User not found', 404)
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound)
             }
             if (!vendor.password) {
-                throw new CustomError("User password not set", 400)
+                throw new CustomError("User password not set", HTTP_statusCode.InternalServerError)
             }
 
             const passwordMatch = await bcrypt.compare(
@@ -859,18 +861,18 @@ class VendorService implements IVendorService {
                 vendor.password || ''
             )
             if (!passwordMatch) {
-                throw new CustomError('Incorrect Password', 401)
+                throw new CustomError('Incorrect Password', HTTP_statusCode.Unauthorized)
             }
 
             if (currentPassword === newPassword) {
-                throw new CustomError("Current and New Passwords can't be same", 401)
+                throw new CustomError("Current and New Passwords can't be same", HTTP_statusCode.Unauthorized)
             }
 
             const salt = await bcrypt.genSalt(10);
             const newHashedPassword = await bcrypt.hash(newPassword, salt);
             const updateSuccess = await this.vendorRepository.UpdatePassword(vendorId, newHashedPassword)
             if (!updateSuccess) {
-                throw new CustomError('Failed to update password', 500);
+                throw new CustomError('Failed to update password', HTTP_statusCode.InternalServerError);
             }
             await sendEmail(
                 vendor.email,
@@ -884,7 +886,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to changing password.", 500);
+            throw new CustomError("Failed to changing password.", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -892,7 +894,7 @@ class VendorService implements IVendorService {
         try {
             const vendor = await this.vendorRepository.getById(vendorId)
             if (!vendor) {
-                throw new CustomError('Vendor not found', 404)
+                throw new CustomError('Vendor not found', HTTP_statusCode.NotFound)
             }
             let vendorWithSignedUrl = vendor.toObject();
             if (vendor?.imageUrl) {
@@ -912,7 +914,7 @@ class VendorService implements IVendorService {
             if (error instanceof CustomError) {
                 throw error;
             }
-            throw new CustomError("Failed to get vendor", 500);
+            throw new CustomError("Failed to get vendor", HTTP_statusCode.InternalServerError);
         }
     }
 
@@ -958,7 +960,7 @@ class VendorService implements IVendorService {
 
 
                     default:
-                        throw new CustomError('Invalid Date Parameter', 400)
+                        throw new CustomError('Invalid Date Parameter', HTTP_statusCode.InternalServerError)
                 }
             }
 
@@ -993,7 +995,6 @@ class VendorService implements IVendorService {
                   }
                 });
           
-                console.log(dailyRevenue, 'dailyRevenue');
                 return dailyRevenue;
               }
 

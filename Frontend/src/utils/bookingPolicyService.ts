@@ -39,22 +39,14 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
 
     const today = new Date();
 
-    // Calculate total days between payment and event
     const totalDaysBetweenPaymentAndEvent = differenceInDays(eventDate, paymentDate);
-    console.log(totalDaysBetweenPaymentAndEvent, 'totalDaysBetweenPaymentAndEvent');
 
-
-    // Calculate days remaining before event
     const daysRemainingBeforeEvent = differenceInDays(eventDate, today);
-    console.log(daysRemainingBeforeEvent, 'daysRemainingBeforeEvent');
 
-    // Calculate percentage of time elapsed
     const timeElapsedPercentage =
       ((totalDaysBetweenPaymentAndEvent - daysRemainingBeforeEvent) / totalDaysBetweenPaymentAndEvent) * 100;
-    console.log(timeElapsedPercentage, 'timeElapsedPercentage');
 
 
-    // Determine refund eligibility and percentages
     if (daysRemainingBeforeEvent < 0) {
       return {
         isEligible: false,
@@ -85,7 +77,6 @@ export class BookingCancellationPolicyImpl implements BookingCancellationPolicy 
       };
     }
 
-    // Beyond 60% of time - no refund
     return {
       isEligible: false,
       userRefundPercentage: 0,

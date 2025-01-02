@@ -63,8 +63,6 @@ connectDB()
   .then(() => {
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}...`);
-      console.log(`Access it at http://localhost:${PORT}`);
-      console.log(`Access it at http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
