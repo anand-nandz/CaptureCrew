@@ -7,7 +7,7 @@ export class ImageService {
     private readonly COMPRESSION_QUALITY = 80;
     private readonly MAX_WIDTH = 1920;
     private readonly THUMBNAIL_WIDTH = 300;
-    private readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private readonly MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
     private readonly ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png','image/jpg', 'image/webp'];
 
     async validateImage(file: Express.Multer.File): Promise<void> {

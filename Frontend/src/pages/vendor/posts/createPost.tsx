@@ -102,8 +102,8 @@ export default function CreatePost({
                 return;
             }
 
-            if (file.size > 5 * 1024 * 1024) {
-                showToastMessage('Image size should be less than 5MB', 'error');
+            if (file.size > 8 * 1024 * 1024) {
+                showToastMessage('Image size should be less than 8MB', 'error');
                 return;
             }
 
