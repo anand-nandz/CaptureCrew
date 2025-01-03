@@ -26,7 +26,6 @@ export default function CreatePost({
 }: CreatePostProps) {
     const navigate = useNavigate();
     const MAX_IMAGES = 6;
-    // Form data state
     const [formData, setFormData] = useState<PostFormData>({
         caption: existingPost?.caption || '',
         location: existingPost?.location || '',
@@ -35,16 +34,13 @@ export default function CreatePost({
         images: Array(MAX_IMAGES).fill(null)
     });
 
-    // Separate states for existing and new images
     const [existingImages, setExistingImages] = useState<string[]>(() => {
         if (!existingPost?.imageUrl) return Array(MAX_IMAGES).fill('');
 
-        // Handle both string and array imageUrl
         const urls = Array.isArray(existingPost.imageUrl)
             ? existingPost.imageUrl
             : [existingPost.imageUrl];
 
-        // Only take up to MAX_IMAGES
         const validUrls = urls.slice(0, MAX_IMAGES);
         return [...validUrls, ...Array(MAX_IMAGES - validUrls.length).fill('')];
     });
@@ -61,10 +57,7 @@ export default function CreatePost({
         try {
             const schema = postValidationSchema(isEditMode, existingPost);
             await schema.validateAt(field, { ...formData, [field]: value });
-            // setErrors(prev => {
-            //     const { [field]: _, ...rest } = prev;
-            //     return rest;
-            // });
+         
             setErrors(prev => Object.fromEntries(
                 Object.entries(prev).filter(([key]) => key !== field)
             ));
@@ -78,18 +71,16 @@ export default function CreatePost({
         }
     };
 
-    // Handle form input changes
     const handleInputChange = (field: keyof PostFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => Object.fromEntries(
                 Object.entries(prev).filter(([key]) => key !== field)
             ));
-    
+
         }
     };
 
-    // Image upload handler with validation
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement> | null, index: number) => {
         const file = event?.target?.files?.[0];
         if (!file) return;
@@ -112,10 +103,6 @@ export default function CreatePost({
             tempImageFiles[index] = file;
 
 
-            // Validate the updated images array
-            // await validateField('images', tempImageFiles);
-
-
             if (isEditMode && existingImages[index] && !existingImages[index].startsWith('blob:')) {
                 setDeletedImages(prev => [...prev, existingImages[index]]);
             }
@@ -132,19 +119,17 @@ export default function CreatePost({
         };
     }
 
-    // Handle image cropping
     const handleCrop = async () => {
         const cropper = cropperRef.current?.cropper;
         if (!cropper || currentImageIndex === null) return;
 
         try {
             const croppedCanvas = cropper.getCroppedCanvas({
-                maxWidth: 1920,
+                maxWidth: 1080,
                 maxHeight: 1080,
                 imageSmoothingQuality: 'high'
             });
 
-            // const croppedImage = croppedCanvas.toDataURL('image/jpeg', 0.9);
             const blob = await new Promise<Blob>((resolve, reject) => {
                 croppedCanvas.toBlob(
                     (b) => b ? resolve(b) : reject(new Error('Failed to create blob')),
@@ -193,14 +178,12 @@ export default function CreatePost({
             return newImages;
         });
 
-        // Update image files
         setImageFiles(prev => {
             const newFiles = [...prev];
             newFiles[index] = null;
             return newFiles;
         });
 
-        // Validate images after removal
         const updatedImageFiles = imageFiles.map((file, i) =>
             i === index ? null : file
         );
@@ -208,7 +191,6 @@ export default function CreatePost({
     };
 
 
-    // Handle form submission
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (isSubmitting) return;
@@ -224,15 +206,12 @@ export default function CreatePost({
             setIsSubmitting(true);
             const submitFormData = new FormData();
 
-            // Append basic form fields
             submitFormData.append('caption', formData.caption);
             submitFormData.append('location', formData.location);
             submitFormData.append('serviceType', formData.serviceType);
             submitFormData.append('status', formData.status);
 
-            // Handle images
             if (isEditMode) {
-                // Add existing image URLs that weren't replaced
                 const remainingImages = existingImages
                     .filter((url, index) =>
                         url &&
@@ -253,7 +232,6 @@ export default function CreatePost({
                 }
             }
 
-            // Append new image files
             const validImageFiles = imageFiles.filter((file): file is File => file instanceof File);
             validImageFiles.forEach(file => {
                 submitFormData.append('images', file);
@@ -301,7 +279,6 @@ export default function CreatePost({
         }
     };
 
-    // Clean up object URLs on unmount
     useEffect(() => {
         return () => {
             existingImages.forEach(url => {
@@ -388,7 +365,6 @@ export default function CreatePost({
                             )}
 
 
-                            {/* Image grid with improved handling */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {Array(6).fill(null).map((_, index) => (
                                     <motion.div
@@ -443,12 +419,18 @@ export default function CreatePost({
                                             <Cropper
                                                 ref={cropperRef}
                                                 src={cropperSrc}
-                                                style={{ height: 300, width: '100%' }}
+                                                style={{ height: 500, width: '100%' }}
                                                 aspectRatio={1}
                                                 guides={true}
                                                 viewMode={1}
                                                 dragMode="move"
                                                 background={false}
+                                                minCropBoxWidth={70} 
+                                                minCropBoxHeight={70}
+                                                responsive={true}
+                                                restore={true}
+                                                zoomable={false}
+                                                checkCrossOrigin={false}
                                             />
                                             <div className="flex justify-end mt-4 gap-2">
                                                 <Button color="danger" onClick={() => setCropperSrc(null)}>
