@@ -23,8 +23,7 @@ import { formatDate } from "@/utils/userUtils";
 
 const UserProfile = () => {
   const dispatch = useDispatch();
-  const userD = useSelector((state: UserRootState) => state.user.userData);
-  
+  const userD = useSelector((state: UserRootState) => state.user.userData);  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [count, setCount] = useState(0);
@@ -229,15 +228,17 @@ const UserProfile = () => {
               >
                 Edit Profile
               </Button>
-              <Button
-                size="sm"
-                placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
-                variant="outlined"
-                onClick={() => setIsPasswordModalOpen(true)}
-                className="flex items-center gap-2"
-              >
-                Change Password
-              </Button>
+             {/* { userD && userD.isGoogleUser && (
+               <Button
+               size="sm"
+               placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}
+               variant="outlined"
+               onClick={() => setIsPasswordModalOpen(true)}
+               className="flex items-center gap-2"
+             >
+               Change Password
+             </Button>
+             )} */}
             </div>
           </div>
         </Card>
