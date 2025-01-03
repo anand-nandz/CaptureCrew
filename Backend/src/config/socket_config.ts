@@ -63,7 +63,7 @@ const configSocketIO = (server: HttpServer) => {
             if (client) {
                 io.to(client.socketId).emit('getMessage', {
                     senderId: message.senderId,
-                    text: message.text,
+                    text: message.text || '',
                     imageName: message.imageName,
                     imageUrl: message.imageUrl,
                     conversationId: message.conversationId
@@ -77,7 +77,7 @@ const configSocketIO = (server: HttpServer) => {
             if (senderClient) {
                 io.to(senderClient.socketId).emit('getMessage', {
                     senderId: message.senderId,
-                    text: message.text,
+                    text: message.text || '',
                     imageName: message.imageName,
                     imageUrl: message.imageUrl,
                     conversationId: message.conversationId,
@@ -86,13 +86,36 @@ const configSocketIO = (server: HttpServer) => {
 
             io.to(message.conversationId).emit('conversationUpdated', {
                 conversationId: message.conversationId,
-                recentMessage: message.text,
+                recentMessage: message.text || (message.imageUrl ? 'Photo' : ''),
                 updatedAt: new Date(),
             });
             
             
         }
         )
+
+        socket.on('typing', (data: { senderId: string; receiverId: string }) => {
+            const receiver = getClient(data.receiverId);
+            if (receiver) {
+                // Emit typing event to the receiver
+                io.to(receiver.socketId).emit('typingStatus', {
+                    senderId: data.senderId,
+                    isTyping: true
+                });
+            }
+        });
+    
+        // Stop typing event
+        socket.on('stopTyping', (data: { senderId: string; receiverId: string }) => {
+            const receiver = getClient(data.receiverId);
+            if (receiver) {
+                // Emit stop typing event to the receiver
+                io.to(receiver.socketId).emit('typingStatus', {
+                    senderId: data.senderId,
+                    isTyping: false
+                });
+            }
+        });
 
         socket.on('disconnect', () => {
             removeClient(socket.id);
