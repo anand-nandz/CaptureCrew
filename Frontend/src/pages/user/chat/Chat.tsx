@@ -26,7 +26,7 @@ import imageCompression from 'browser-image-compression';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY || "";
-const BUCKET_REGION = import.meta.env.VITE_BUCKET_REGION || "";
+const BUCKET_REGION = import.meta.env.VITE_BUCKET_REGION || "ap-south-1";
 const BUCKET_NAME = import.meta.env.VITE_BUCKET_NAME || "";
 const SECRET_ACCESS_KEY = import.meta.env.VITE_SECRET_ACCESS_KEY || "";
 
