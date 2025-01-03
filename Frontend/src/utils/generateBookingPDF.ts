@@ -26,11 +26,11 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
 
     const addSectionTitle = (title: string, y: number) => {
         doc.setFillColor(primaryColor);
-        doc.rect(0, y, 210, 10, 'F'); 
+        doc.rect(0, y, 210, 10, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(13); 
-        doc.text(title, 10, y + 7); 
+        doc.setFontSize(13);
+        doc.text(title, 10, y + 7);
     };
 
     const addSubsectionTitle = (title: string, y: number) => {
@@ -38,7 +38,7 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.text(title, 10, y);
-        doc.setLineWidth(0.2); 
+        doc.setLineWidth(0.2);
         doc.line(10, y + 2, 200, y + 2);
         return y + 6;
     };
@@ -48,19 +48,20 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.text(left, 10, y);
+        const rightText = String(right);
 
-        if (right.includes('₹')) {
-            doc.text(right, 200, y, { align: 'right' });
+        if (rightText.includes('₹')) {
+            doc.text(rightText, 200, y, { align: 'right' });
         } else {
-            doc.text(right, 85, y);
+            doc.text(rightText, 85, y);
         }
     };
 
     doc.setFillColor(primaryColor);
-    doc.rect(0, 0, 210, 45, 'F'); 
+    doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(28); 
+    doc.setFontSize(28);
     doc.text("CaptureCrew", 70, 30);
 
     const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
@@ -80,7 +81,7 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
     };
 
     try {
-        const logoPath = '/images/logo3.png'; 
+        const logoPath = '/images/logo3.png';
         const logoBase64 = await loadImageAsBase64(logoPath);
 
         doc.addImage(logoBase64, 'PNG', 15, 12, 25, 25);
@@ -94,26 +95,26 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
     }
 
 
-    let yPos = 55; 
+    let yPos = 55;
 
     const checkPageOverflow = (currentY: number, requiredSpace: number = 20) => {
         if (currentY + requiredSpace > doc.internal.pageSize.height - 40) {
             doc.addPage();
-            return 20; 
+            return 20;
         }
         return currentY;
     };
 
     yPos = checkPageOverflow(yPos);
     addSectionTitle("Booking Summary", yPos);
-    yPos += 18; 
+    yPos += 18;
     addRow("Booking Reference:", booking.bookingId, yPos);
     yPos += 8;
     const bookingDate = formatDateTime(booking.createdAt);
     addRow("Booking Date:", `${bookingDate.date} at ${bookingDate.time}`, yPos);
     yPos += 8;
     addRow("Current Status:", booking.bookingStatus.toUpperCase(), yPos);
-    yPos += 12; 
+    yPos += 12;
 
     yPos = checkPageOverflow(yPos);
     addSectionTitle("Client Details", yPos);
@@ -156,10 +157,10 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
     yPos += 18;
 
     yPos = addSubsectionTitle("Total Package Cost", yPos);
-    addRow("Base Amount:", `₹${booking.totalAmount}`, yPos += 8);
+    addRow("Base Amount:", `Rs ${booking.totalAmount}`, yPos += 8);
 
     yPos = addSubsectionTitle("Advance Payment", yPos += 12);
-    addRow("Amount Paid:", `₹${booking.advancePayment.amount}`, yPos += 8);
+    addRow("Amount Paid:", `Rs ${booking.advancePayment.amount}`, yPos += 8);
     addRow("Payment Status:", booking.advancePayment.status.toUpperCase(), yPos += 8);
     addRow("Payment ID:", booking.advancePayment?.paymentId ?? "N/A", yPos += 8);
     const advanceDate = booking.advancePayment.paidAt
@@ -168,7 +169,7 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
     addRow("Paid On:", `${advanceDate.date} at ${advanceDate.time}`, yPos += 8);
 
     yPos = addSubsectionTitle("Final Payment", yPos += 12);
-    addRow("Amount:", `₹${booking.finalPayment.amount}`, yPos += 8);
+    addRow("Amount:", `Rs ${booking.finalPayment.amount}`, yPos += 8);
     addRow("Payment Status:", booking.finalPayment.status.toUpperCase(), yPos += 8);
     if (booking.finalPayment.paymentId) {
         addRow("Payment ID:", booking.finalPayment.paymentId, yPos += 8);
@@ -179,6 +180,20 @@ export const generateBookingPDF = async (booking: BookingConfirmed) => {
     }
     const dueDate = new Date(booking.finalPayment.dueDate);
     addRow("Due Date:", dueDate.toLocaleDateString(), yPos += 8);
+
+    yPos = addSubsectionTitle("Total Amount Paid", yPos += 12);
+    const advancePaid = booking.advancePayment.status.toLowerCase() === "completed";
+    const finalPaid = booking.finalPayment.status.toLowerCase() === "completed";
+
+    addRow("Advance Payment: ", `${advancePaid ? '✓' : '✘'} Rs${booking.advancePayment.amount}`, yPos += 8);
+
+    addRow("Final Payment: ", `${finalPaid ? '✓' : '✘'} Rs${booking.finalPayment.amount}`, yPos += 8);
+
+    const balance = finalPaid ? 0 : (advancePaid ? booking.finalPayment.amount : booking.totalAmount - booking.advancePayment.amount);
+    addRow("Balance: ", `Rs ${balance}`, yPos += 8);
+
+    const totalAmt = finalPaid ? (booking.finalPayment.amount + booking.advancePayment.amount) : (booking.advancePayment.amount)
+    addRow('Total Amount Paid ', `Rs ${totalAmt}`, yPos +=8)
 
     const addFooter = () => {
         const pageCount = doc.getNumberOfPages();

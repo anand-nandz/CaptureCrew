@@ -73,7 +73,7 @@ const ListedVendors = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); 
+  }, []);
 
   const debouncedFetchData = useCallback(
     debounce(fetchVendorsData, 500),
@@ -116,7 +116,7 @@ const ListedVendors = () => {
       showToastMessage('Vendor ID is missing', 'error');
       return;
     }
-  
+
     try {
       await axiosInstance.post('/reports', {
         itemId: vendorId,
@@ -124,11 +124,11 @@ const ListedVendors = () => {
         reason: reportData.reason,
         additionalDetails: reportData.additionalDetails
       });
-  
+
       showToastMessage('Vendor reported successfully', 'success');
     } catch (error) {
       console.log(error);
-      
+
       if (error instanceof AxiosError) {
         showToastMessage(error.response?.data.message || 'Error fetching booking data', 'error');
       } else {
@@ -138,7 +138,7 @@ const ListedVendors = () => {
       throw error;
     }
   };
-  
+
 
   const PostModal = () => {
     if (!selectedVendor || !modalOpen) return null;
@@ -284,9 +284,13 @@ const ListedVendors = () => {
           sx={{ padding: { xs: 2, sm: 3, md: 4 } }}
         >
           {isLoading ? (
-            <tr><td colSpan={6} className="text-center p-4"><Loader /></td></tr>
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+              <Loader />
+            </Grid>
           ) : vendors.length === 0 ? (
-            <tr><td colSpan={6} className="text-center p-4">No vendors found</td></tr>
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+              <Typography variant="body1">No vendors found</Typography>
+            </Grid>
           ) : (
 
             vendors.map((vendor) => (
@@ -376,9 +380,9 @@ const ListedVendors = () => {
       <ReportModal
         isOpen={isReportModalOpen}
         onOpenChange={setIsReportModalOpen}
-        type= 'Vendor'
-        onReportSubmit={(reportData) => handleReportSubmit(selectedVendor?._id, reportData)} 
-        />
+        type='Vendor'
+        onReportSubmit={(reportData) => handleReportSubmit(selectedVendor?._id, reportData)}
+      />
 
     </Container>
   );
