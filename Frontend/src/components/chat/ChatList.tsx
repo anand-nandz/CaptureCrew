@@ -4,6 +4,7 @@ import { UserData } from "@/types/userTypes";
 import { VendorData } from "@/types/vendorTypes";
 import { Avatar } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
+import { FaRegImage } from "react-icons/fa";
 
 
 
@@ -28,7 +29,7 @@ const ChatList: React.FC<ConversationsProps> = ({
                 const response = await axiosInstance.get(`/getVendor?vendorId=${friendId}`)
                 setVendor(response.data.data)
             } catch (error) {
-                console.log(error);
+                console.error(error);
             }
         };
         getUser();
@@ -44,7 +45,7 @@ const ChatList: React.FC<ConversationsProps> = ({
                 <Avatar
                     size="md"
                     src={vendor?.imageUrl || "/images/default-avatar.png"}
-                    className={`rounded-full ${currentchat?._id === conversation._id  ? 'border-2 border-green-500' : ''}`}
+                    className={`rounded-full ${currentchat?._id === conversation._id ? 'border-2 border-green-500' : ''}`}
                 />
             </div>
             <div className="flex-1 min-w-0">
@@ -57,7 +58,16 @@ const ChatList: React.FC<ConversationsProps> = ({
                         {unreadMessages[conversation._id]}
                     </span>
                 )}
-                <p className="text-sm text-gray-500 truncate">{conversation?.recentMessage}</p>
+                <p className="text-sm text-gray-500 truncate">
+                    {conversation?.recentMessage === '' ? (
+                        <>
+                            <FaRegImage className="inline mr-1" />
+                            Photo
+                        </>
+                    ) : (
+                        conversation?.recentMessage
+                    )}
+                </p>
             </div>
         </div>
     );

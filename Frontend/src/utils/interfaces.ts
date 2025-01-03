@@ -330,3 +330,8 @@ export interface DateRange {
 export interface RevenueChartProps {
   role: Role;
 }
+
+export interface FileDetails {
+  filename: string;
+  originalFile: File;
+}
