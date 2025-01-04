@@ -221,6 +221,16 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     }
   };
 
+  const handleResubmitClick = () => {
+    Swal.fire({
+      title: "Resubmit Application",
+      text: "The resubmission feature is currently unavailable. We appreciate your patience and recommend checking back later. For urgent matters, please contact our support team.",
+      icon: "info",
+      confirmButtonText: "Okay",
+      confirmButtonColor: "#000",
+    });
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200 hidden md:table">
@@ -443,6 +453,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                           <Button
                             size="sm"
                             color="default"
+                            onClick={handleResubmitClick}
                           >
                             Resubmit
                           </Button>
@@ -560,6 +571,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                       <Button
                         size="sm"
                         color="default"
+                        onClick={handleResubmitClick}
                       >
                         Resubmit
                       </Button>

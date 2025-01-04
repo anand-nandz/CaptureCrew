@@ -16,6 +16,7 @@ import {
 import { CreditCard, Wallet, Shield, AlertCircle, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { PaymentMethodModalProps } from '@/utils/interfaces';
+import Swal from 'sweetalert2';
 
 
 
@@ -37,6 +38,24 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
             console.error('Payment processing error:', error);
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    const handleRazorpayClick = () => {
+        Swal.fire({
+            title: "Payment Option Unavailable",
+            text: "Razorpay is currently under maintenance. Please use other payment options.",
+            icon: "info",
+            confirmButtonText: "Okay",
+            confirmButtonColor: "#000",
+        });
+    };
+
+    const handleRadioChange = (value: string) => {
+        if (value === "razorpay") {
+            handleRazorpayClick();
+        } else {
+            setSelectedMethod(value);
         }
     };
 
@@ -85,7 +104,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
                     >
                         <RadioGroup
                             value={selectedMethod}
-                            onValueChange={setSelectedMethod}
+                            onValueChange={handleRadioChange}
                             className="gap-4"
                         >
                             <motion.div variants={fadeIn} className="space-y-4 flex">
@@ -113,6 +132,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
 
                                     <Radio
                                         value="razorpay"
+                                        onClick={handleRazorpayClick} 
                                         className="border border-gray-200 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
                                         description={
                                             <div className="flex items-center gap-2 text-gray-600">
