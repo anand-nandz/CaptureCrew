@@ -88,7 +88,7 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
                 .sort({ createdAt: -1 })
                 // .skip(validSkip)
                 // .limit(limit)
-                .populate('vendor_id', 'name companyName city about contactinfo imageUrl') // Populate vendor details
+                .populate('vendor_id', 'name companyName city about contactinfo imageUrl isActive') // Populate vendor details
                 .lean<PostDocument[]>();
 
 

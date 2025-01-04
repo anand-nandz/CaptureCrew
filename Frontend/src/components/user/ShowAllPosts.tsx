@@ -28,9 +28,11 @@ export default function ShowAllPosts() {
             const response = await axiosInstance.get('/viewposts', {
                 headers: { Authorization: `Bearer ${token}` },
             })
+            console.log(response.data.data,'response');
+            
 
             const publishedPosts = response.data.data.posts.filter(
-                (post : PostData) => post.status === PostStatus.Published
+                (post : PostData) => post.status === PostStatus.Published && post.vendor.isActive
             )
 
 
