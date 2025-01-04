@@ -12,7 +12,7 @@ import {
   DropdownMenu,
   DropdownItem,
   Avatar,
-  Input
+  
 } from "@nextui-org/react";
 import { ChevronDown, Scale, Activity, Slash, Server, User, Search, MessageCircle } from 'lucide-react';
 import { axiosInstance } from '../../config/api/axiosInstance';
@@ -88,8 +88,13 @@ export default function UserNavbar() {
     message: <MessageCircle className="text-warning" size={24} />
   };
 
-  const menuItems = ["HOME", "BROWSE SERVICES", "FAVORITES", "ABOUT US"];
-
+  const menuItems = [
+    { label: "HOME", route: `${USER.HOME}` },
+    { label: "POST", route: `${USER.POST}` },
+    { label: "VENDORS", route: `${USER.VENDORLIST}` },
+    { label: "BOOKINGS", route: `${USER.BOOKING}` },
+    { label: "ABOUT US", route: `${USER.ABOUT_US}` }
+  ];
   return (
     <Navbar
       onMenuOpenChange={setIsMenuOpen}
@@ -186,7 +191,7 @@ export default function UserNavbar() {
       {/* Mobile Menu */}
       <NavbarMenu className="bg-gray-800 pt-6 px-6">
         <NavbarMenuItem>
-          <Input
+          {/* <Input
             classNames={{
               base: "max-w-full",
               input: "text-small",
@@ -196,15 +201,15 @@ export default function UserNavbar() {
             size="sm"
             startContent={icons.search}
             type="search"
-          />
+          /> */}
         </NavbarMenuItem>
         {menuItems.map((item, index) => (
-          <NavbarMenuItem key={`${item}-${index}`}>
+          <NavbarMenuItem key={`${item.label}-${index}`}>
             <Link
               className="w-full text-white hover:text-gray-300"
-              to={`${USER.HOME}`}
+              to={item.route}
             >
-              {item}
+              {item.label}
             </Link>
           </NavbarMenuItem>
         ))}
