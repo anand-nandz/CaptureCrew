@@ -12,6 +12,7 @@ import { showToastMessage } from "../../../validations/common/toast"
 import { VENDOR } from "../../../config/constants/constants"
 import { PostData, PostStatus, ServiceProvided } from "../../../types/postTypes"
 import CreatePost from "./createPost"
+import { ServiceTabs } from "@/components/common/ServiceTabs"
 
 export default function EnhancedPosts() {
   const navigate = useNavigate()
@@ -27,6 +28,16 @@ export default function EnhancedPosts() {
 
   useEffect(() => {
     fetchPosts()
+    const handlePostUpdated = () => {
+      fetchPosts()
+    }
+
+    window.addEventListener('postUpdated', handlePostUpdated)
+
+    // Clean up event listener on unmount
+    return () => {
+      window.removeEventListener('postUpdated', handlePostUpdated)
+    }
   }, [])
 
   const fetchPosts = async () => {
@@ -41,9 +52,11 @@ export default function EnhancedPosts() {
 
       if (Array.isArray(publishedPosts)) {
         setPosts(publishedPosts)
-        // publishedPosts.forEach(post => {
-        //   console.log('Post service type:', post.serviceType)
-        // })
+        const initialImageIndices = publishedPosts.reduce((acc, post) => {
+          acc[post._id] = 0
+          return acc
+        }, {} as { [key: string]: number })
+        setCurrentImageIndex(initialImageIndices)
       } else {
         console.error('Published posts is not an array:', publishedPosts)
       }
@@ -83,6 +96,16 @@ export default function EnhancedPosts() {
     setSelectedPostForEdit(null);
     setIsEditModalOpen(false);
   };
+
+  const handlePostUpdated = (updatedPost: PostData) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post._id === updatedPost._id ? updatedPost : post
+      )
+    )
+    setSelectedPostForEdit(null)
+    setIsEditModalOpen(false)
+  }
 
 
   useEffect(() => {
@@ -144,21 +167,11 @@ export default function EnhancedPosts() {
             Upload New Post
           </Button>
         </div>
-
-        <div className="flex space-x-12 mb-8 justify-center overflow-x-auto pb-2 ">
-          {Object.values(ServiceProvided).map((service) => (
-            <Button
-              key={service}
-              onClick={() => handleServiceChange(service)}
-              className={`px-6 py-2 rounded-full whitespace-nowrap md:space-x-3 md:text-xs ${selectedService === service
-                ? 'bg-black text-white md:text-xs sm:text-xs'
-                : 'bg-white text-gray-600 hover:bg-gray-100 md:text-xs sm:text-xs'
-                }`}
-            >
-              {service}
-            </Button>
-          ))}
-        </div>
+        <ServiceTabs
+          services={Object.values(ServiceProvided)}
+          selectedService={selectedService}
+          onServiceChange={(service) => handleServiceChange(service as ServiceProvided)}
+        />
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -247,7 +260,6 @@ export default function EnhancedPosts() {
 
                       }
 
-
                       <Button
                         color="default"
                         variant="light"
@@ -316,19 +328,22 @@ export default function EnhancedPosts() {
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           size="xl"
-         
+
         >
           <ModalContent>
             {(onClose) => (
               <>
-                <ModalHeader className="bg-black text-white">
+                <ModalHeader className="bg-black text-white ">
                   Edit Post
                 </ModalHeader>
                 <ModalBody>
                   <CreatePost
                     isEditMode={true}
                     existingPost={selectedPostForEdit}
-                    onClose={onClose}
+                    onClose={() => {
+                      handlePostUpdated(selectedPostForEdit!);
+                      onClose();
+                    }}
                   />
                 </ModalBody>
               </>

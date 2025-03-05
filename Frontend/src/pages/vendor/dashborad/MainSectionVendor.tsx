@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import VendorRootState from "@/redux/rootstate/VendorState";
 
 const MainSectionVendor = () => {
-    const vendordetails =  useSelector((state:VendorRootState)=>state.vendor.vendorData);    
+    const vendordetails = useSelector((state: VendorRootState) => state.vendor.vendorData);
     const [vendor, setVendor] = useState(null);
 
     useEffect(() => {
@@ -32,7 +32,7 @@ const MainSectionVendor = () => {
 
                     <div className="space-y-8">
                         <VendorDetails isVendor={true} vendorDetails={vendordetails} />
-                        <ImageMasonry vendorData={vendor} />
+                        <ImageMasonry vendorDetails={vendor} />
                     </div>
                 </>
             ) : (

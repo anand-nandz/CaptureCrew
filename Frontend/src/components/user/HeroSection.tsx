@@ -166,7 +166,7 @@ const HeroSection = () => {
             <h2 className="text-4xl font-serif font-light text-gray-900">What We Do</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            {services.map((service, index) => (
+            {services.slice(0,3).map((service, index) => (
               <div key={index} className="flex flex-col items-center">
                 <div className="w-full aspect-square mb-6 overflow-hidden border border-gray-200">
                   <img
@@ -203,9 +203,9 @@ const HeroSection = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  className="bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
-                  <div className="aspect-w-16 aspect-h-9 mb-6">
+                  <div className="w-full mb-2 p-0">
                     <img
                       src={category.image}
                       alt={category.title}
@@ -259,6 +259,30 @@ const HeroSection = () => {
           ))}
         </Carousel>
       </div>
+
+      <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h3 className="text-xl text-yellow-600 font-light tracking-wide mb-2">MOMENTS</h3>
+            <h2 className="text-4xl font-serif font-light text-gray-900">What We Do</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {services.slice(3,6).map((service, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div className="w-full aspect-square mb-6 overflow-hidden border border-gray-200">
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-serif font-light mb-4 text-gray-900">{service.title}</h3>
+                <p className="text-sm text-center text-gray-600 max-w-xs">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </>
   );
 };

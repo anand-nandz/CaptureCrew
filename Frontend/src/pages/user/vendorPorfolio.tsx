@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { PostData, PostStatus, ServiceProvided } from '../../types/postTypes';
 import { axiosInstance } from '../../config/api/axiosInstance';
 import { useParams } from 'react-router-dom';
-import { Button, Pagination } from '@nextui-org/react'
+import {  Pagination } from '@nextui-org/react'
 import { PostCard } from '../../components/user/PostCard';
 import { PostModal } from '../../components/user/PostModal';
 import Servicepackage from '../../components/vendor/ServicePackage';
@@ -14,6 +14,7 @@ import { AxiosError } from 'axios';
 import { showToastMessage } from '@/validations/common/toast';
 import VendorReviews from '@/components/common/ReviewCard';
 import { VendorReview } from '@/types/extraTypes';
+import { ServiceTabs } from '@/components/common/ServiceTabs';
 
 
 const VendorPorfolio = () => {
@@ -38,7 +39,7 @@ const VendorPorfolio = () => {
         setIsLoading(true)
         try {
             const response = await axiosInstance.get(`/portfolio/${vendorId}`)
-            
+
             const publishedPosts = response.data.data.post.filter(
                 (post: PostData) => post.status === PostStatus.Published
             )
@@ -57,7 +58,7 @@ const VendorPorfolio = () => {
             }
             if (response.data.data.vendor) {
                 setVendor(response.data.data.vendor);
-            }            
+            }
 
         } catch (error) {
             console.error('Error fetching posts:', error)
@@ -100,21 +101,11 @@ const VendorPorfolio = () => {
                 <h1 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] text-center mb-12 uppercase">
                     My Collections
                 </h1>
-
-                <div className="flex space-x-12 mb-8 justify-center overflow-x-auto pb-2">
-                    {Object.values(ServiceProvided).map((service) => (
-                        <Button
-                            key={service}
-                            onClick={() => handleServiceChange(service)}
-                            className={`px-6 py-2 rounded-full whitespace-nowrap ${selectedService === service
-                                ? 'bg-black text-white'
-                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            {service}
-                        </Button>
-                    ))}
-                </div>
+                <ServiceTabs
+                    services={Object.values(ServiceProvided)}
+                    selectedService={selectedService}
+                    onServiceChange={(service) => handleServiceChange(service as ServiceProvided)}
+                />
 
                 {isLoading ? (
                     <div className="flex justify-center items-center h-64">
@@ -150,7 +141,7 @@ const VendorPorfolio = () => {
                     </div>
                 )}
             </div>
-            <VendorReviews vendorId={`${vendorId}`} reviews={reviews}/>
+            <VendorReviews vendorId={`${vendorId}`} reviews={reviews} />
             <PostModal
                 post={selectedPost}
                 isOpen={modalOpen}

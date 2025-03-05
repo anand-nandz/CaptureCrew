@@ -10,7 +10,6 @@ import { CalendarDays, Mail, Phone, Badge, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { axiosInstance } from "../../../config/api/axiosInstance";
 import { showToastMessage } from "../../../validations/common/toast";
-
 import { useSelector, useDispatch } from "react-redux";
 import UserRootState from "@/redux/rootstate/UserState";
 import { setUserInfo } from "@/redux/slices/UserSlice";

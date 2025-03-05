@@ -138,24 +138,39 @@ export const convertToPaymentBookingData = (booking: Booking): PaymentBookingDat
     },
   ];
 
+  export const services = [
+    {
+      title: 'WEDDING',
+      image: '/images/event1.jpg',
+      description: 'Love seems the swiftest but it is the slowest of all growths. No man or woman really knows what perfect love is until they have been married a quarter of a century.',
+    },
+    {
+      title: 'ENGAGEMENT',
+      image: '/images/event2.jpg',
+      description: 'When you realize you want to spend the rest of your life with somebody, you want the rest of your life to start as soon as possible.',
+    },
+    {
+      title: 'OUTDOOR',
+      image: '/images/event3.jpg',
+      description: "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma – which is living with the results of other people's thinking."
+    },
+    {
+      title: 'NATURE',
+      image: '/images/event4.jpg',
+      description: 'Nature always wears the colors of the spirit. It does not hurry, yet everything is accomplished in its own perfect time, reminding us of the beauty in patience and growth.',
+    },
+    {
+      title: 'FOOD',
+      image: '/images/event5.jpg',
+      description: 'Good food is the foundation of genuine happiness. The art of food photography captures flavors beyond taste, making every dish a visual delight before it becomes a feast to savor.',
+    },
+    {
+      title: 'FASHION',
+      image: '/images/event6.jpg',
+      description: 'Fashion is not just about clothing; it is an expression of personality and creativity. Every style tells a story, capturing confidence and elegance in every carefully crafted frame.',
+    },
+  ];
   
-export const services = [
-  {
-    title: 'WEDDING',
-    image: '/images/event1.jpg',
-    description: 'Love seems the swiftest but it is the slowest of all growths. No man or woman really knows what perfect love is until they have been married a quarter of a century.',
-  },
-  {
-    title: 'ENGAGEMENT',
-    image: '/images/event2.jpg',
-    description: 'When you realize you want to spend the rest of your life with somebody, you want the rest of your life to start as soon as possible.',
-  },
-  {
-    title: 'OUTDOOR',
-    image: '/images/event3.jpg',
-    description: "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma – which is living with the results of other people's thinking."
-  },
-];
 
 
 export const ReportReasons = [

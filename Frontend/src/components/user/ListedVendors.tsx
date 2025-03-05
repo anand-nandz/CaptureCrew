@@ -134,7 +134,6 @@ const ListedVendors = () => {
       } else {
         showToastMessage('An unknown error occurred', 'error');
       }
-      // showToastMessage('Failed to submit report', 'error');
       throw error;
     }
   };
@@ -321,28 +320,68 @@ const ListedVendors = () => {
                         <Typography gutterBottom variant="h5" component="div">
                           {vendor?.name}
                         </Typography>
-
                         <Typography variant="body2" color="text.secondary">
                           {vendor?.about}
                         </Typography>
                       </CardContent>
-                      <CardActions>
-                        <Button size="small"
-                          onClick={() => viewPorfolio(vendor._id)}
-                        >View Porfolio</Button>
-                      </CardActions>
-                      <CardActions>
-                        <Button size="small"
-                          onClick={() => handleShowDetails(vendor)}
-                        >View Details</Button>
-                      </CardActions>
-                      <CardActions>
+                      <CardActions sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '8px 16px 16px'
+                      }}>
+                        <Box sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          marginBottom: '12px'
+                        }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleShowDetails(vendor)}
+                            sx={{
+                              borderColor: '#000000',
+                              color: '#000000',
+                              width: '48%',
+                              '&:hover': {
+                                borderColor: '#333333',
+                                color: '#333333',
+                              }
+                            }}
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleReport(vendor._id)}
+                            sx={{
+                              borderColor: '#000000',
+                              color: '#000000',
+                              width: '48%',
+                              '&:hover': {
+                                borderColor: '#333333',
+                                color: '#333333',
+                              }
+                            }}
+                          >
+                            Report Vendor
+                          </Button>
+                        </Box>
                         <Button
                           size="small"
-                          // startContent={<FontAwesomeIcon icon={faFlag} />}
-                          onClick={() => handleReport(vendor._id)}
+                          variant="contained"
+                          onClick={() => viewPorfolio(vendor._id)}
+                          sx={{
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF',
+                            width: '100%',
+                            '&:hover': {
+                              backgroundColor: '#333333'
+                            }
+                          }}
                         >
-                          Report Vendor
+                          View Portfolio
                         </Button>
                       </CardActions>
                     </Card>
@@ -366,10 +405,28 @@ const ListedVendors = () => {
             Page {currentPage} of {totalPages}
           </Typography>
           <div className="flex gap-2">
-            <Button variant="outlined" size="small" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              sx={{
+                borderColor: '#000000',
+                color: '#000000'
+              }}
+            >
               Previous
             </Button>
-            <Button variant="outlined" size="small" onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              sx={{
+                borderColor: '#000000',
+                color: '#000000'
+              }}
+            >
               Next
             </Button>
           </div>

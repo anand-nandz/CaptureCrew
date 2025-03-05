@@ -95,7 +95,7 @@ const Login = () => {
                         </h2>
                     </div>
 
-                    <form onSubmit={formik.handleSubmit}>
+                    <form onSubmit={formik.handleSubmit} >
                         <CardBody className="flex flex-col gap-4 px-4" placeholder={undefined} onPointerEnterCapture={undefined} onPointerLeaveCapture={undefined}>
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>

@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from 'react'
-import { Button, Pagination } from '@nextui-org/react'
+import { Pagination } from '@nextui-org/react'
 import { PostData, ServiceProvided, PostStatus } from '../../types/postTypes'
 import { axiosInstance } from '../../config/api/axiosInstance'
 import { PostCard } from './PostCard'
 import { PostModal } from './PostModal'
+import { ServiceTabs } from '../common/ServiceTabs';
 
 
 export default function ShowAllPosts() {
@@ -27,18 +28,15 @@ export default function ShowAllPosts() {
             const token = localStorage.getItem('userToken')
             const response = await axiosInstance.get('/viewposts', {
                 headers: { Authorization: `Bearer ${token}` },
-            })            
+            })
 
             const publishedPosts = response.data.data.posts.filter(
-                (post : PostData) => post.status === PostStatus.Published && post.vendor.isActive
+                (post: PostData) => post.status === PostStatus.Published && post.vendor.isActive
             )
 
 
             if (Array.isArray(publishedPosts)) {
                 setAllPosts(publishedPosts)
-                // publishedPosts.forEach(post => {
-                //     console.log('Post service type:', post.serviceType)
-                // })
             } else {
                 console.error('Published posts is not an array:', publishedPosts)
             }
@@ -70,7 +68,6 @@ export default function ShowAllPosts() {
         setModalOpen(true)
     }
 
-    
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
@@ -79,20 +76,11 @@ export default function ShowAllPosts() {
                     All Posts
                 </h1>
 
-                <div className="flex space-x-12 mb-8 justify-center overflow-x-auto pb-2">
-                    {Object.values(ServiceProvided).map((service) => (
-                        <Button
-                            key={service}
-                            onClick={() => handleServiceChange(service)}
-                            className={`px-6 py-2 rounded-full whitespace-nowrap ${selectedService === service
-                                ? 'bg-black text-white'
-                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            {service}
-                        </Button>
-                    ))}
-                </div>
+                <ServiceTabs 
+                    services={Object.values(ServiceProvided)}
+                    selectedService={selectedService}
+                    onServiceChange={(service) => handleServiceChange(service as ServiceProvided)}
+                />
 
                 {isLoading ? (
                     <div className="flex justify-center items-center h-64">
@@ -106,10 +94,10 @@ export default function ShowAllPosts() {
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {currentPosts.map((post) => (
-                           <PostCard 
-                            key={post._id}
-                            post={post}
-                            onShowDetails={handleShowDetails}
+                            <PostCard
+                                key={post._id}
+                                post={post}
+                                onShowDetails={handleShowDetails}
                             />
                         ))}
                     </div>
@@ -128,11 +116,11 @@ export default function ShowAllPosts() {
                     </div>
                 )}
             </div>
-                <PostModal
-                    post={selectedPost}
-                    isOpen= {modalOpen}
-                    onClose={()=>setModalOpen(false)}
-                />
+            <PostModal
+                post={selectedPost}
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+            />
         </div>
     )
 }

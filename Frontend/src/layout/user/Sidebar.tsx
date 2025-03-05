@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card, Typography, List, ListItem, ListItemPrefix, ListItemSuffix, Chip, IconButton, Tooltip } from "@material-tailwind/react";
 import {
   UserCircleIcon, ShoppingBagIcon,
@@ -23,6 +23,7 @@ interface MenuItem {
 const Sidebar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const [activeItem, setActiveItem] = useState('Profile');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -38,7 +39,7 @@ const Sidebar = () => {
   }, []);
 
 
-  const menuItems: MenuItem[] = [
+  const menuItems = useMemo(() => [
     { icon: UserCircleIcon, label: 'Profile', path: USER.PROFILE, badge: null },
     { icon: Wallet, label: 'Wallet', path: USER.WALLET, badge: null },
     { icon: ShoppingBagIcon, label: 'Bookings', path: USER.BOOKING, badge: null },
@@ -46,7 +47,7 @@ const Sidebar = () => {
     { icon: UserGroupIcon, label: 'Vendors', path: USER.VENDORLIST, badge: null },
     { icon: Cog6ToothIcon, label: 'Settings', path: USER.PROFILE, badge: null },
     { icon: PowerIcon, label: 'Log Out', path: null, badge: null }
-  ];
+  ], []); 
 
   const handleMenuClick = async (item: MenuItem) => {
     if (item.label === 'Log Out') {
@@ -66,6 +67,13 @@ const Sidebar = () => {
     navigate(item.path!);
     if (isMobile) setIsCollapsed(true);
   };
+  
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const active = menuItems.find((item) => currentPath.includes(item.path || ''))?.label || 'Profile';
+    setActiveItem(active);
+  }, [location.pathname, menuItems]);
+
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);

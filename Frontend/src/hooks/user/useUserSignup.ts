@@ -85,7 +85,7 @@ const images = [
     };
   
   
-    const submitHandler = async (e: { preventDefault: () => void }) => {
+    const   submitHandler = async (e: { preventDefault: () => void }) => {
       e.preventDefault();
       const errors = validate(formValues);
       setFormErrors(errors);

@@ -17,8 +17,14 @@ export interface PostData {
 export enum ServiceProvided {
     Engagement = 'Engagement',
     Wedding = 'Wedding',
+    Food= "Food",
+    Nature = 'Nature',
     Birthday = 'Birthday Party',
     OutdoorShoot = "Outdoor Shoot",
+    Fashion= "Fashion",
+    Product= "Product",
+    Baby= "Baby & Newborn",
+    Corporate= "Corporate Events",
 }
 
 export enum PostStatus {

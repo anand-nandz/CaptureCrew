@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card, Typography, List, ListItem, ListItemPrefix, ListItemSuffix, Chip, IconButton, Tooltip } from "@material-tailwind/react";
 import {
-    UserCircleIcon, ShoppingBagIcon, CloudArrowUpIcon ,
+    UserCircleIcon, ShoppingBagIcon, CloudArrowUpIcon,
     ChatBubbleLeftRightIcon, PowerIcon, CalendarIcon,
     Bars3Icon, XMarkIcon, CubeIcon, StarIcon
 } from "@heroicons/react/24/solid";
@@ -39,18 +39,18 @@ const SidebarVendor = () => {
     }, []);
 
 
-    const menuItems: MenuItem[] = [
+    const menuItems = useMemo(() => [
         { icon: UserCircleIcon, label: 'Profile', path: VENDOR.PROFILE, badge: null },
         { icon: Wallet, label: 'Wallet', path: VENDOR.WALLET, badge: null },
         { icon: ShoppingBagIcon, label: 'Bookings', path: VENDOR.REQUEST_BOOKING, badge: null },
         { icon: ChatBubbleLeftRightIcon, label: 'Chats', path: VENDOR.CHAT, badge: null },
-        { icon: CloudArrowUpIcon , label: 'Upload Contents', path: VENDOR.VIEW_POSTS, badge: null },
+        { icon: CloudArrowUpIcon, label: 'Upload Contents', path: VENDOR.VIEW_POSTS, badge: null },
         { icon: CalendarIcon, label: 'Slot Update', path: VENDOR.DATE_AVAILABILTY, badge: null },
         { icon: CubeIcon, label: 'Packages', path: VENDOR.VIEW_PACKAGES, badge: null },
         { icon: StarIcon, label: 'Reviews', path: VENDOR.REVIEW, badge: null },
         { icon: FaChartBar, label: 'Stats', path: VENDOR.STATS, badge: null },
         { icon: PowerIcon, label: 'Log Out', path: null, badge: null }
-    ];
+    ], []);
 
     const handleMenuClick = async (item: MenuItem) => {
         if (item.label === 'Log Out') {
@@ -76,9 +76,9 @@ const SidebarVendor = () => {
         const currentPath = location.pathname; // Extract the pathname
         const active = menuItems.find((item) => currentPath.includes(item.path || ''))?.label || 'Profile';
         setActiveItem(active);
-    }, []);
-    
-    
+    }, [location.pathname, menuItems]);
+
+
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };

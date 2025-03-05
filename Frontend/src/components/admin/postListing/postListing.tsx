@@ -14,6 +14,7 @@ import { Switch } from '@material-tailwind/react'
 import Swal from 'sweetalert2'
 import { showToastMessage } from '../../../validations/common/toast'
 import { FlagIcon } from 'lucide-react'
+import { ServiceTabs } from '@/components/common/ServiceTabs'
 
 export default function PostListingAdmin() {
     const [allPosts, setAllPosts] = useState<PostData[]>([])
@@ -107,19 +108,19 @@ export default function PostListingAdmin() {
         if (result.isConfirmed) {
             try {
                 const response = await axiosInstanceAdmin.patch(`/blockp-unblockp?postId=${postId}`);
-                setAllPosts(prevPosts => 
-                    prevPosts.map(post => 
-                        post._id === postId 
+                setAllPosts(prevPosts =>
+                    prevPosts.map(post =>
+                        post._id === postId
                             ? {
                                 ...post,
-                                status: post.status === PostStatus.Blocked 
-                                    ? PostStatus.Published 
+                                status: post.status === PostStatus.Blocked
+                                    ? PostStatus.Published
                                     : PostStatus.Blocked
                             }
                             : post
                     )
                 );
-                
+
                 showToastMessage(response.data.message, 'success');
                 Swal.fire(
                     'Success!',
@@ -263,22 +264,12 @@ export default function PostListingAdmin() {
                 <h1 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] text-center mb-12 uppercase">
                     All Posts
                 </h1>
+                <ServiceTabs
+                    services={Object.values(ServiceProvided)}
+                    selectedService={selectedService}
+                    onServiceChange={(service) => handleServiceChange(service as ServiceProvided)}
+                />
 
-
-                <div className="flex space-x-12 mb-8 justify-center overflow-x-auto pb-2">
-                    {Object.values(ServiceProvided).map((service) => (
-                        <Button
-                            key={service}
-                            onClick={() => handleServiceChange(service)}
-                            className={`px-6 py-2 rounded-full whitespace-nowrap ${selectedService === service
-                                ? 'bg-black text-white'
-                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            {service}
-                        </Button>
-                    ))}
-                </div>
 
                 {isLoading ? (
                     <div className="flex justify-center items-center h-64">
@@ -305,7 +296,7 @@ export default function PostListingAdmin() {
                                         <h2 className="text-xl font-bold">{post.serviceType}</h2>
                                         <div className="w-max flex justify-center items-center">
                                             <Switch
-                                                id={`switch-${post._id}`} 
+                                                id={`switch-${post._id}`}
                                                 ripple={false}
                                                 color={post.status !== PostStatus.Blocked ? "green" : "red"}
                                                 checked={post.status !== PostStatus.Blocked}
@@ -329,7 +320,7 @@ export default function PostListingAdmin() {
                                             />
                                         </div>
                                     </div>
-                                    
+
                                 </div>
 
                                 <div
@@ -362,7 +353,7 @@ export default function PostListingAdmin() {
                                         >
                                             {post.reportCount || 0}
                                         </Button>
-                                       
+
                                         <Button
 
                                             variant="light"

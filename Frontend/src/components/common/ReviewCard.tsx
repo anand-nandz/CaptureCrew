@@ -8,7 +8,6 @@ import {
   Avatar,
   Rating,
   useTheme,
-  useMediaQuery
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import Slider from 'react-slick';
@@ -44,8 +43,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
     boxShadow: theme.shadows[8],
   },
   borderRadius: 16,
-  minHeight: 350,
-  margin: theme.spacing(2),
+  maxWidth: '300px',  // Set maximum width
+  width: '100%',      // Full width within container
+  minHeight: '200px', // Reduced min height for horizontal layout
+  margin: '0 auto',   // Center cards
   overflow: 'hidden',
 }));
 
@@ -64,22 +65,16 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
   const [loading, setLoading] = useState(!initialReviews || initialReviews.length === 0);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   useEffect(() => {
-
-    if (initialReviews && initialReviews.length > 0) {
-      setReviews(initialReviews);
-      setLoading(false);
-      return; 
-    }
 
     const fetchVendorReviews = async () => {
       try {
         const response = await axiosInstance.get(`/getReviews/${vendorId}`, {
           withCredentials: true
         });
+        console.log(response.data.reviews);
+
         setReviews(response.data.reviews);
       } catch (err) {
         console.error('Error fetching vendor reviews:', err);
@@ -89,40 +84,37 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
       }
     };
 
-    if (!initialReviews || initialReviews.length === 0) {
       fetchVendorReviews();
-    }
-  }, [vendorId, initialReviews]);
+    
+  }, [vendorId]);
 
-  if (loading) return <div>Loading reviews...</div>;
-  if (error) return <div>{error}</div>;
 
   const settings = {
     dots: true,
     infinite: true,
-    speed: 500,
-    slidesToShow: isMobile ? 1 : isTablet ? 2 : 3,
-    slidesToScroll: 1,
+    speed: 1500,
     autoplay: true,
     autoplaySpeed: 3000,
     pauseOnHover: true,
+    slidesToShow: 3,
+    slidesToScroll: 1,
     responsive: [
       {
-        breakpoint: 1024,
+        breakpoint: 1200,
         settings: {
           slidesToShow: 3,
           slidesToScroll: 1,
         }
       },
       {
-        breakpoint: 600,
+        breakpoint: 900,
         settings: {
           slidesToShow: 2,
           slidesToScroll: 1,
         }
       },
       {
-        breakpoint: 480,
+        breakpoint: 600,
         settings: {
           slidesToShow: 1,
           slidesToScroll: 1,
@@ -157,7 +149,7 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
         bgcolor: 'background.default',
       }}>
         <Container maxWidth="sm" sx={{ textAlign: 'center' }}>
-        <Typography variant="h4" component="h2" gutterBottom className='py-4'>
+          <Typography variant="h4" component="h2" gutterBottom className='py-4'>
             What our Clients say!
           </Typography>
           <Typography variant="h5" gutterBottom>No reviews yet</Typography>
@@ -184,7 +176,7 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
         <Box
           sx={{
             textAlign: 'center',
-            mb: 10
+            mb: 6
           }}
         >
           <Typography variant="h4" component="h2" gutterBottom>
@@ -201,65 +193,86 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
           />
         </Box>
 
-        <Slider {...settings}>
-          {reviews.map((review) => (
-            <Box key={review._id} sx={{ display: 'flex', justifyContent: 'center' }}>
-              <StyledCard>
-                <QuoteIcon />
-                <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    mb: 3
-                  }}>
-                    <Avatar
-                      src={review.userId?.imageUrl || '/default-avatar.svg'}
+        <Box sx={{ 
+          '.slick-track': { 
+            display: 'flex', 
+            '& .slick-slide': {
+              height: 'inherit',
+              '& > div': {
+                height: '100%'
+              }
+            }
+          },
+          '.slick-slide': {
+            padding: '0 10px'
+          }
+        }}>
+          <Slider {...settings}>
+            {reviews.map((review, index) => (
+              <Box key={`${review._id}-${index}`} sx={{ height: '100%' }}>
+                <StyledCard>
+                  <QuoteIcon />
+                  <CardContent sx={{ position: 'relative', zIndex: 1 }}>
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      mb: 2
+                    }}>
+                      <Avatar
+                        src={review.userId?.imageUrl || '/default-avatar.svg'}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          mb: 1,
+                          border: `2px solid ${theme.palette.background.paper}`,
+                          boxShadow: theme.shadows[2],
+                        }}
+                      />
+                      <Typography variant="subtitle1" gutterBottom>
+                        {review.userId?.name || 'Anonymous'}
+                      </Typography>
+                      <Rating
+                        value={review.rating}
+                        readOnly
+                        precision={0.5}
+                        sx={{ mb: 1 }}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
                       sx={{
-                        width: 80,
-                        height: 80,
-                        mb: 2,
-                        border: `4px solid ${theme.palette.background.paper}`,
-                        boxShadow: theme.shadows[2],
+                        lineHeight: 1.5,
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
                       }}
-                    />
-                    <Typography variant="h6" gutterBottom>
-                      {review.userId?.name || 'Anonymous'}
+                    >
+                      "{review.content}"
                     </Typography>
-                    <Rating
-                      value={review.rating}
-                      readOnly
-                      precision={0.5}
-                      sx={{ mb: 2 }}
-                    />
-                  </Box>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      lineHeight: 1.5,
-                      textAlign: 'center',
-                    }}
-                  >
-                    "{review.content}"
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display: 'block',
-                      mt: 2,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </Typography>
-                </CardContent>
-              </StyledCard>
-            </Box>
-          ))}
-        </Slider>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        display: 'block',
+                        mt: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                </StyledCard>
+              </Box>
+            ))}
+          </Slider>
+        </Box>
       </Container>
     </Box>
   );

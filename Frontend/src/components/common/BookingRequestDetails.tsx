@@ -59,6 +59,8 @@ export interface BookingDetailsModalProps {
 
 const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ isOpen, onOpenChange, booking }) => {
 
+  console.log(booking,'ggggggggggggggggggggggggggggggggggg');
+  
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'requested': return "warning";

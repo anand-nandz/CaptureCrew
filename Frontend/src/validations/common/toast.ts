@@ -1,7 +1,6 @@
 import { toast, ToastOptions } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
-// Custom CSS for dark theme and icon size
 const toastStyles = `
 .Toastify__toast {
   background-color: #1a1a1a !important;
@@ -37,7 +36,6 @@ const toastStyles = `
 }
 `;
 
-// Add the styles to the document head
 const styleSheet = document.createElement("style");
 styleSheet.innerText = toastStyles;
 document.head.appendChild(styleSheet);

@@ -40,7 +40,8 @@ const createAxiosInstance: CreateAxiosInstance = (baseUrl, tokenKey, refreshToke
                             const refreshResponse = await instance.post('/refresh-token',{},{withCredentials:true});
                             const newToken = refreshResponse.data.token;                            
                             localStorage.setItem(tokenKey, newToken);
-
+                            console.log(refreshResponse.data,'refresh res data');
+                            
                             error.config.headers.Authorization = `Bearer ${newToken}`;
                             return instance(error.config);
 

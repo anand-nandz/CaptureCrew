@@ -9,6 +9,8 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/system';
 import UserNavbar from '@/layout/user/navbar';
+import DynamicBackground from '@/components/common/DynamicBackground';
+import Footer from '@/layout/user/footer';
 
 const AboutImages = React.lazy(() => import('../../components/common/AboutImages'));
 
@@ -46,7 +48,7 @@ const About = () => {
         <>
             <UserNavbar />
             <Box sx={{ bgcolor: '#faf7f5' }}>
-                {/* Hero Section */}
+
                 <Box
                     sx={{
                         height: '90vh',
@@ -169,6 +171,13 @@ const About = () => {
                         </Grid>
                     </Container>
                 </StyledSection>
+
+                <DynamicBackground
+                    filepath="/images/aboutus3.jpg"
+                    height="h-[500px]"
+                    type="image"
+                    className="w-full"
+                />
 
                 {/* Gallery Section */}
                 <StyledSection sx={{ bgcolor: 'white' }}>
@@ -310,6 +319,7 @@ const About = () => {
                     </Container>
                 </Box>
             </Box>
+            <Footer/>
         </>
     );
 };
