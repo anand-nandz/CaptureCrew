@@ -430,7 +430,7 @@ class PostService implements IPostService {
                 throw new CustomError('Post not found', HTTP_statusCode.NotFound);
             }
             if (existingPost.vendor_id.toString() !== vendorId) {
-                throw new CustomError('Unauthorized to edit this post', 403);
+                throw new CustomError('Unauthorized to edit this post', HTTP_statusCode.NoAccess);
             }
 
             const extractFilename = (url: string): string => {

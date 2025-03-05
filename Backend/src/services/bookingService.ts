@@ -69,8 +69,8 @@ class BookingService implements IBookingService {
                 this.vendorRepository.getById(vendorId)
             ])
 
-            if (!user) throw new CustomError('No user found', HTTP_statusCode.NotFound);
-            if (!vendor) throw new CustomError('No Vendor found', HTTP_statusCode.NotFound);
+            if (!user) throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound);
+            if (!vendor) throw new CustomError(Messages.VENDOR_NOT_FOUND, HTTP_statusCode.NotFound);
             if (bookingData.startingDate) {
                 const slotAvailabilty = await this.bookingRepository.checkIsAvailable(bookingData.startingDate, vendorId);
 
@@ -274,7 +274,7 @@ class BookingService implements IBookingService {
                 throw new CustomError('No booking Request for this Id', HTTP_statusCode.NotFound)
             }
             if (!vendor) {
-                throw new CustomError('Vendor not found', HTTP_statusCode.NotFound);
+                throw new CustomError(Messages.VENDOR_NOT_FOUND, HTTP_statusCode.NotFound);
             }
             if (bookingReq.bookingStatus !== 'requested') {
                 throw new CustomError('Booking has already been processed', HTTP_statusCode.InternalServerError);

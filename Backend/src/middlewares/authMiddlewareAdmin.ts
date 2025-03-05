@@ -3,6 +3,8 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Types } from 'mongoose';
  import dotenv from 'dotenv'
 import { AuthRequest } from '../types/adminTypes';
+import HTTP_statusCode from '../enums/httpStatusCode';
+import Messages from '../enums/errorMessage';
  dotenv.config()
 interface UserJwtPayload extends JwtPayload {
   _id: string;
@@ -15,13 +17,13 @@ export const authTokenAdmin = (req: AuthRequest, res: Response, next: NextFuncti
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ message: 'Authentication required' });
+    res.status(HTTP_statusCode.Unauthorized).json({ message: Messages.AUTHENTICATION_REQUIRED });
     return;
   }
   
   jwt.verify(token, process.env.JWT_SECRET_KEY!, (err, decoded) => {
     if (err) {
-      res.status(403).json({ message: 'Token is not valid' });
+      res.status(HTTP_statusCode.NoAccess).json({ message: Messages.TOKEN_NOT_VALID });
       return;
     }
        
@@ -35,7 +37,7 @@ export const authTokenAdmin = (req: AuthRequest, res: Response, next: NextFuncti
       };
       next();
     } else {
-      res.status(403).json({ message: 'Token payload is invalid' });
+      res.status(HTTP_statusCode.NoAccess).json({ message: Messages.INVALID_PAYLOAD });
     }
   });
 };

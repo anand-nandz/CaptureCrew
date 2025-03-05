@@ -3,6 +3,8 @@ import { AuthenticatedRequest } from "../types/userTypes";
 import { CustomError } from "../error/customError";
 import jwt from 'jsonwebtoken';
 import UserRepository from "../repositories/userRepository";
+import HTTP_statusCode from "../enums/httpStatusCode";
+import Messages from "../enums/errorMessage";
 
 const userRepository = new UserRepository(); 
 
@@ -11,7 +13,7 @@ export const  authMiddleware = async (req:AuthenticatedRequest, res:Response ,ne
         const token = req.headers.authorization?.split(' ')[1]
         
         if(!token){
-            throw new CustomError('Authentication Required',401)
+            throw new CustomError(Messages.AUTHENTICATION_REQUIRED,HTTP_statusCode.Unauthorized)
         }
 
         try {
@@ -19,7 +21,7 @@ export const  authMiddleware = async (req:AuthenticatedRequest, res:Response ,ne
             const user = await userRepository.getById(decoded._id);
             
             if (!user) {
-                throw new CustomError('User not found', 404);
+                throw new CustomError(Messages.USER_NOT_FOUND, HTTP_statusCode.NotFound);
             }
 
             req.user = {
@@ -29,9 +31,9 @@ export const  authMiddleware = async (req:AuthenticatedRequest, res:Response ,ne
             next();
         } catch (jwtError) {
             if (jwtError instanceof jwt.TokenExpiredError) {
-                res.status(401).json({ message: 'Token expired', expired: true });
+                res.status(HTTP_statusCode.Unauthorized).json({ message: 'Token expired', expired: true });
             } else {
-                res.status(401).json({ message: 'Invalid token' });
+                res.status(HTTP_statusCode.Unauthorized).json({ message: Messages.INVALID_TOKEN });
             }
         }
 

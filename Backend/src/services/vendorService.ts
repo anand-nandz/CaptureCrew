@@ -118,7 +118,7 @@ class VendorService implements IVendorService {
         try {
             const existingVendor = await this.vendorRepository.findByEmail(email);
 
-            if (!existingVendor) throw new CustomError('Vendor not Registered', HTTP_statusCode.NotFound);
+            if (!existingVendor) throw new CustomError('Vendor not Registered', HTTP_statusCode.Unauthorized);
 
             let vendorWithSignedUrl = existingVendor.toObject();
             if (existingVendor.imageUrl) {
@@ -138,11 +138,11 @@ class VendorService implements IVendorService {
                 existingVendor.password || ''
             )
             if (existingVendor.isVerified === false || existingVendor.isAccepted === AcceptanceStatus.Requested) {
-                throw new CustomError('Admin needs to verify Your Account', 403);
+                throw new CustomError('Admin needs to verify Your Account', HTTP_statusCode.NoAccess);
             }
 
             if (!passwordMatch) throw new CustomError('Incorrect Password ,Try again', HTTP_statusCode.Unauthorized)
-            if (existingVendor.isActive === false) throw new CustomError('Account is Blocked by Admin', 403);
+            if (existingVendor.isActive === false) throw new CustomError('Account is Blocked by Admin', HTTP_statusCode.NoAccess);
 
             const token = createAccessToken(existingVendor._id.toString())
 
@@ -616,7 +616,7 @@ class VendorService implements IVendorService {
                 throw new CustomError('Package not found', HTTP_statusCode.NotFound)
             }
             if (existingPkg.vendor_id.toString() !== vendorId.toString()) {
-                throw new CustomError('Unauthorized to edit this package', 403);
+                throw new CustomError('Unauthorized to edit this package', HTTP_statusCode.NoAccess);
             }
 
             const updatedData: Partial<PackageDocument> = {

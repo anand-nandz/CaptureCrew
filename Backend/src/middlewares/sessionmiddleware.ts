@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export function verifySession(req: Request, res: Response, next: NextFunction) {
   
   if (req.session && req.session.user) {
     next();
   } else {
-    res.status(401).json({ message: 'No session found or session expired' });
+    res.status(HTTP_statusCode.Unauthorized).json({ message: 'No session found or session expired' });
   }
 }
 

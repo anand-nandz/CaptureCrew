@@ -3,6 +3,7 @@ enum Messages {
     GENERATE_OTP = "Couldn't generate OTP",
     SESSION_EXPIRED = 'Session expired. Please try again.',
     OTP_EXPIRED = 'OTP has expired. Please request a new one.',
+    
     INVALID_OTP = 'Invalid OTP',
     INVALID_TOKEN = 'Invalid Token',
     OTP_SENT = `OTP send to Email for Verification`,
@@ -17,7 +18,10 @@ enum Messages {
     TOKEN_REQUIRED = 'Token is required',
     PASSWORD_RESET_LINK = 'Password reset link sent to your email' ,
     PASSWORD_RESET_SUCCESS = 'Password Reset Successfull',
-    
+    AUTHENTICATION_REQUIRED = 'Authentication required' ,
+    TOKEN_NOT_VALID ='Token is not valid',
+    INVALID_PAYLOAD ='Token payload is invalid',
+
     USER_ID_MISSING = 'User ID is missing',
     VENDOR_ID_MISSING = 'Vendor ID is missing',
     POST_ID_MISSING = 'Post ID is missing or invalid',

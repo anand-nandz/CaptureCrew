@@ -43,7 +43,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
                 .skip(skip)
                 .limit(limit)
                 .select('-password')
-                .sort({ createdAt: -1 })
+                .sort({totalRating: -1, createdAt: -1 })
 
             return {
                 vendors,

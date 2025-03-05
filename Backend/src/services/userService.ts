@@ -19,7 +19,6 @@ import HTTP_statusCode from '../enums/httpStatusCode';
 import Messages from '../enums/errorMessage';
 
 
-
 class UserService implements IUserService {
 
     private userRepository: IUserRepository;
@@ -35,7 +34,7 @@ class UserService implements IUserService {
             const existingUser = await this.userRepository.findByEmail(email);
 
             if (!existingUser) {
-                throw new CustomError('User Not Exist!!..', HTTP_statusCode.NotFound)
+                throw new CustomError('User Not Exist!!..', HTTP_statusCode.Unauthorized)
             }
 
             const passwordMatch = await bcrypt.compare(
@@ -44,10 +43,10 @@ class UserService implements IUserService {
             )
 
             if (!passwordMatch) {
-                throw new CustomError('Incorrect Password', 401)
+                throw new CustomError('Incorrect Password', HTTP_statusCode.Unauthorized)
             }
             if (existingUser.isActive === false) {
-                throw new CustomError('Blocked by Admin', 403)
+                throw new CustomError('Blocked by Admin', HTTP_statusCode.NoAccess)
             }
 
             let userWithSignedUrl = existingUser.toObject();
@@ -152,7 +151,7 @@ class UserService implements IUserService {
             const user = await this.userRepository.getById(decodedToken._id);
 
             if (!user || user.refreshToken !== refreshToken) {
-                throw new CustomError('Invalid refresh Token', 401)
+                throw new CustomError('Invalid refresh Token', HTTP_statusCode.Unauthorized)
             }
 
             const accessToken = createAccessToken(user._id.toString())
@@ -311,7 +310,9 @@ class UserService implements IUserService {
             const existingUser = await this.userRepository.findByEmail(userData.email);
             let user: UserDocument;
             let isNewUser = false;
-
+            if (existingUser?.isActive === false) {
+                throw new CustomError('Blocked by Admin', HTTP_statusCode.NoAccess)
+            }
 
             if (existingUser) {
                 if (!existingUser.isGoogleUser) {
@@ -485,11 +486,11 @@ class UserService implements IUserService {
                 user.password || ''
             )
             if (!passwordMatch) {
-                throw new CustomError('Incorrect Password', 401)
+                throw new CustomError('Incorrect Password', HTTP_statusCode.Unauthorized)
             }
 
             if (currentPassword === newPassword) {
-                throw new CustomError("Current and New Passwords can't be same", 401)
+                throw new CustomError("Current and New Passwords can't be same", HTTP_statusCode.Unauthorized)
             }
 
             const salt = await bcrypt.genSalt(10);

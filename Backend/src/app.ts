@@ -20,6 +20,7 @@ import { errorLogStream } from './config/loggerConfig';
 import { corsOption } from './config/corsConfig';
 import { sessionOptions, sessionStore } from './config/session.Config';
 import HTTP_statusCode from './enums/httpStatusCode';
+import { errorHandler } from './middlewares/errorHandler';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api/conversations', chatRoutes);
 
 const bookingRepository = new BookingRepository();
 BookingStatusCron.initializeCronJobs(bookingRepository);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

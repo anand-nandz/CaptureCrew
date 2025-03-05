@@ -262,14 +262,12 @@ function getCurrentWeekRange() {
   return { startOfWeek, endOfWeek };
 }
 
-// Function to get current year range
 function getCurrentYearRange() {
   const startOfYear = new Date(new Date().getFullYear(), 0, 1);
   const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
   return { startOfYear, endOfYear };
 }
 
-// Function to calculate the last five years' range
 function getLastFiveYearsRange() {
   const currentYear = new Date().getFullYear();
   const startOfFiveYearsAgo = new Date(currentYear - 4, 0, 1);
