@@ -4,7 +4,7 @@ import HeroBanner from "./HeroBanner";
 import { useNavigate } from "react-router-dom";
 import { showToastMessage } from "../../validations/common/toast";
 import { USER } from "../../config/constants/constants";
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { VendorData, VendorResponse } from '../../types/vendorTypes';
 import { axiosInstance } from '../../config/api/axiosInstance';
 import { CATEGORIES, services } from "@/utils/utils";
@@ -52,7 +52,7 @@ const HeroSection = () => {
 
   const navigate = useNavigate()
 
-  const CarouselNavigation = ({ setActiveIndex, activeIndex, length }: CarouselNavigationProps) => (
+  const CarouselNavigation = useCallback(({ setActiveIndex, activeIndex, length }: CarouselNavigationProps) => (
     <div className="absolute bottom-4 left-2/4 z-50 flex -translate-x-2/4 gap-2">
       {Array.from({ length }).map((_, i) => (
         <span
@@ -63,9 +63,9 @@ const HeroSection = () => {
         />
       ))}
     </div>
-  );
+  ),[]);
 
-  const PrevArrow = ({ handlePrev }: CarouselArrowProps) => (
+  const PrevArrow = useCallback(({ handlePrev }: CarouselArrowProps) => (
     <button
       onClick={handlePrev}
       className="absolute top-2/4 left-4 -translate-y-2/4 rounded-full bg-white/30 p-3 text-white hover:bg-white/60 focus:outline-none"
@@ -85,9 +85,9 @@ const HeroSection = () => {
         />
       </svg>
     </button>
-  );
+  ),[]);
 
-  const NextArrow = ({ handleNext }: CarouselArrowProps) => (
+  const NextArrow = useCallback(({ handleNext }: CarouselArrowProps) => (
     <button
       onClick={handleNext}
       className="absolute top-2/4 !right-4 -translate-y-2/4 rounded-full bg-white/30 p-3 text-white hover:bg-white/60 focus:outline-none"
@@ -107,9 +107,9 @@ const HeroSection = () => {
         />
       </svg>
     </button>
-  );
+  ),[]);
 
-  const handleProfileClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleProfileClick = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
       navigate(`${USER.VENDORLIST}`)
@@ -118,11 +118,11 @@ const HeroSection = () => {
       showToastMessage('Error during loading profile', 'error');
     }
 
-  }
+  },[navigate])
 
-  const viewPorfolio = (vendorId: string) => {
+  const viewPorfolio = useCallback((vendorId: string) => {
     navigate(`${USER.PORTFOLIO}/${vendorId}`)
-  }
+  },[navigate])
 
   return (
     <>
@@ -287,4 +287,4 @@ const HeroSection = () => {
   );
 };
 
-export default HeroSection;
+export default React.memo(HeroSection);

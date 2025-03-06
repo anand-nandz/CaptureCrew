@@ -56,8 +56,6 @@ export default function ShowAllPosts() {
     const endIndex = startIndex + POSTS_PER_PAGE
     const currentPosts = filteredPosts.slice(startIndex, endIndex)
 
-
-
     const handleServiceChange = (service: ServiceProvided) => {
         setSelectedService(service)
         setCurrentPage(1)

@@ -1,7 +1,7 @@
 import UserNavbar from '../../layout/user/navbar'
 import VendorDetails from '../../components/common/vendorDetails'
 import Footer from '../../layout/user/footer'
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PostData, PostStatus, ServiceProvided } from '../../types/postTypes';
 import { axiosInstance } from '../../config/api/axiosInstance';
 import { useParams } from 'react-router-dom';
@@ -35,7 +35,7 @@ const VendorPorfolio = () => {
         fetchPosts()
     }, [vendorId])
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         setIsLoading(true)
         try {
             const response = await axiosInstance.get(`/portfolio/${vendorId}`)
@@ -70,7 +70,7 @@ const VendorPorfolio = () => {
         } finally {
             setIsLoading(false)
         }
-    }
+    },[vendorId])
 
     const filteredPosts = posts.filter(post => post.serviceType === selectedService);
     const totalFilteredPosts = filteredPosts.length;

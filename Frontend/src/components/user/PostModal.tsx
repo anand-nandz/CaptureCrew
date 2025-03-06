@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMapMarkerAlt, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-// import { Button } from '@nextui-org/react';
+import { faMapMarkerAlt, faTimes, faChevronLeft, faChevronRight, faStar } from '@fortawesome/free-solid-svg-icons';
+import {
+    faEnvelope,
+    faPhone,
+} from '@fortawesome/free-solid-svg-icons';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { PostModalProps } from '../../types/postTypes';
 
-export const PostModal = ({ post, isOpen, onClose }: PostModalProps) => {
+export const PostModal = React.memo(({ post, isOpen, onClose }: PostModalProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     if (!post || !isOpen) return null;
@@ -106,19 +109,39 @@ export const PostModal = ({ post, isOpen, onClose }: PostModalProps) => {
 
                             <p className="text-gray-600">{post.caption}</p>
 
-                            {/* <div className="flex items-center justify-between pt-4 border-t">
-                                <Button
-                                    color="danger"
-                                    variant="light"
-                                    startContent={<FontAwesomeIcon icon={faHeart} />}
-                                >
-                                    {post.likesCount || 0} likes
-                                </Button>
-                            </div> */}
+                            <div className="border-t pt-4">
+                                <h3 className="text-lg font-semibold mb-3">Vendor Information</h3>
+                                {post?.vendor?.email && (
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
+                                        <span>{post?.vendor?.email}</span>
+                                    </div>
+                                )}
+                                {post?.vendor?.contactinfo && (
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <FontAwesomeIcon icon={faPhone} className="mr-2" />
+                                        <span>{post?.vendor?.contactinfo}</span>
+                                    </div>
+                                )}
+                                {post?.vendor?.city && (
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
+                                        <span>{post?.vendor?.city}</span>
+                                    </div>
+                                )}
+                                 <div className="flex items-center">
+                                    <FontAwesomeIcon icon={faStar} className="text-yellow-400 mr-2" />
+                                    <span className="font-semibold">
+                                        Rating: {post?.vendor?.totalRating?.toFixed(1) || '0.0'}
+                                    </span>
+                                </div>
+
+                            </div>
+
                         </div>
                     </div>
                 </div>
             </Box>
         </Modal>
     );
-};
+});
