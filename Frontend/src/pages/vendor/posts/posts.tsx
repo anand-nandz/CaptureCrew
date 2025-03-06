@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalHeader, Pagination } from 
 import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from 'framer-motion'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faTrash, faMapMarkerAlt, faHeart, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons"
+import { faTrash, faMapMarkerAlt, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons"
 import SidebarVendor from "../../../layout/vendor/SidebarProfileVendor"
 import { axiosInstanceVendor } from "../../../config/api/axiosInstance"
 import { showToastMessage } from "../../../validations/common/toast"
@@ -34,7 +34,6 @@ export default function EnhancedPosts() {
 
     window.addEventListener('postUpdated', handlePostUpdated)
 
-    // Clean up event listener on unmount
     return () => {
       window.removeEventListener('postUpdated', handlePostUpdated)
     }
@@ -129,9 +128,9 @@ export default function EnhancedPosts() {
     navigate('/vendor/add-post')
   }
 
-  const handleLike = useCallback((postId: string) => {
-    console.log(`Liked post: ${postId}`)
-  }, [])
+  // const handleLike = useCallback((postId: string) => {
+  //   console.log(`Liked post: ${postId}`)
+  // }, [])
 
   const toggleExpandPost = useCallback((postId: string) => {
     setExpandedPost(prev => prev === postId ? null : postId)
@@ -228,14 +227,14 @@ export default function EnhancedPosts() {
                         </Badge>
                         <h2 className="text-xl font-bold text-gray-800">{post.serviceType}</h2>
                       </div>
-                      <Button
+                      {/* <Button
                         isIconOnly
                         color="danger"
                         variant="light"
                         onClick={() => { handleLike(post._id) }}
                       >
                         <FontAwesomeIcon icon={faHeart} />
-                      </Button>
+                      </Button> */}
                     </div>
                     <p className="text-gray-600 mb-4">{post.caption}</p>
                     {post.location && (
@@ -245,9 +244,9 @@ export default function EnhancedPosts() {
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">
+                      {/* <span className="text-sm text-gray-500">
                         Likes: {post.likesCount || 0}
-                      </span>
+                      </span> */}
                       {post.status !== PostStatus.Blocked ?
                         (<Button
                           onClick={() => handleEditClick(post)}
@@ -319,7 +318,7 @@ export default function EnhancedPosts() {
               page={currentPage}
               onChange={setCurrentPage}
               showControls
-              color="primary"
+              color="default"
             />
           </div>
         )}

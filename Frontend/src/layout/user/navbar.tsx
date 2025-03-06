@@ -14,7 +14,7 @@ import {
   Avatar,
   
 } from "@nextui-org/react";
-import { ChevronDown, Scale, Activity, Slash, Server, User, Search, MessageCircle } from 'lucide-react';
+import { ChevronDown, Scale, Activity, Slash, Server, User, Search, MessageCircle, Camera } from 'lucide-react';
 import { axiosInstance } from '../../config/api/axiosInstance';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/UserSlice';
@@ -46,7 +46,6 @@ export default function UserNavbar() {
   };
 
   const handleProfileClick = async (e: React.MouseEvent<HTMLElement>) => {
-    e.preventDefault();
     e.preventDefault();
     try {
       navigate(`${USER.PROFILE}`)
@@ -87,7 +86,8 @@ export default function UserNavbar() {
         />
       </NavbarContent>
       <NavbarBrand>
-        <p className="font-bold text-white pl-4 text-xl lg:text-2xl">CaptureCrew</p>
+      <Camera className="h-6 w-6 text-red-500" />
+        <p className="font-bold text-white pl-2 text-xl lg:text-2xl">CaptureCrew</p>
       </NavbarBrand>
 
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
@@ -135,9 +135,6 @@ export default function UserNavbar() {
             <DropdownItem key="profile" startContent={<User size={20} />} onClick={handleProfileClick}>
               Profile
             </DropdownItem>
-            <DropdownItem key="settings" startContent={<Scale size={20} />}>
-              Settings
-            </DropdownItem>
             <DropdownItem key="logout" className="text-danger" color="danger" startContent={<Slash size={20} />}
               onClick={handleLogout}>
               Log Out
@@ -152,7 +149,7 @@ export default function UserNavbar() {
       </NavbarContent>
 
       
-      <NavbarMenu className="bg-gray-800 pt-6 px-6">
+      <NavbarMenu className="bg-stone-800 pt-6 px-6">
         <NavbarMenuItem>
         </NavbarMenuItem>
         {menuItems.map((item, index) => (

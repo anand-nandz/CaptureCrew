@@ -22,7 +22,7 @@ import {
   CardFooter,
   Input
 } from "@material-tailwind/react";
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AcceptanceStatus, VendorData, VendorResponse } from '../../types/vendorTypes';
 import { axiosInstance } from '../../config/api/axiosInstance';
 import Loader from '../common/Loader';
@@ -75,8 +75,8 @@ const ListedVendors = () => {
     }
   }, []);
 
-  const debouncedFetchData = useCallback(
-    debounce(fetchVendorsData, 500),
+  const debouncedFetchData = useMemo(
+    () => debounce(fetchVendorsData, 500),
     [fetchVendorsData]
   );
 
@@ -146,7 +146,7 @@ const ListedVendors = () => {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        className="flex items-center justify-center"
+        className="flex items-center justify-center overflow-y-auto overflow-x-hidden"
       >
         <Box className="relative bg-white dark:bg-gray-900 w-full max-w-6xl mx-4 rounded-lg overflow-hidden flex flex-col md:flex-row md:h-[80vh]">
           <div className="relative w-full md:w-[60%] h -full bg-black flex items-center justify-center">
@@ -179,9 +179,9 @@ const ListedVendors = () => {
             </div>
           </div>
 
-          {/* Right side - Details */}
+          
           <div className="w-full md:w-[40%] flex flex-col h-full">
-            {/* Header */}
+        
             <div className="p-4 border-b flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{selectedVendor.name}</h2>
@@ -197,16 +197,16 @@ const ListedVendors = () => {
               </IconButton>
             </div>
 
-            {/* Content */}
+            
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-6">
-                {/* About Section */}
+            
                 <div>
                   <h3 className="text-lg font-semibold mb-2">About</h3>
                   <p className="text-gray-600">{selectedVendor.about}</p>
                 </div>
 
-                {/* Contact Information */}
+           
                 <div className="border-t pt-4">
                   <h3 className="text-lg font-semibold mb-3">Contact Information</h3>
                   {selectedVendor.email && (
@@ -230,7 +230,7 @@ const ListedVendors = () => {
 
                 </div>
 
-                {/* Rating Section */}
+                
                 <div className="border-t pt-4 flex items-center justify-between">
                   <div className="flex items-center">
                     <FontAwesomeIcon icon={faStar} className="text-yellow-400 mr-2" />

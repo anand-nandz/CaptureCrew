@@ -1,24 +1,11 @@
-import { useEffect, useState } from 'react'
+import React from 'react'
 import { Typography } from "@material-tailwind/react";
-const CAROUSEL_IMAGES = [
-    '/images/caro1.jpg',
-    '/images/caro2.jpg',
-    '/images/caro3.jpg',
-  ];
-const HeroBanner = () => {
-    const [backgroundIndex, setBackgroundIndex] = useState(0);
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-          setBackgroundIndex((prevIndex) => (prevIndex + 1) % CAROUSEL_IMAGES.length);
-        }, 2000);
-        return () => clearInterval(intervalId);
-      }, []);
-      
+
+const HeroBanner = () => {    
   return (
     <div className="relative w-full h-screen overflow-hidden">
     <div
       className="absolute inset-0 w-full h-full animate-BgAnimation bg-cover bg-center transition-transform duration-500 ease-in-out transform scale-105"
-      style={{ backgroundImage: `url(${CAROUSEL_IMAGES[backgroundIndex]})` }}
     />
     <div className="absolute inset-0 bg-black bg-opacity-50" />
 
@@ -52,4 +39,4 @@ const HeroBanner = () => {
   )
 }
 
-export default HeroBanner
+export default React.memo(HeroBanner)

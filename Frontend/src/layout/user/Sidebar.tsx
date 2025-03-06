@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card, Typography, List, ListItem, ListItemPrefix, ListItemSuffix, Chip, IconButton, Tooltip } from "@material-tailwind/react";
 import {
   UserCircleIcon, ShoppingBagIcon,
-  ChatBubbleLeftRightIcon, Cog6ToothIcon, PowerIcon,
+  ChatBubbleLeftRightIcon, PowerIcon,
   Bars3Icon, XMarkIcon, UserGroupIcon
 } from "@heroicons/react/24/solid";
 import { USER } from '../../config/constants/constants';
@@ -45,7 +45,6 @@ const Sidebar = () => {
     { icon: ShoppingBagIcon, label: 'Bookings', path: USER.BOOKING, badge: null },
     { icon: ChatBubbleLeftRightIcon, label: 'Chats', path: USER.CHAT, badge: null },
     { icon: UserGroupIcon, label: 'Vendors', path: USER.VENDORLIST, badge: null },
-    { icon: Cog6ToothIcon, label: 'Settings', path: USER.PROFILE, badge: null },
     { icon: PowerIcon, label: 'Log Out', path: null, badge: null }
   ], []); 
 

@@ -73,7 +73,7 @@ const SidebarVendor = () => {
         if (isMobile) setIsCollapsed(true);
     };
     useEffect(() => {
-        const currentPath = location.pathname; // Extract the pathname
+        const currentPath = location.pathname; 
         const active = menuItems.find((item) => currentPath.includes(item.path || ''))?.label || 'Profile';
         setActiveItem(active);
     }, [location.pathname, menuItems]);

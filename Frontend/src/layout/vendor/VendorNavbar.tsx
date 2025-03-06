@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navbar, MobileNav, Typography, IconButton } from "@material-tailwind/react";
-import { MessageCircle, User, Scale, Slash } from 'lucide-react';
+import { MessageCircle, User, Slash, Camera } from 'lucide-react';
 import { VENDOR } from '../../config/constants/constants';
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,7 +41,6 @@ export default function VendorNavbar() {
       .post("/logout")
       .then(() => {
         localStorage.removeItem('vendorToken')
-        // localStorage.removeItem('vendorRefresh')
         dispatch(logout());
         navigate(`${VENDOR.LOGIN}`);
         showToastMessage('Logged out successfully', 'success');
@@ -59,53 +58,49 @@ export default function VendorNavbar() {
         onPointerEnterCapture={undefined}
         onPointerLeaveCapture={undefined}>
         <div className="flex items-center justify-between">
-          {/* Logo and CaptureCrew */}
           <div className="flex items-center gap-4">
             <Typography as="a" href="#" className="text-white text-2xl font-bold" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
-              <img src="/images/cclogo.svg" alt="Logo" className="h-8" />
+              <Camera className="h-6 w-6 text-red-500" />
             </Typography>
 
-            <Typography as="a" href="#" className="text-white text-lg md:text-xl lg:text-2xl font-semibold" placeholder={undefined}
+            <Typography as="a" href="#" className="text-white text-xl md:text-xl lg:text-2xl font-bold" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
               CaptureCrew
             </Typography>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden sm:flex gap-6 md:gap-8 lg:gap-10 items-center text-white">
-            <Typography as="a" href={VENDOR.DASHBOARD} className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+          <div className="hidden sm:flex gap-6 md:gap-8 lg:gap-10 items-center text-white ">
+            <Typography as="a" href={VENDOR.DASHBOARD} className="cursor-pointer font-semibold  text-md md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
               HOME
             </Typography>
-            <Typography as="a" href="#" className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+            <Typography as="a" href="#" className="cursor-pointer font-semibold text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined} onClick={handleProfileClick}
               onPointerLeaveCapture={undefined}>
               PROFILE
             </Typography>
-            <Typography as="a" href={VENDOR.VIEW_POSTS} className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+            <Typography as="a" href={VENDOR.VIEW_POSTS} className="cursor-pointer font-semibold text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
               CONTENTS
             </Typography>
-            <Typography as="a"  href={VENDOR.REVIEW} className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+            <Typography as="a"  href={VENDOR.REVIEW} className="cursor-pointer font-semibold text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
               REVIEWS
             </Typography>
-            <Typography as="a" href={VENDOR.REQUEST_BOOKING} className="cursor-pointer text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
+            <Typography as="a" href={VENDOR.REQUEST_BOOKING} className="cursor-pointer font-semibold text-sm md:text-base lg:text-lg hover:text-gray-300 transition-all" placeholder={undefined}
               onPointerEnterCapture={undefined}
               onPointerLeaveCapture={undefined}>
               BOOKING REQUEST
             </Typography>
           </div>
 
-          {/* Avatar, Chat Icon, and Mobile Menu Icon */}
           <div className="flex items-center gap-4">
-            {/* Avatar Dropdown */}
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
                 <Avatar
@@ -121,9 +116,6 @@ export default function VendorNavbar() {
                 <DropdownItem key="profile" startContent={<User size={20} />} onClick={handleProfileClick}>
                   Profile
                 </DropdownItem>
-                <DropdownItem key="settings" startContent={<Scale size={20} />}>
-                  Settings
-                </DropdownItem>
                 <DropdownItem key="logout" className="text-danger" color="danger" startContent={<Slash size={20} />}
                   onClick={handleLogout}>
                   Log Out
@@ -131,10 +123,8 @@ export default function VendorNavbar() {
               </DropdownMenu>
             </Dropdown>
 
-            {/* Chat Icon */}
             <MessageCircle className="text-white w-6 h-6 cursor-pointer"  onClick={()=>navigate(`${VENDOR.CHAT}`)}/>
 
-            {/* Mobile Menu Icon */}
             <IconButton
               variant="text"
               placeholder={undefined}
@@ -156,7 +146,6 @@ export default function VendorNavbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         <MobileNav open={openNav}>
           <div className="flex flex-col gap-4 items-center text-white">
             <Typography as="a" href={VENDOR.DASHBOARD} className="cursor-pointer text-lg" placeholder={undefined}

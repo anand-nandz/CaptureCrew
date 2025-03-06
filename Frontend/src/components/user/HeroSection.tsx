@@ -128,7 +128,6 @@ const HeroSection = () => {
     <>
       <HeroBanner />
 
-      {/* Vendors Section */}
       <section className="relative container mx-auto px-4 mb-3">
         <h2 className="text-4xl font-light tracking-[0.3em] text-[#B8860B] py-10 md:py-20 uppercase text-center">
           Popular Vendors
@@ -184,7 +183,6 @@ const HeroSection = () => {
       </section>
 
 
-      {/* Categories Section */}
       <section className="container mx-auto px-4 py-16">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -236,7 +234,7 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* Carousel Section */}
+     
       <div className="relative">
         <Carousel
           autoplay

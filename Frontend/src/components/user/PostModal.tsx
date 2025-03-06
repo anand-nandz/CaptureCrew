@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMapMarkerAlt, faTimes, faChevronLeft, faChevronRight, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faMapMarkerAlt, faTimes, faChevronLeft, faChevronRight, faStar, faUser } from '@fortawesome/free-solid-svg-icons';
 import {
     faEnvelope,
     faPhone,
@@ -13,6 +13,11 @@ import { PostModalProps } from '../../types/postTypes';
 
 export const PostModal = React.memo(({ post, isOpen, onClose }: PostModalProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    useEffect(() => {
+        if (!isOpen) {
+            setCurrentImageIndex(0);
+        }
+    }, [isOpen, post]);
 
     if (!post || !isOpen) return null;
 
@@ -30,10 +35,15 @@ export const PostModal = React.memo(({ post, isOpen, onClose }: PostModalProps) 
         );
     };
 
+    const handleClose = () => {
+        setCurrentImageIndex(0);
+        onClose();
+    };
+
     return (
         <Modal
             open={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             className="flex items-center justify-center"
         >
             <Box className="relative bg-white dark:bg-gray-900 w-full max-w-5xl mx-4 rounded-lg overflow-hidden flex flex-col md:flex-row md:h-[80vh]">
@@ -111,6 +121,12 @@ export const PostModal = React.memo(({ post, isOpen, onClose }: PostModalProps) 
 
                             <div className="border-t pt-4">
                                 <h3 className="text-lg font-semibold mb-3">Vendor Information</h3>
+                                {post?.vendor?.name && (
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <FontAwesomeIcon icon={faUser} className="mr-2" />
+                                        <span>{post?.vendor?.name}</span>
+                                    </div>
+                                )}
                                 {post?.vendor?.email && (
                                     <div className="flex items-center text-gray-600 mb-2">
                                         <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
