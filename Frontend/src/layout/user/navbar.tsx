@@ -55,28 +55,7 @@ export default function UserNavbar() {
       showToastMessage('Error during loading profile', 'error');
     }
   }
-  // const handleHomeClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-  //   e.preventDefault();
-  //   try {
-  //     navigate(`${USER.HOME}`);
-  //   } catch (error) {
-  //     console.log('Profile Error', error);
-  //     showToastMessage('Error during loading profile', 'error');
-  //   }
-  // };
-
-
-  // const handlePostClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-  //   e.preventDefault();
-  //   try {
-  //     navigate(`${USER.POST}`);
-  //   } catch (error) {
-  //     console.log('Profile Error', error);
-  //     showToastMessage('Error during loading profile', 'error');
-  //   }
-  // };
-
-
+  
   const icons = {
     chevron: <ChevronDown size={16} />,
     scale: <Scale className="text-warning" size={30} />,
@@ -101,7 +80,6 @@ export default function UserNavbar() {
       className="bg-stone-900 font-['judson'] py-2 w-full"
       maxWidth="full"
     >
-      {/* Logo and Menu Toggle */}
       <NavbarContent className="sm:hidden">
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -112,7 +90,6 @@ export default function UserNavbar() {
         <p className="font-bold text-white pl-4 text-xl lg:text-2xl">CaptureCrew</p>
       </NavbarBrand>
 
-      {/* Navbar Items */}
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         <NavbarItem>
           <Link to={`${USER.HOME}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base">
@@ -124,20 +101,7 @@ export default function UserNavbar() {
             POST
           </Link>
         </NavbarItem>
-        {/* <NavbarItem className="max-w-xs hidden md:flex">
-          <Input
-            classNames={{
-
-              base: "max-w-full lg:text-xl md:text-lg sm:text-base",
-              input: "text-small lg:text-xl md:text-lg sm:text-base",
-              inputWrapper: "font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
-            }}
-            placeholder="Type to search..."
-            size="sm"
-            startContent={icons.search}
-            type="search"
-          />
-        </NavbarItem> */}
+       
         <NavbarItem>
           <Link to={`${USER.VENDORLIST}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
             VENDORS
@@ -147,7 +111,7 @@ export default function UserNavbar() {
           <Link to={`${USER.BOOKING}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
             BOOKINGS
           </Link>
-          {/* <li onClick={() => navigate(`${USER.PROFILE}`)}>profile</li> */}
+
         </NavbarItem>
         <NavbarItem>
           <Link to={`${USER.ABOUT_US}`} className="text-white hover:text-gray-300 lg:text-xl md:text-lg sm:text-base" >
@@ -156,7 +120,6 @@ export default function UserNavbar() {
         </NavbarItem>
       </NavbarContent>
 
-      {/* Avatar and Chat Icon */}
       <NavbarContent justify="end">
         <Dropdown placement="bottom-end">
           <DropdownTrigger>
@@ -188,20 +151,9 @@ export default function UserNavbar() {
         </NavbarItem>
       </NavbarContent>
 
-      {/* Mobile Menu */}
+      
       <NavbarMenu className="bg-gray-800 pt-6 px-6">
         <NavbarMenuItem>
-          {/* <Input
-            classNames={{
-              base: "max-w-full",
-              input: "text-small",
-              inputWrapper: "font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
-            }}
-            placeholder="Type to search..."
-            size="sm"
-            startContent={icons.search}
-            type="search"
-          /> */}
         </NavbarMenuItem>
         {menuItems.map((item, index) => (
           <NavbarMenuItem key={`${item.label}-${index}`}>
