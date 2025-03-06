@@ -393,7 +393,7 @@ class PostService implements IPostService {
                         return post as PostDocument;
                     }
                 })
-            );
+            );            
 
             return {
                 posts: postWithSignedUrls,

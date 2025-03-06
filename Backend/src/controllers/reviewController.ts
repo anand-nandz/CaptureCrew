@@ -43,7 +43,6 @@ class ReviewController {
             const page: number = parseInt(req.query.page as string) || 1;
             const pageSize: number = parseInt(req.query.pageSize as string) || 6;
             const { reviews, count } = await this.reviewService.getreviewsForvendor(vendorId, page, pageSize);
-            console.log(reviews,'reviews');
             
             const totalPages = Math.ceil(count / pageSize)
             res.status(HTTP_statusCode.OK).json({ reviews, totalPages })

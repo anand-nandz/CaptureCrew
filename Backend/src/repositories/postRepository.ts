@@ -86,13 +86,8 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
 
             const posts = await Post.find()
                 .sort({ createdAt: -1 })
-                // .skip(validSkip)
-                // .limit(limit)
-                .populate('vendor_id', 'name companyName city about contactinfo imageUrl isActive') // Populate vendor details
+                .populate('vendor_id', 'name companyName email city about contactinfo imageUrl totalRating isActive') 
                 .lean<PostDocument[]>();
-
-
-            // const allPosts = await Post.find().lean();
 
             return {
                 posts,
@@ -176,7 +171,7 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
 
             const posts = await Post.find(query)
                 .sort({ createdAt: -1 })
-                .populate('vendor_id', 'name companyName city about contactinfo imageUrl')
+                .populate('vendor_id', 'name email companyName city about contactinfo imageUrl')
                 .lean();
 
             const mappedPosts = posts.map(post => ({
