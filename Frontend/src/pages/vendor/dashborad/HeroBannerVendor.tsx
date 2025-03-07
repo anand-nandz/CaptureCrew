@@ -5,7 +5,7 @@ const HeroBannerVendor = () => {
   return (
     <>
       <div className="relative flex h-screen content-center items-center justify-center pt-16 pb-32 m-0">
-        <div className="absolute top-0 h-full w-full bg-[url('/images/homebg2.jpg')] bg-cover bg-center" />
+        <div className="absolute top-0 h-full w-full bg-[url('/images/aboutus2.jpg')] bg-cover bg-center" />
         <div className="absolute top-0 h-full w-full bg-black/60 bg-cover bg-center" />
         <div className="max-w-8xl container relative mx-auto">
           <div className="flex flex-wrap items-center">

@@ -174,7 +174,7 @@ const Chat = () => {
       const response = await axiosInstanceChat.get(`/?userId=${vendor?._id}`);
       setConversation(response.data);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 

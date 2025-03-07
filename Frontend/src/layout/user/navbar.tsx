@@ -40,7 +40,7 @@ export default function UserNavbar() {
       navigate(`${USER.LOGIN}`);
       showToastMessage('Logged out successfully', 'success');
     } catch (error) {
-      console.log('Logout Error', error);
+      console.error('Logout Error', error);
       showToastMessage('Error during logout', 'error');
     }
   };
@@ -50,7 +50,7 @@ export default function UserNavbar() {
     try {
       navigate(`${USER.PROFILE}`)
     } catch (error) {
-      console.log('Profile Error', error);
+      console.error('Profile Error', error);
       showToastMessage('Error during loading profile', 'error');
     }
   }

@@ -29,7 +29,7 @@ export default function VendorNavbar() {
     try {
       navigate(`${VENDOR.PROFILE}`)
     } catch (error) {
-      console.log('Profile Error', error);
+      console.error('Profile Error', error);
       showToastMessage('Error during loading profile', 'error');
     }
 
@@ -47,7 +47,7 @@ export default function VendorNavbar() {
 
       })
       .catch((error) => {
-        console.log('Logout Error', error);
+        console.error('Logout Error', error);
         showToastMessage('Error during logout', 'error');
       });
   };

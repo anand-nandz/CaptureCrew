@@ -19,7 +19,6 @@ export const BookingTable: React.FC<BookingTableProps> = ({
   onAccept,
   onReject
 }) => {
-console.log(bookings,'bookingg');
 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);

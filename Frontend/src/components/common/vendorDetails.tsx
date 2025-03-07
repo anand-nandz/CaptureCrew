@@ -26,9 +26,7 @@ export default function VendorDetails({ isVendor, vendorDetails }: VendorProps) 
  
   const handleMessageOpen = async() => {
 
-    const res= await  axiosInstanceChat.post('/',{senderId: user?._id, receiverId:vendorDetails?._id})
-      const conversation = res.data
-      console.log(conversation,'conversationnnnnnn');
+    await  axiosInstanceChat.post('/',{senderId: user?._id, receiverId:vendorDetails?._id})
       
     navigate(`${USER.CHAT}`);
   };

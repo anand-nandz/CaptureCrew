@@ -45,7 +45,7 @@ const ResetPassword: React.FC = () => {
 
             setIsTokenValid(response.data.isValid);
         } catch (error) {
-            console.log(error, 'error')
+            console.error(error, 'error')
             Swal.fire({
                 title: 'Error!',
                 text: 'Invalid or expired reset token',

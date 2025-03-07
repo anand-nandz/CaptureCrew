@@ -33,7 +33,6 @@ function AdminBooking() {
       }
 
     } catch (error) {
-      console.log(error);
       if (error instanceof AxiosError) {
         showToastMessage(error.response?.data.message || 'Error fetching booking data', 'error');
       } else {

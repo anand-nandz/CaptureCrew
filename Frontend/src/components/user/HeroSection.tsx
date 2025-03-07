@@ -114,7 +114,7 @@ const HeroSection = () => {
     try {
       navigate(`${USER.VENDORLIST}`)
     } catch (error) {
-      console.log('Profile Error', error);
+      console.error('Profile Error', error);
       showToastMessage('Error during loading profile', 'error');
     }
 

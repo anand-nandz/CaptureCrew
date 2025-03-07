@@ -22,7 +22,6 @@ interface ImageGalleryProps {
 type ViewMode = "grid" | "masonry"
 
 const ImageGallery: React.FC<ImageGalleryProps> = ({ vendorDetails }) => {
-  console.log(vendorDetails, 'vendorDetails');
 
   const [activeService, setActiveService] = useState<string>("")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")

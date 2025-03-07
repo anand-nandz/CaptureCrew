@@ -73,8 +73,6 @@ export const VendorReviews: React.FC<VendorReviewsProps> = ({ vendorId, reviews:
         const response = await axiosInstance.get(`/getReviews/${vendorId}`, {
           withCredentials: true
         });
-        console.log(response.data.reviews);
-
         setReviews(response.data.reviews);
       } catch (err) {
         console.error('Error fetching vendor reviews:', err);
