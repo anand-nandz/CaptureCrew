@@ -25,7 +25,9 @@ import UserRootState from '@/redux/rootstate/UserState';
 
 
 export default function UserNavbar() {
-  const user= useSelector((state:UserRootState)=>state.user.userData)
+  const user= useSelector((state:UserRootState)=>state.user.userData);
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export default function UserNavbar() {
 
   const handleLogout = async (e: React.MouseEvent<HTMLLIElement>) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await axiosInstance.post('/logout');
       localStorage.removeItem('userToken')
@@ -42,6 +45,8 @@ export default function UserNavbar() {
     } catch (error) {
       console.error('Logout Error', error);
       showToastMessage('Error during logout', 'error');
+    }  finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,7 +142,7 @@ export default function UserNavbar() {
             </DropdownItem>
             <DropdownItem key="logout" className="text-danger" color="danger" startContent={<Slash size={20} />}
               onClick={handleLogout}>
-              Log Out
+              {isLoading ? "Logging out..." : "Log Out"}
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
