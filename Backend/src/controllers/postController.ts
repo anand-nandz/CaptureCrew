@@ -116,9 +116,6 @@ class PostController {
             const limit = parseInt(req.query.limit as string) || 3;
     
             const result = await this.postService.displayPosts(limit, page);
-            console.log(result,'result');
-            
-            
             res.status(HTTP_statusCode.OK).json({
                 status: 'success',
                 data: {

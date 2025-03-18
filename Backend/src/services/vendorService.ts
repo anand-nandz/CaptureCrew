@@ -243,7 +243,6 @@ class VendorService implements IVendorService {
                 })
             )
 
-
             return {
                 ...result,
                 vendors: updatedVendors
