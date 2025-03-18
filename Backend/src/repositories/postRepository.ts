@@ -128,7 +128,7 @@ class PostRepository extends BaseRepository<PostDocument> implements IPostReposi
                 .sort({ createdAt: -1 })
                 // .skip(skip)
                 // .limit(limit)
-                .populate('vendor_id', 'name companyName city about contactinfo imageUrl')
+                .populate('vendor_id', 'name companyName city about contactinfo imageUrl totalRating')
                 .lean<PostDocument[]>();
 
             const totalPages = Math.ceil(total / limit);
