@@ -23,7 +23,7 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
         try {
             const skip = (page - 1) * limit;
 
-            let query: { [key: string]: any } = {};
+            let query: { [key: string]: any } = {isVerified: true};
 
             if (search) {
                 query = {
@@ -37,14 +37,14 @@ class VendorRepository extends BaseRepository<VendorDocument> implements IVendor
             if (status) {
                 query.isActive = status === 'active'
             }
-
+            
             const total = await Vendor.countDocuments(query);
             const vendors = await Vendor.find(query)
                 .skip(skip)
                 .limit(limit)
                 .select('-password')
                 .sort({totalRating: -1, createdAt: -1 })
-
+            
             return {
                 vendors,
                 total,
